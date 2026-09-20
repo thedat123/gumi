@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Level Down — Gumi">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B83556"/>
+      <stop offset="1" stop-color="#DC97A5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- vùng an toàn maskable ~80%: nhân vật nằm trong khoảng 100..412 -->
+  <g transform="translate(256 268)">
+    <!-- tai -->
+    <path d="M-120 -70 L-96 -140 L-40 -92 Z" fill="#E3A57C"/>
+    <path d="M120 -70 L96 -140 L40 -92 Z" fill="#E3A57C"/>
+    <path d="M-104 -84 L-92 -122 L-64 -96 Z" fill="#845747"/>
+    <path d="M104 -84 L92 -122 L64 -96 Z" fill="#845747"/>
+    <!-- thân/đầu -->
+    <circle cx="0" cy="0" r="128" fill="#E3A57C"/>
+    <ellipse cx="0" cy="34" rx="86" ry="72" fill="#FCE9DF"/>
+    <!-- mắt -->
+    <circle cx="-46" cy="-14" r="16" fill="#3A241E"/>
+    <circle cx="46" cy="-14" r="16" fill="#3A241E"/>
+    <circle cx="-40" cy="-20" r="5" fill="#fff"/>
+    <circle cx="52" cy="-20" r="5" fill="#fff"/>
+    <!-- miệng -->
+    <path d="M-22 24 q22 18 44 0" fill="none" stroke="#3A241E" stroke-width="8" stroke-linecap="round"/>
+    <!-- ngôi sao nhấn -->
+    <path d="M150 -150 l10 22 l24 2 l-18 16 l6 24 l-22 -13 l-22 13 l6 -24 l-18 -16 l24 -2 z" fill="#FA990A"/>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+{
+  "totalDays": 14,
+  "freezeDay": 11,
+  "bufferTasks": 1,
+  "milestoneDeadlines": { "M0": 2, "M1": 4, "M2": 6, "M3": 9, "M4": 11, "M5": 13 },
+  "days": [
+    { "day": 1,  "expectedDone": 1,  "review": null, "focus": "Chốt D1–D8, chuẩn bị môi trường, chạy tay T-001 để đo chi phí" },
+    { "day": 2,  "expectedDone": 2,  "review": "M0", "focus": "T-002 xong, duyệt M0, bật autopilot" },
+    { "day": 3,  "expectedDone": 4,  "review": null, "focus": "M1: schema + RLS, động cơ ngày" },
+    { "day": 4,  "expectedDone": 6,  "review": "M1", "focus": "T-005, T-006 xong, duyệt M1" },
+    { "day": 5,  "expectedDone": 8,  "review": null, "focus": "M2: submit_checkin, streak/Sugar Pass" },
+    { "day": 6,  "expectedDone": 10, "review": "M2", "focus": "Quiz + leaderboard xong, duyệt kỹ M2 (30 phút)" },
+    { "day": 7,  "expectedDone": 12, "review": null, "focus": "M3: onboarding, dashboard" },
+    { "day": 8,  "expectedDone": 13, "review": null, "focus": "M3: check-in UI" },
+    { "day": 9,  "expectedDone": 14, "review": "M3", "focus": "Leaderboard UI xong, duyệt M3 bằng điện thoại thật" },
+    { "day": 10, "expectedDone": 15, "review": null, "focus": "M4: quiz UI, mini-game" },
+    { "day": 11, "expectedDone": 17, "review": "M4", "focus": "Day 10 + card Story xong, duyệt M4. ĐÓNG BĂNG TÍNH NĂNG" },
+    { "day": 12, "expectedDone": 18, "review": null, "focus": "M5: admin kiểm duyệt; người test tay iOS/Android" },
+    { "day": 13, "expectedDone": 19, "review": "M5", "focus": "E2E toàn hành trình, duyệt M5, dry-run 5–10 người" },
+    { "day": 14, "expectedDone": 19, "review": null, "focus": "Đệm: sửa lỗi dry-run, seed admin, deploy, chốt launch" }
+  ]
+}

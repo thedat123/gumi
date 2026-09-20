@@ -1,0 +1,77 @@
+{
+  "neverCut": [
+    "T-003 AC3–AC8 (RLS, quyền ghi, is_admin, Storage riêng tư)",
+    "T-007 mọi AC (kiểm tra ngày, đường dẫn ảnh, chống cộng điểm đôi, race)",
+    "T-008 AC2–AC6 (Sugar Pass, streak, tính điểm, tính lại khi bị gỡ)",
+    "T-009 AC1, AC3 và T-015 AC6 (đáp án quiz không lộ ra client)",
+    "T-010 AC1, AC7 (bảng xếp hạng không lộ dữ liệu riêng tư)",
+    "T-016 AC1 và AC7 (đáp án mini-game không lộ ra client)",
+    "T-018 AC1–AC3 (quyền admin) và T-019 AC7 (không lộ service_role, now_override NULL)"
+  ],
+  "cuts": [
+    {
+      "id": "C-01",
+      "task": "T-014",
+      "saves": 0.3,
+      "title": "Bỏ tự làm mới bảng xếp hạng mỗi 20 giây",
+      "how": "Bỏ AC4; thay bằng nút \"Làm mới\" thủ công.",
+      "cost": "Người chơi phải tự bấm để thấy hạng mới."
+    },
+    {
+      "id": "C-02",
+      "task": "T-010",
+      "saves": 0.2,
+      "title": "Bỏ kiểm thử hiệu năng 200 người",
+      "how": "Bỏ AC6. Quy mô thật chỉ ~100 người, truy vấn đơn giản.",
+      "cost": "Không có bằng chứng hiệu năng; rủi ro thấp ở quy mô này."
+    },
+    {
+      "id": "C-03",
+      "task": "T-015",
+      "saves": 0.2,
+      "title": "Bỏ yêu cầu truy cập bàn phím cho thanh trượt",
+      "how": "Bỏ AC2.",
+      "cost": "Người dùng bàn phím/trình đọc màn hình khó dùng quiz."
+    },
+    {
+      "id": "C-04",
+      "task": "T-013",
+      "saves": 0.3,
+      "title": "Bỏ 'thử lại mà không mất ảnh' khi lỗi mạng",
+      "how": "Sửa AC5: chỉ giữ 'khoá nút khi đang gửi, bấm đúp chỉ tạo 1 check-in'.",
+      "cost": "Mạng yếu thì người chơi phải chọn lại ảnh."
+    },
+    {
+      "id": "C-05",
+      "task": "T-019",
+      "saves": 0.7,
+      "title": "Bỏ kịch bản e2e người chơi C và tie-break",
+      "how": "Bỏ AC4 và AC5 (logic này đã có test SQL ở T-008, T-010, T-018).",
+      "cost": "Mất kiểm chứng xuyên UI cho hai luồng này."
+    },
+    {
+      "id": "C-06",
+      "task": "T-018",
+      "saves": 1.0,
+      "title": "Bỏ giao diện /admin, dùng Supabase Table Editor",
+      "how": "Bỏ AC5; giữ nguyên các RPC admin. Ghi cách duyệt bằng Table Editor vào docs/admin.md (AC6).",
+      "cost": "Admin thao tác bằng bảng dữ liệu, không xem trước ảnh tiện."
+    },
+    {
+      "id": "C-07",
+      "task": "T-016",
+      "saves": 1.0,
+      "title": "Gộp Day 4 và Day 7 thành quiz trắc nghiệm thường",
+      "how": "Viết lại AC5–AC6: Day 4 chọn 3 tên của đường trong danh sách (bỏ đồng hồ 30 giây), Day 7 chọn đáp án cho 3 chuỗi emoji, infographic là ảnh tĩnh.",
+      "cost": "Mini-game kém hấp dẫn hơn brief."
+    },
+    {
+      "id": "C-08",
+      "task": "T-017",
+      "saves": 1.0,
+      "title": "Đơn giản hoá card Story thành mẫu tĩnh",
+      "how": "Bỏ AC4 (get_my_summary tính động) và viết lại AC6: card chỉ gồm lời chúc, Gumi tiến hoá, tổng điểm, hạng, tên. Giữ AC7 (PNG 1080×1920).",
+      "cost": "Card kém 'cá nhân hoá' hơn brief mục V."
+    }
+  ]
+}

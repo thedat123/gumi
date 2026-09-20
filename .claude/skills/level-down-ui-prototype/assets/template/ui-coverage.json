@@ -1,0 +1,24 @@
+{
+  "_doc": "Kiểm kê những màn/trạng thái prototype ĐÃ dựng, dùng làm đầu vào cho check_coverage.mjs của skill level-down-ui-review. Cập nhật mỗi khi thêm màn: node <ui-review>/scripts/check_coverage.mjs ui-coverage.json",
+  "screens": [
+    { "id": "S03", "name": "Đăng nhập", "evidence": "src/pages/Login.tsx",
+      "states": ["default", "wrong_password", "loading", "in_app_browser_banner", "forgot_password_contact_admin"] },
+    { "id": "S04", "name": "Onboarding", "evidence": "src/pages/Onboarding.tsx",
+      "states": ["default", "level_selected_with_estimate", "validation_error", "submitting"] },
+    { "id": "S05", "name": "Dashboard", "evidence": "src/pages/Dashboard.tsx + src/mock/scenarios.ts",
+      "states": ["before_start", "today_open", "today_done", "dying", "missed_no_pass", "rejected_day", "finished", "ended"] },
+    { "id": "S06", "name": "Nhiệm vụ có ảnh", "evidence": "src/pages/CheckIn.tsx",
+      "states": ["default", "photo_selected", "uploading", "success", "error_network", "not_today", "already_done", "level_not_allowed", "photo_too_large_or_not_image"] },
+    { "id": "S12", "name": "Bảng xếp hạng", "evidence": "src/pages/Leaderboard.tsx",
+      "states": ["in_top10", "outside_top10_with_gap", "empty", "loading", "error"] },
+    { "id": "S14", "name": "Lỗi chung", "evidence": "src/App.tsx",
+      "states": ["not_found"] }
+  ],
+  "components": [
+    { "id": "C01", "name": "Gumi", "evidence": "src/components/Gumi.tsx", "states": ["bo_pho", "hap_hoi", "tien_hoa"] },
+    { "id": "C02", "name": "Dải 10 ngày", "evidence": "src/components/DayStrip.tsx", "states": ["checked", "passed", "open", "dying", "missed", "rejected", "future"] },
+    { "id": "C03", "name": "Thẻ nhiệm vụ", "evidence": "src/components/MissionCard.tsx", "states": ["DRINK", "KNOW", "SHARE", "FINAL", "done"] },
+    { "id": "C04", "name": "Hộp Sugar Pass", "evidence": "src/components/SugarPassDialog.tsx", "states": ["confirm", "countdown", "success"] },
+    { "id": "C05", "name": "Thông báo", "evidence": "src/components/Banner.tsx", "states": ["success", "error", "info"] }
+  ]
+}

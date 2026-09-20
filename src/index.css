@@ -1,0 +1,35 @@
+@import "@fontsource/be-vietnam-pro/400.css";
+@import "@fontsource/be-vietnam-pro/600.css";
+@import "@fontsource/be-vietnam-pro/700.css";
+@import "tailwindcss";
+@import "./theme.css";
+@import "./gumi.css";
+
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body {
+  min-height: 100dvh;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  /* Nền Lumber + vầng sáng ấm phía trên cho có chiều sâu (production, không loè loẹt). */
+  background: radial-gradient(130% 90% at 50% -20%, #FFF1E9 0%, var(--color-bg) 55%) fixed;
+}
+#root { min-height: 100dvh; }
+:focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* --- gradient thương hiệu (kết hợp 6 màu bảng) --- */
+.grad-brand { background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-pink) 100%); }
+.grad-sunset { background-image: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 90%); }
+.grad-story { background-image: linear-gradient(160deg, var(--color-primary) 0%, #A32C4B 45%, var(--color-gumi-dark) 100%); }
+.text-gradient { background-image: linear-gradient(120deg, var(--color-primary), var(--color-gumi-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* --- đổ bóng mềm, ấm --- */
+.shadow-soft { box-shadow: 0 8px 24px -14px rgba(58, 36, 30, 0.28); }
+.shadow-pop { box-shadow: 0 14px 34px -14px rgba(184, 53, 86, 0.42); }
+
+.spinner { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } body { background: var(--color-bg); } }

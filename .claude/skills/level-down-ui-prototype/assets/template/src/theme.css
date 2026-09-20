@@ -1,0 +1,29 @@
+/* Sinh tự động từ tokens.json bằng `npm run tokens`. Không sửa tay. */
+@theme {
+  --color-bg: #FFF6EA;
+  --color-surface: #FFFFFF;
+  --color-text: #2A2320;
+  --color-muted: #6B5F58;
+  --color-border: #E5D8C8;
+  --color-border-strong: #8C7F75;
+  --color-primary: #C93F2B;
+  --color-on-primary: #FFFFFF;
+  --color-accent: #FFC94D;
+  --color-on-accent: #2A2320;
+  --color-success: #1F7A4D;
+  --color-danger: #B3261E;
+  --color-info: #1D5FA8;
+  --color-gumi: #F2B57A;
+  --color-gumi-dark: #C98545;
+  --color-gumi-belly: #FFE3C4;
+  --color-gumi-ink: #3B2A22;
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
+  --text-caption: 13px;
+  --text-small: 14px;
+  --text-body: 16px;
+  --text-title: 20px;
+  --text-headline: 28px;
+}
