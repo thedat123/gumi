@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
+import { ChapterTease } from '../components/ChapterTease';
 import { Gumi } from '../components/Gumi';
 import { vi } from '../content/vi';
 
@@ -20,7 +21,7 @@ export function Day7() {
       setWarn(false);
       const next = step + 1;
       setStep(next);
-      if (next >= PUZZLES.length) api.submitMinigame(7).catch(() => {});
+      if (next >= PUZZLES.length) api.submitMinigame(3).catch(() => {});
     } else {
       setWarn(true);
     }
@@ -35,6 +36,7 @@ export function Day7() {
           <h2 className="text-title font-bold">{vi.day7.infographicTitle}</h2>
           <p className="mt-1 text-small text-muted">{vi.day7.infographic}</p>
         </Card>
+        <ChapterTease day={3} />
         <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.day7.backHome}</Link>
       </div>
     );

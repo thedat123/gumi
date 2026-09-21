@@ -3,11 +3,13 @@
 import { vi } from '../content/vi';
 import type { DayState, GumiState } from '../api/types';
 
-export const TOTAL_DAYS = 10;
+export const TOTAL_DAYS = 21;
+export const MILESTONE_DAYS = [7, 14, 21]; // mốc chuyển vùng đất / tiến hoá Gumi
 export const STREAK_BONUS: { n: number; pts: number }[] = [
-  { n: 3, pts: 15 },
-  { n: 7, pts: 30 },
-  { n: 10, pts: 50 },
+  { n: 5, pts: 10 },
+  { n: 10, pts: 20 },
+  { n: 15, pts: 30 },
+  { n: 21, pts: 50 },
 ];
 
 export const missionPoints = (day: number): number => vi.missions[day - 1]?.points ?? 0;
@@ -20,7 +22,7 @@ export interface ProgressInput {
   quizScore?: number; // điểm thực của quiz Day 2 (thay cho điểm phẳng)
 }
 
-/** Trạng thái từng ngày cho dải 10 ngày (D1: ngày theo lịch chung). */
+/** Trạng thái từng ngày cho hành trình 21 ngày (D1: ngày theo lịch chung). */
 export function computeDays(p: ProgressInput): DayState[] {
   const days: DayState[] = [];
   for (let d = 1; d <= TOTAL_DAYS; d++) {
@@ -69,7 +71,7 @@ export function totalPoints(p: ProgressInput, days: DayState[]): number {
   return missionTotal(p) + streakBonus(days);
 }
 
-/** Gumi: hấp hối > tiến hoá (đã xong Day 10) > bơ phờ. */
+/** Gumi: hấp hối > tiến hoá (đã xong Day 21) > bơ phờ. */
 export function gumiStateOf(days: DayState[]): GumiState {
   if (days.includes('dying')) return 'hap_hoi';
   if (days[TOTAL_DAYS - 1] === 'checked') return 'tien_hoa';
@@ -79,4 +81,19 @@ export function gumiStateOf(days: DayState[]): GumiState {
 /** Số ngày check-in được duyệt thật (không tính Pass) — dùng cho "All Finishers" (D5). */
 export function approvedCount(days: DayState[]): number {
   return days.filter((d) => d === 'checked').length;
+}
+
+/** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–7), 2 = Rừng Đường Ẩn (8–14), 3 = Đỉnh 0% (15–21). */
+export const actOfDay = (day: number): 1 | 2 | 3 => (day <= 7 ? 1 : day <= 14 ? 2 : 3);
+export const isMilestone = (day: number): boolean => MILESTONE_DAYS.includes(day);
+
+export type GumiStage = 'crash' | 'sleepy' | 'balanced' | 'charged' | 'master';
+/** 4 nấc tiến hoá theo số ngày đã đi (0 / 1–7 / 8–14 / 15–21), riêng đang hấp hối = crash. */
+export function gumiStage(days: DayState[]): GumiStage {
+  if (days.includes('dying')) return 'crash';
+  const done = days.filter((d) => d === 'checked' || d === 'passed').length;
+  if (done === 0) return 'sleepy';
+  if (done <= 7) return 'balanced';
+  if (done <= 14) return 'charged';
+  return 'master';
 }

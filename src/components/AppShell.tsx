@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { useSession } from '../app/session';
 
@@ -11,9 +11,14 @@ import { useSession } from '../app/session';
 export function AppShell() {
   const { profile, session, signOut } = useSession();
   const isAdmin = profile?.role === 'admin';
+  const { pathname } = useLocation();
+  // Trang phòng Gumi, bản đồ & chương chạy RỘNG (nhập vai), các trang khác giữ cột hẹp dễ đọc.
+  const immersive = !!session && (pathname === '/' || pathname === '/journey' || pathname.startsWith('/chapter'));
+  const isRoom = pathname === '/'; // màn chính đã có dock riêng → ẩn thanh điều hướng dưới
 
   const items = [
-    { to: '/', end: true, label: vi.nav.home, icon: '🗺️' },
+    { to: '/', end: true, label: vi.nav.home, icon: '🏠' },
+    { to: '/journey', end: false, label: vi.nav.journey, icon: '🗺️' },
     { to: '/leaderboard', end: false, label: vi.nav.leaderboard, icon: '🏆' },
     ...(isAdmin ? [{ to: '/admin', end: false, label: vi.nav.admin, icon: '🛡️' }] : []),
   ];
@@ -81,14 +86,14 @@ export function AppShell() {
           </header>
         )}
 
-        <main className="flex-1 px-4 pb-28 pt-1 lg:px-8 lg:pb-10 lg:pt-6">
-          <div className={`mx-auto w-full ${session ? 'max-w-2xl' : 'max-w-5xl'}`}>
+        <main className={`flex-1 px-4 pb-28 pt-1 lg:pb-10 lg:pt-6 ${immersive ? 'lg:px-6' : 'lg:px-8'}`}>
+          <div className={`mx-auto w-full ${!session ? 'max-w-5xl' : immersive ? 'max-w-6xl' : 'max-w-2xl'}`}>
             <Outlet />
           </div>
         </main>
 
-        {/* Thanh điều hướng dưới (mobile) */}
-        {session && (
+        {/* Thanh điều hướng dưới (mobile) — ẩn ở màn Phòng Gumi vì đã có dock riêng */}
+        {session && !isRoom && (
           <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-4 pb-3 lg:hidden" aria-label="Điều hướng chính">
             <div className="flex gap-1 rounded-pill border border-border bg-surface/95 p-1.5 shadow-soft backdrop-blur">
               {items.map((i) => (

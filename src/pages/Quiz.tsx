@@ -5,6 +5,7 @@ import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ChapterTease } from '../components/ChapterTease';
 import { Gumi } from '../components/Gumi';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
@@ -28,6 +29,7 @@ export function Quiz() {
         <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.quiz.result(result.score, result.max)}</Banner>
         <p className="text-small text-muted">{vi.quiz.resultSub}</p>
+        <ChapterTease day={2} />
         <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.quiz.backHome}</Link>
       </div>
     );

@@ -1,0 +1,95 @@
+/* Hành trình: bản đồ chương + chuyển cảnh + BỐI CẢNH VÙNG ĐẤT. Ưu tiên animate transform/opacity. */
+
+/* Đường mòn nối các chặng (trang trí, vẽ tĩnh). */
+.trail-spine {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 4px;
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(var(--color-border) 0 8px, transparent 8px 16px);
+  border-radius: 999px; z-index: 0;
+}
+/* Đường mòn ngang cho desktop. */
+.trail-spine-h {
+  position: absolute; left: 0; right: 0; top: 50%; height: 4px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(90deg, var(--color-border) 0 8px, transparent 8px 16px);
+  border-radius: 999px; z-index: 0;
+}
+
+/* Nhịp "hôm nay". */
+.node-today { animation: node-pulse 2.4s ease-in-out infinite; }
+@keyframes node-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .92; } }
+
+/* Chuyển cảnh & thoại. */
+.beat { animation: beat-in .32s ease-out both; }
+@keyframes beat-in { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+.line-in { animation: line-in .3s ease-out both; }
+@keyframes line-in { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+
+/* ====================== BỐI CẢNH VÙNG ĐẤT ====================== */
+.scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.scene > * { position: absolute; }
+.scene-grad, .scene-scrim { inset: 0; }
+.scene-far, .scene-near { left: 0; right: 0; bottom: 0; width: 100%; }
+.scene-far { opacity: .55; height: 46%; }
+.scene-near { height: 30%; }
+.scene-mist {
+  left: -20%; right: -20%; height: 42%;
+  background: radial-gradient(60% 100% at 50% 100%, rgba(255,255,255,.55), transparent 70%);
+  filter: blur(2px);
+}
+.scene-mist-a { top: 8%;  animation: mist-a 26s ease-in-out infinite; }
+.scene-mist-b { top: 34%; opacity: .7; animation: mist-b 34s ease-in-out infinite; }
+@keyframes mist-a { 0%,100% { transform: translateX(-6%); } 50% { transform: translateX(8%); } }
+@keyframes mist-b { 0%,100% { transform: translateX(7%); } 50% { transform: translateX(-7%); } }
+
+/* Lớp hạt (bọt/bụi/tuyết) */
+.scene-bit {
+  bottom: -8%; width: var(--sz, 10px); height: var(--sz, 10px);
+  border-radius: 999px; opacity: 0; will-change: transform, opacity;
+}
+
+/* --- Vùng 1: Đầm Lầy Ngọt --- */
+.scene--act1 .scene-grad { background: linear-gradient(180deg, #6f9a63 0%, #3f6a47 34%, #274c34 66%, #16321f 100%); }
+.scene--act1 .scene-scrim { background: linear-gradient(180deg, rgba(255,246,234,.94) 0%, rgba(255,246,234,.45) 16%, transparent 38%, transparent 78%, rgba(22,50,31,.35) 100%); }
+.scene--act1 .scene-bit { background: radial-gradient(circle at 34% 30%, #f0fce4, #a9db8a 70%, rgba(169,219,138,0) 100%); animation: bit-rise var(--dur, 9s) linear var(--delay, 0s) infinite; }
+.scene--act1 .scene-near { animation: sway 7s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes bit-rise {
+  0% { transform: translate(0, 0) scale(.5); opacity: 0; }
+  12% { opacity: .85; }
+  50% { transform: translate(6px, -34vh) scale(1); }
+  88% { opacity: .5; }
+  100% { transform: translate(-4px, -72vh) scale(1.05); opacity: 0; }
+}
+@keyframes sway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+
+/* --- Vùng 2: Rừng Đường Ẩn --- */
+.scene--act2 .scene-grad { background: linear-gradient(180deg, #4c7a4f 0%, #2c5333 40%, #1a3a22 74%, #10271a 100%); }
+.scene--act2 .scene-scrim { background: linear-gradient(180deg, rgba(255,246,234,.92) 0%, rgba(255,246,234,.4) 16%, transparent 40%); }
+.scene--act2 .scene-mist { background: radial-gradient(60% 100% at 50% 100%, rgba(214,236,214,.6), transparent 70%); }
+.scene--act2 .scene-bit { background: radial-gradient(circle, #eaf6e2, rgba(234,246,226,0) 70%); animation: bit-drift var(--dur, 12s) linear var(--delay, 0s) infinite; }
+.scene--act2 .scene-near { animation: sway 9s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes bit-drift {
+  0% { transform: translate(0, 0) scale(.6); opacity: 0; }
+  15% { opacity: .7; }
+  100% { transform: translate(40px, -60vh) scale(1); opacity: 0; }
+}
+
+/* --- Vùng 3: Đỉnh 0% --- */
+.scene--act3 .scene-grad { background: linear-gradient(180deg, #bfe2f7 0%, #d9eefb 45%, #eef7fe 78%, #f8fcff 100%); }
+.scene--act3 .scene-scrim { background: linear-gradient(180deg, rgba(255,255,255,.55) 0%, transparent 30%); }
+.scene--act3 .scene-mist { background: radial-gradient(60% 100% at 50% 100%, rgba(255,255,255,.75), transparent 70%); }
+.scene--act3 .scene-bit { top: -8%; bottom: auto; background: radial-gradient(circle, #ffffff, rgba(255,255,255,0) 72%); animation: bit-fall var(--dur, 10s) linear var(--delay, 0s) infinite; }
+@keyframes bit-fall {
+  0% { transform: translate(0, 0) scale(.7); opacity: 0; }
+  12% { opacity: .9; }
+  100% { transform: translate(18px, 78vh) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-today, .beat, .line-in,
+  .scene-mist, .scene-bit, .scene-near { animation: none !important; }
+  .scene-bit { display: none; }
+}
+html.rm .node-today, html.rm .beat, html.rm .line-in,
+html.rm .scene-mist, html.rm .scene-bit, html.rm .scene-near { animation: none !important; }
+html.rm .scene-bit { display: none; }

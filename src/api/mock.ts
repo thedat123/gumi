@@ -25,10 +25,15 @@ import {
   type WallPost,
 } from './types';
 
-const KEY = 'ld_mock_v1';
+const KEY = 'ld_mock_v3';
 const START_LEVEL: SugarLevel = 100;
-const DRINK_DAYS = [1, 3, 6, 9];
-const KNOW_DAYS = [2, 4, 7];
+const PASSES = 3;
+// Ánh xạ ngày → loại nhiệm vụ cho hành trình 21 ngày (khớp vi.missions và MissionRouter).
+const LEVEL_DAYS = [1, 5, 15, 20]; // DRINK có chọn mức đường + dùng tính đường đã cắt
+const DRINK_DAYS = [1, 5, 10, 15, 20]; // ngày DRINK (đếm ly healthy)
+const SHARE_DAYS = [4, 8, 13]; // check-in ảnh, không chọn mức
+const PHOTO_DAYS = [...DRINK_DAYS, ...SHARE_DAYS]; // mọi ngày check-in ảnh
+const MINIGAME_DAYS = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19]; // GAME/KNOW/TRACKER (quiz Day2, wall Day21 tách riêng)
 
 interface Persisted {
   session: Session | null;
@@ -41,6 +46,7 @@ interface Persisted {
   levels: Record<number, SugarLevel>; // mức đường đã check-in mỗi ngày DRINK
   quiz: QuizResult | null;
   wall: WallPost[];
+  passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 3)
 }
 
 const SEED_WALL: WallPost[] = vi.wall.posts.map((p, i) => ({
@@ -65,7 +71,7 @@ const ADMIN_SEED: AdminCheckin[] = [
 ];
 
 function fresh(): Persisted {
-  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL] };
+  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES };
 }
 
 function load(): Persisted {
@@ -94,7 +100,7 @@ const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Ước tính đường đã cắt giảm (D7): tổng chênh g/ly trên các ngày DRINK đã check-in, 1 ly/ngày. */
 function sugarCut(levels: Record<number, SugarLevel>): number {
-  return DRINK_DAYS.reduce((sum, d) => {
+  return LEVEL_DAYS.reduce((sum, d) => {
     const lv = levels[d];
     return lv == null ? sum : sum + (gramsPerDrink(START_LEVEL) - gramsPerDrink(lv));
   }, 0);
@@ -242,7 +248,8 @@ export function createMockApi(): Api {
         totalPoints: points,
         streak: longestStreak(days),
         rank: rankFor(points),
-        passAvailable: state.profile?.sugarPassAvailable ?? true,
+        passAvailable: state.passesLeft > 0,
+        passesLeft: state.passesLeft,
         passHoursLeft: days.includes('dying') ? 18 : null,
         gumi: gumiStateOf(days),
         rejectedReason: rejectedDay ? 'ảnh không hợp lệ' : undefined,
@@ -269,9 +276,10 @@ export function createMockApi(): Api {
       await delay(null, 700);
       if (!fileName) throw new ApiError('photo_invalid');
       if (day !== state.campaignDay) throw new ApiError('not_today');
+      if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
       if (state.completed.includes(day)) throw new ApiError('already_done');
-      if (DRINK_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
-      if (DRINK_DAYS.includes(day)) state.levels[day] = level;
+      if (LEVEL_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
+      if (LEVEL_DAYS.includes(day)) state.levels[day] = level;
       advance(day);
       save();
       return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
@@ -280,11 +288,12 @@ export function createMockApi(): Api {
     async useSugarPass() {
       requireSession();
       await delay(null, 500);
-      if (!state.profile?.sugarPassAvailable) throw new ApiError('no_pass');
-      // Cứu ngày hôm nay (bỏ lỡ): đánh dấu passed, 0 điểm, giữ chuỗi, rồi sang ngày kế.
+      if (state.passesLeft <= 0) throw new ApiError('no_pass');
+      // Cứu ngày hôm nay (bỏ lỡ): đánh dấu passed, 0 điểm, giữ chuỗi, rồi sang ngày kế. Có 3 Bùa.
       const day = state.campaignDay;
       if (!state.passed.includes(day)) state.passed.push(day);
-      if (state.profile) state.profile.sugarPassAvailable = false;
+      state.passesLeft -= 1;
+      if (state.profile) state.profile.sugarPassAvailable = state.passesLeft > 0;
       if (state.campaignDay <= TOTAL_DAYS) state.campaignDay = day + 1;
       save();
     },
@@ -313,7 +322,7 @@ export function createMockApi(): Api {
     async submitMinigame(day): Promise<CheckinResult> {
       requireSession();
       await delay(null, 400);
-      if (!KNOW_DAYS.includes(day)) throw new ApiError('server');
+      if (!MINIGAME_DAYS.includes(day)) throw new ApiError('server');
       advance(day);
       save();
       return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
@@ -323,7 +332,7 @@ export function createMockApi(): Api {
       const s = requireSession();
       await delay(null, 400);
       state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date(0).toISOString() }, ...state.wall];
-      advance(10);
+      advance(TOTAL_DAYS);
       save();
     },
 

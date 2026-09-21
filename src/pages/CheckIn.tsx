@@ -4,14 +4,16 @@ import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ChapterTease } from '../components/ChapterTease';
 import { Gumi } from '../components/Gumi';
 import { vi } from '../content/vi';
 import { errorCode, messageFor } from '../lib/errors';
 import type { SugarLevel } from '../lib/sugar';
 
 const LEVELS: SugarLevel[] = [70, 50, 30, 0];
+const LEVEL_DAYS = [1, 5, 15, 20]; // ngày DRINK có chọn mức đường
 
-/** S06 — Nhiệm vụ có ảnh (Day 1/3/6/9 có chọn mức đường; Day 5/8 chỉ ảnh). */
+/** S06 — Nhiệm vụ có ảnh: ngày DRINK có chọn mức đường; ngày SHARE chỉ ảnh. */
 export function CheckIn() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 1;
@@ -22,7 +24,7 @@ export function CheckIn() {
   const [error, setError] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
 
-  const needsLevel = [1, 3, 6, 9].includes(day);
+  const needsLevel = LEVEL_DAYS.includes(day);
   const pick = (e: ChangeEvent<HTMLInputElement>) => setFile(e.target.files?.[0]?.name ?? null);
 
   const submit = async () => {
@@ -43,8 +45,9 @@ export function CheckIn() {
   if (phase === 'success') {
     return (
       <div className="flex flex-col items-center gap-3 pt-6 text-center">
-        <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
+        <Gumi state="bo_pho" size={150} progress={day / vi.journey.total} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.checkin.success(m.points)}</Banner>
+        <ChapterTease day={day} />
         <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.checkin.back}</Link>
       </div>
     );

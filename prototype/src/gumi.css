@@ -1,0 +1,83 @@
+/* Gumi: chỉ animate transform và opacity. Mỗi màn tối đa MỘT mascot chuyển động. */
+.gumi { position: relative; display: inline-block; width: var(--gumi-size, 200px); aspect-ratio: 200 / 220; }
+.gumi svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.g-actor, .g-breath { transform-box: fill-box; transform-origin: 50% 100%; }
+.g-shadow { fill: rgb(0 0 0 / 0.12); }
+.g-body { fill: var(--color-gumi); }
+.g-dark { fill: var(--color-gumi-dark); }
+.g-belly { fill: var(--color-gumi-belly); }
+.g-ink { fill: var(--color-gumi-ink); }
+.g-white { fill: #fff; }
+.g-stroke { fill: none; stroke: var(--color-gumi-ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.g-lens { fill: var(--color-gumi-ink); }
+.g-star { fill: var(--color-accent); }
+.g-flash { fill: var(--color-accent); opacity: 0; }
+.g-sweat { fill: #7CC4F2; }
+
+/* --- chuyển động chờ (idle) --- */
+.gumi--bo-pho .g-breath { animation: g-breathe 3.6s ease-in-out infinite; }
+.gumi--hap-hoi .g-actor { animation: g-wobble 2.6s ease-in-out infinite; }
+.gumi--tien-hoa .g-breath { animation: g-breathe 3s ease-in-out infinite; }
+.gumi--tien-hoa .g-actor { animation: g-hop 10s ease-in-out var(--hop-delay, 0s) infinite; }
+.g-eyes-open { animation: g-blink-open 5s infinite; }
+.g-eyes-closed { opacity: 0; animation: g-blink-closed 5s infinite; }
+
+@keyframes g-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.02, 1.035); } }
+@keyframes g-wobble { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(2px); } }
+@keyframes g-hop {
+  0%, 11%, 100% { transform: translateY(0) scale(1, 1); }
+  3% { transform: translateY(0) scale(1.06, 0.92); }
+  6% { transform: translateY(-22px) scale(0.96, 1.05); }
+  9% { transform: translateY(0) scale(1.06, 0.92); }
+}
+@keyframes g-blink-open { 0%, 92%, 100% { opacity: 1; } 94%, 98% { opacity: 0; } }
+@keyframes g-blink-closed { 0%, 92%, 100% { opacity: 0; } 94%, 98% { opacity: 1; } }
+
+/* --- chuyển động theo sự kiện (chạy một lần) --- */
+.gumi.is-cheer .g-actor { animation: g-cheer 1.2s ease-out 1; }
+.gumi.is-poke .g-actor { animation: g-poke 0.5s ease-out 1; }
+.gumi.is-revive .g-actor { animation: g-revive 1.4s ease-out 1; }
+.gumi.is-evolve .g-actor { animation: g-evolve 2s ease-in-out 1; }
+.gumi.is-evolve .g-flash { animation: g-flash 2s ease-in-out 1; }
+.gumi.is-cheer .g-sparkle, .gumi.is-revive .g-sparkle, .gumi.is-evolve .g-sparkle { animation: g-sparkle 1s ease-out 1 both; animation-delay: var(--d, 0s); }
+.g-sparkle { opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; }
+
+@keyframes g-cheer {
+  0% { transform: translateY(0) scale(1, 1); }
+  15% { transform: translateY(0) scale(1.08, 0.9); }
+  35% { transform: translateY(-34px) scale(0.95, 1.06) rotate(-4deg); }
+  55% { transform: translateY(0) scale(1.06, 0.93); }
+  70% { transform: translateY(-16px) scale(0.98, 1.03) rotate(4deg); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@keyframes g-poke { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px) scale(0.97, 1.04); } }
+@keyframes g-revive {
+  0% { transform: rotate(-14deg) translateY(8px) scale(0.96); }
+  40% { transform: rotate(6deg) translateY(-18px) scale(1.04); }
+  70% { transform: rotate(-3deg) translateY(0); }
+  100% { transform: rotate(0); }
+}
+@keyframes g-evolve { 0% { transform: scale(1); } 30% { transform: scale(0.9); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes g-flash { 0% { opacity: 0; } 50% { opacity: 0.95; } 100% { opacity: 0; } }
+@keyframes g-sparkle { 0% { opacity: 0; transform: translate(0, 0) scale(0.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -40px)) scale(1); } }
+
+/* --- bong bóng lời thoại --- */
+.g-bubble {
+  position: absolute; left: 50%; bottom: 100%; max-width: 220px; width: max-content;
+  transform: translate(-50%, 6px); opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  background: var(--color-surface); color: var(--color-text); border: 2px solid var(--color-gumi-ink);
+  border-radius: var(--radius-control); padding: 6px 10px; font-size: var(--text-small); text-align: center;
+}
+.gumi.has-bubble .g-bubble { opacity: 1; transform: translate(-50%, -4px); }
+
+/* --- tạm dừng khi tab ẩn hoặc mascot ra ngoài màn hình (tiết kiệm pin) --- */
+.gumi[data-paused="true"] * { animation-play-state: paused !important; }
+
+/* --- giảm chuyển động: tư thế tĩnh --- */
+@media (prefers-reduced-motion: reduce) {
+  .gumi, .gumi * { animation: none !important; transition: none !important; }
+  .g-sparkle, .g-flash { display: none; }
+}
+html.rm .gumi, html.rm .gumi * { animation: none !important; transition: none !important; }
+html.rm .g-sparkle, html.rm .g-flash { display: none; }

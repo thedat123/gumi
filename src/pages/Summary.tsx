@@ -35,7 +35,7 @@ export function Summary() {
                 <Metric label={M.lowest} value={`${s.lowestLevel}%`} />
                 <Metric label={M.healthy} value={`${s.healthyCount}/${s.healthyTotal}`} />
                 <Metric label={M.quiz} value={`${s.quizScore}/${s.quizMax}`} />
-                <Metric label={M.streak} value={`${s.streak}/10`} />
+                <Metric label={M.streak} value={`${s.streak}/${vi.journey.total}`} />
                 <Metric label={vi.summary.rank} value={`#${s.rank}`} />
               </div>
               <p className="mt-auto text-body font-bold">{vi.summary.totalPoints}: {s.totalPoints}</p>

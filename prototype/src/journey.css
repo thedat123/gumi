@@ -1,0 +1,40 @@
+/* Hành trình: bản đồ chương + chuyển cảnh. Chỉ animate transform/opacity (xem check-motion). */
+
+/* Đường mòn nối các chặng (trang trí, vẽ tĩnh — không hoạt ảnh). */
+.trail-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(var(--color-border) 0 8px, transparent 8px 16px);
+  border-radius: 999px;
+  z-index: 0;
+}
+
+/* Nhịp "hôm nay": chấm sáng nhẹ nhàng để mắt biết đi đâu tiếp. */
+.node-today { animation: node-pulse 2.4s ease-in-out infinite; }
+@keyframes node-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.92; }
+}
+
+/* Chuyển cảnh khi lật sang nhịp mới trong một chương. */
+.beat { animation: beat-in 0.32s ease-out both; }
+@keyframes beat-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Bong bóng thoại trượt vào. */
+.line-in { animation: line-in 0.3s ease-out both; }
+@keyframes line-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-today, .beat, .line-in { animation: none !important; }
+}
+html.rm .node-today, html.rm .beat, html.rm .line-in { animation: none !important; }

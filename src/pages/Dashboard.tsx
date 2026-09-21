@@ -1,20 +1,18 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { DayStrip } from '../components/DayStrip';
 import { Gumi } from '../components/Gumi';
-import { MissionCard } from '../components/MissionCard';
+import { JourneyMap } from '../components/JourneyMap';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { vi } from '../content/vi';
-import { approvedCount } from '../lib/scoring';
+import { approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync } from '../app/useAsync';
 import type { GumiEvent } from '../api/types';
 
-/** S05 — Dashboard: hành trình 10 ngày, nhiệm vụ hôm nay, Gumi, Sugar Pass, mọi trạng thái. */
+/** S05 — Trang chủ = BẢN ĐỒ HÀNH TRÌNH 21 ngày (không phải hub có tab). Mỗi ngày mở ra như một chương. */
 export function Dashboard() {
   const state = useAsync(() => api.getJourney(), []);
   const [dialog, setDialog] = useState(false);
@@ -25,10 +23,11 @@ export function Dashboard() {
   return (
     <AsyncView state={state}>
       {(s) => {
-        const finished = s.days[9] === 'checked';
+        const finished = s.days[vi.journey.total - 1] === 'checked';
         const dying = s.days.includes('dying');
         const rejected = s.days.includes('rejected');
-        const todayDone = s.days[s.day - 1] === 'checked';
+        const done = approvedCount(s.days);
+        const progress = Math.min(1, done / vi.journey.total);
 
         const usePass = async () => {
           try {
@@ -42,42 +41,39 @@ export function Dashboard() {
         };
 
         return (
-          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_300px] lg:items-start lg:gap-6">
-            {/* Cột chính: Gumi + hành trình 10 ngày */}
-            <div className="flex flex-col gap-4">
-              <section className="flex flex-col items-center gap-1 rounded-card bg-surface/70 p-4 pt-3 text-center shadow-soft lg:p-6">
-                <Gumi state={s.gumi} size={190} interactive event={event?.name ?? null} eventKey={event?.key ?? 0} />
-                <span className="rounded-pill bg-pink/25 px-3 py-0.5 text-caption font-semibold text-primary" data-testid="gumi-caption">{vi.gumi.caption[s.gumi]}</span>
-                <h1 className="text-headline font-bold leading-tight" data-testid="journey-title">{vi.journey.title}: {approvedCount(s.days)} / 10 {vi.journey.unit}</h1>
-                <p className="text-small text-muted">{vi.hero.message}</p>
-              </section>
+          <div className="lg:grid lg:min-h-[calc(100dvh-7rem)] lg:grid-cols-[340px_1fr] lg:items-center lg:gap-8">
+            <div className="flex flex-col gap-4 lg:rounded-card lg:border lg:border-border lg:bg-surface/55 lg:p-5 lg:shadow-soft lg:backdrop-blur">
+            {/* Hero: Gumi khoẻ dần theo tiến độ + thanh chỉ số */}
+            <section className="flex flex-col items-center gap-1 pt-1 text-center">
+              <Gumi state={s.gumi} size={168} interactive progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
+              <span className="rounded-pill bg-pink/25 px-3 py-0.5 text-caption font-semibold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(s.days)]}</span>
+              <h1 className="text-title font-bold text-muted" data-testid="journey-title">{vi.journey.title}</h1>
+              <p className="text-headline font-bold text-primary" data-testid="journey-progress">{vi.journey.progress(done)}</p>
+              <p className="text-small text-muted">{vi.hero.message}</p>
+            </section>
 
-              {s.phase === 'before' && <Banner kind="info">{vi.banners.before('01/10')}</Banner>}
-              {dying && (
-                <Banner kind="error" action={s.passAvailable ? <Button onClick={() => setDialog(true)} className="shrink-0">{vi.pass.button}</Button> : undefined}>
-                  {vi.banners.dying(s.passHoursLeft ?? 0)}
-                </Banner>
-              )}
-              {rejected && <Banner kind="error">{vi.banners.rejected(s.rejectedReason ?? 'không hợp lệ')}</Banner>}
-              {!s.passAvailable && s.days.includes('missed') && <Banner kind="info">{vi.banners.missedNoPass}</Banner>}
-              {finished && s.phase !== 'ended' && <Banner kind="success">{vi.banners.finished}</Banner>}
-              {s.phase === 'ended' && !finished && <Banner kind="info">{vi.banners.ended}</Banner>}
-
-              <Card className="lg:p-6"><DayStrip days={s.days} today={s.day} /></Card>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <Card className="border-accent! bg-accent/12 p-3!"><p className="text-caption text-muted">Điểm</p><p className="text-title font-bold text-primary">{s.totalPoints}</p></Card>
+              <Card className="border-pink! bg-pink/15 p-3!"><p className="text-caption text-muted">Chuỗi</p><p className="text-title font-bold text-primary">🔥 {s.streak}</p></Card>
+              <Card className="border-info! bg-info/12 p-3!"><p className="text-caption text-muted">Hạng</p><p className="text-title font-bold text-info">{s.rank ? `#${s.rank}` : '—'}</p></Card>
             </div>
 
-            {/* Cột phải (desktop): nhiệm vụ hôm nay + chỉ số */}
-            <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-              {s.phase === 'running' && !finished && s.day >= 1 && s.day <= 10 && <MissionCard day={s.day} done={todayDone} />}
-              {finished && (
-                <Link to="/summary" className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.wall.viewCard}</Link>
-              )}
+            {s.phase === 'before' && <Banner kind="info">{vi.banners.before('01/10')}</Banner>}
+            {dying && (
+              <Banner kind="error" action={s.passAvailable ? <Button onClick={() => setDialog(true)} className="shrink-0">{vi.pass.button}</Button> : undefined}>
+                {vi.banners.dying(s.passHoursLeft ?? 0)}
+              </Banner>
+            )}
+            {rejected && <Banner kind="error">{vi.banners.rejected(s.rejectedReason ?? 'không hợp lệ')}</Banner>}
+            {!s.passAvailable && s.days.includes('missed') && <Banner kind="info">{vi.banners.missedNoPass}</Banner>}
+            {finished && s.phase !== 'ended' && <Banner kind="success">{vi.banners.finished}</Banner>}
+            {s.phase === 'ended' && !finished && <Banner kind="info">{vi.banners.ended}</Banner>}
 
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <Card className="border-accent! bg-accent/12 p-3!"><p className="text-caption text-muted">Điểm</p><p className="text-title font-bold text-primary">{s.totalPoints}</p></Card>
-                <Card className="border-pink! bg-pink/15 p-3!"><p className="text-caption text-muted">Chuỗi</p><p className="text-title font-bold text-primary">🔥 {s.streak}</p></Card>
-                <Card className="border-info! bg-info/12 p-3!"><p className="text-caption text-muted">Hạng</p><p className="text-title font-bold text-info">{s.rank ? `#${s.rank}` : '—'}</p></Card>
-              </div>
+            </div>
+
+            {/* Bản đồ hành trình 21 ngày */}
+            <div className="mt-4 min-w-0 lg:mt-0">
+              <JourneyMap days={s.days} today={s.day} />
             </div>
 
             {dialog && (

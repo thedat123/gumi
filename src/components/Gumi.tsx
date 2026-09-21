@@ -11,6 +11,8 @@ interface Props {
   eventKey?: number;
   /** Cho phép bấm vào để Gumi nhảy và nói. */
   interactive?: boolean;
+  /** Tiến độ 0..1: càng cao, bụng Gumi càng nhỏ (khoẻ dần) trước khi tiến hoá hẳn ở Day 21. */
+  progress?: number;
   onEventEnd?: () => void;
 }
 
@@ -21,7 +23,7 @@ const SPARKLES = [
 ];
 
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
-export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, onEventEnd }: Props) {
+export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, progress = 0, onEventEnd }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const paused = useAnimationPause(ref);
   const hopDelay = useMemo(() => Math.round(Math.random() * 4000) / 1000, []);
@@ -54,7 +56,9 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
 
   const cls = ['gumi', CLASS[shown], event ? `is-${event}` : '', poke && !event ? 'is-poke' : '', bubble ? 'has-bubble' : ''].filter(Boolean).join(' ');
   const fit = shown === 'tien_hoa';
-  const bellyRx = fit ? 44 : 68;
+  // Bụng thu nhỏ dần theo tiến độ (68 → 44) khi còn ở dạng bơ phờ; tiến hoá thì gọn hẳn.
+  const p = Math.min(1, Math.max(0, progress));
+  const bellyRx = fit ? 44 : Math.round(68 - 24 * p);
   const style = { '--gumi-size': `${size}px`, '--hop-delay': `${hopDelay}s` } as CSSProperties;
 
   return (

@@ -53,30 +53,36 @@ describe('mock API — luồng chơi', () => {
     await expect(api.getJourney()).rejects.toMatchObject({ code: 'forbidden' } as ApiError);
   });
 
-  it('chơi hết 10 ngày → Gumi tiến hoá, summary đủ điều kiện', async () => {
+  it('chơi hết 21 ngày → Gumi tiến hoá, summary đủ điều kiện', async () => {
     const api = await ready();
-    for (let d = 1; d <= 10; d++) {
+    const minigameDays = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19];
+    for (let d = 1; d <= 21; d++) {
       if (d === 2) await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 });
-      else if (d === 4 || d === 7) await api.submitMinigame(d);
-      else if (d === 10) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 10 ngày.');
+      else if (minigameDays.includes(d)) await api.submitMinigame(d);
+      else if (d === 21) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 21 ngày.');
       else await api.submitCheckin(d, 30, `d${d}.jpg`);
     }
     const j = await api.getJourney();
     expect(j.gumi).toBe('tien_hoa');
-    expect(j.days[9]).toBe('checked');
+    expect(j.days[20]).toBe('checked');
     const sum = await api.getSummary();
     expect(sum.eligible).toBe(true);
-    expect(sum.streak).toBe(10);
-    expect(sum.healthyCount).toBe(4); // 4 ngày DRINK
+    expect(sum.streak).toBe(21);
+    expect(sum.healthyCount).toBe(5); // 5 ngày DRINK
   });
 
-  it('Sugar Pass cứu ngày hôm nay: giữ chuỗi, hết pass', async () => {
+  it('Sugar Pass cứu ngày hôm nay: giữ chuỗi; có 3 Bùa, dùng hết mới khoá', async () => {
     const api = await ready();
     await api.submitCheckin(1, 70, 'a.jpg'); // xong ngày 1, sang ngày 2
-    await api.useSugarPass(); // bỏ qua ngày 2 bằng pass
-    const j = await api.getJourney();
+    await api.useSugarPass(); // bỏ qua ngày 2 (còn 2 Bùa)
+    let j = await api.getJourney();
     expect(j.days[1]).toBe('passed');
-    expect(j.passAvailable).toBe(false);
     expect(j.day).toBe(3);
+    expect(j.passAvailable).toBe(true); // vẫn còn Bùa
+    await api.useSugarPass(); // ngày 3 (còn 1)
+    await api.useSugarPass(); // ngày 4 (còn 0)
+    j = await api.getJourney();
+    expect(j.passAvailable).toBe(false);
+    await expect(api.useSugarPass()).rejects.toMatchObject({ code: 'no_pass' } as ApiError);
   });
 });

@@ -40,6 +40,7 @@ export interface Journey {
   streak: number;
   rank: number;
   passAvailable: boolean;
+  passesLeft: number; // số Bùa Hồi Sinh còn lại (0..3)
   passHoursLeft: number | null;
   gumi: GumiState;
   rejectedReason?: string;

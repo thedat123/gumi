@@ -4,6 +4,7 @@ import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ChapterTease } from '../components/ChapterTease';
 import { Gumi } from '../components/Gumi';
 import { vi } from '../content/vi';
 
@@ -32,7 +33,7 @@ export function Day4() {
       setWarn(false);
       const next = found.includes(name) ? found : [...found, name];
       setFound(next);
-      if (next.length === SUGAR.length) { setPhase('success'); api.submitMinigame(4).catch(() => {}); }
+      if (next.length === SUGAR.length) { setPhase('success'); api.submitMinigame(11).catch(() => {}); }
     } else {
       setWarn(true);
     }
@@ -53,6 +54,7 @@ export function Day4() {
         <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.day4.success}</Banner>
         <p className="text-small text-muted">{vi.day4.crashInfo}</p>
+        <ChapterTease day={11} />
         <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.day4.backHome}</Link>
       </div>
     );

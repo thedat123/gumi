@@ -3,7 +3,9 @@ import { AppShell } from './components/AppShell';
 import { RequireAdmin, RequireAuth, RequireProfile } from './app/guards';
 import { SessionProvider } from './app/session';
 import { Admin } from './pages/Admin';
+import { ChapterIntro } from './pages/ChapterIntro';
 import { Dashboard } from './pages/Dashboard';
+import { GumiRoom } from './pages/GumiRoom';
 import { Landing } from './pages/Landing';
 import { Leaderboard } from './pages/Leaderboard';
 import { Login } from './pages/Login';
@@ -28,7 +30,9 @@ export function App() {
           {/* Đã đăng nhập, chưa cần hồ sơ */}
           <Route path="onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
           {/* Cần hồ sơ */}
-          <Route index element={<RequireProfile><Dashboard /></RequireProfile>} />
+          <Route index element={<RequireProfile><GumiRoom /></RequireProfile>} />
+          <Route path="journey" element={<RequireProfile><Dashboard /></RequireProfile>} />
+          <Route path="chapter/:day" element={<RequireProfile><ChapterIntro /></RequireProfile>} />
           <Route path="mission/:day" element={<RequireProfile><MissionRouter /></RequireProfile>} />
           <Route path="leaderboard" element={<RequireProfile><Leaderboard /></RequireProfile>} />
           <Route path="summary" element={<RequireProfile><Summary /></RequireProfile>} />
