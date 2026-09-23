@@ -5,11 +5,14 @@ import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { GameShell } from '../components/GameShell';
 import { Gumi } from '../components/Gumi';
+import { Icon } from '../components/Icon';
 import { vi } from '../content/vi';
+import { playSfx } from '../lib/sfx';
 import { useAsync } from '../app/useAsync';
 
-/** S10 — Day 10: lời nhắn tốt nghiệp + bức tường cộng đồng. */
+/** S10 — Day 21: lời nhắn tốt nghiệp + bức tường cộng đồng. */
 export function Wall() {
   const posts = useAsync(() => api.getWallPosts(), []);
   const [text, setText] = useState('');
@@ -22,18 +25,13 @@ export function Wall() {
     setTouched(true);
     if (!ok) return;
     setBusy(true);
-    try {
-      await api.submitWallPost(text.trim());
-      setPosted(true);
-      posts.reload();
-    } finally {
-      setBusy(false);
-    }
+    try { await api.submitWallPost(text.trim()); playSfx('win'); setPosted(true); posts.reload(); }
+    finally { setBusy(false); }
   };
 
   if (posted) {
     return (
-      <div className="flex flex-col items-center gap-3 pt-4 text-center">
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 pt-4 text-center">
         <Gumi state="tien_hoa" size={150} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.wall.postedTitle}</Banner>
         <p className="text-small text-muted">{vi.wall.postedSub}</p>
@@ -43,40 +41,40 @@ export function Wall() {
   }
 
   return (
-    <div className="flex flex-col gap-4 pt-2">
-      <h1 className="text-headline font-bold">{vi.wall.title}</h1>
-      <p className="text-small text-muted">{vi.wall.formPrompt}</p>
-      <Card className="flex flex-col gap-2">
-        <label htmlFor="wall-msg" className="sr-only">{vi.wall.formPrompt}</label>
-        <textarea id="wall-msg" value={text} maxLength={200} rows={4} placeholder={vi.wall.placeholder}
-          onChange={(e) => setText(e.target.value)}
-          className="min-h-24 rounded-control border-2 border-border-strong bg-surface p-3 text-body" />
-        <div className="flex items-center justify-between text-caption text-muted">
-          <span>{vi.wall.hint}</span><span>{text.trim().length}/200</span>
-        </div>
-        {touched && !ok && <p className="text-caption text-danger">⚠ {vi.wall.tooShort}</p>}
-        <Button onClick={submit} loading={busy} block>{vi.wall.submit}</Button>
-      </Card>
+    <GameShell act={3} title={vi.wall.title} intro={vi.wall.formPrompt}>
+      <div className="flex flex-col gap-3">
+        <Card className="flex flex-col gap-2">
+          <label htmlFor="wall-msg" className="sr-only">{vi.wall.formPrompt}</label>
+          <textarea id="wall-msg" value={text} maxLength={200} rows={4} placeholder={vi.wall.placeholder}
+            onChange={(e) => setText(e.target.value)}
+            className="min-h-24 rounded-control border-2 border-border-strong/50 bg-surface p-3 text-body focus:border-primary" />
+          <div className="flex items-center justify-between text-caption text-muted">
+            <span>{vi.wall.hint}</span><span>{text.trim().length}/200</span>
+          </div>
+          {touched && !ok && <p className="flex items-center gap-1 text-caption text-danger"><Icon name="x" size={13} strokeWidth={2.4} /> {vi.wall.tooShort}</p>}
+          <Button onClick={submit} loading={busy} block>{vi.wall.submit}</Button>
+        </Card>
 
-      <h2 className="text-title font-bold">{vi.wall.wallTitle}</h2>
-      <AsyncView state={posts} empty={<Banner kind="info">{vi.wall.empty}</Banner>}>
-        {(list) =>
-          list.length === 0 ? (
-            <Banner kind="info">{vi.wall.empty}</Banner>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {list.map((p) => (
-                <li key={p.id}>
-                  <Card className="flex flex-col gap-1">
-                    <span className="text-small font-bold">{p.name}</span>
-                    <span className="text-small text-muted">{p.text}</span>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      </AsyncView>
-    </div>
+        <h2 className="mt-1 flex items-center gap-1.5 text-title font-bold"><Icon name="sparkle" size={18} filled className="text-accent" />{vi.wall.wallTitle}</h2>
+        <AsyncView state={posts} empty={<Banner kind="info">{vi.wall.empty}</Banner>}>
+          {(list) =>
+            list.length === 0 ? (
+              <Banner kind="info">{vi.wall.empty}</Banner>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {list.map((pp) => (
+                  <li key={pp.id}>
+                    <Card className="flex flex-col gap-1 bg-surface/95 backdrop-blur">
+                      <span className="text-small font-bold text-primary">{pp.name}</span>
+                      <span className="text-small text-muted">{pp.text}</span>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </AsyncView>
+      </div>
+    </GameShell>
   );
 }

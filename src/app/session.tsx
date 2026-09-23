@@ -9,6 +9,7 @@ interface SessionCtx {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -53,6 +54,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await loadProfile(s);
   }, [loadProfile]);
 
+  const signInWithGoogle = useCallback(async () => {
+    const s = await api.auth.signInWithGoogle();
+    if (s) { setSession(s); await loadProfile(s); }
+  }, [loadProfile]);
+
   const signOut = useCallback(async () => {
     await api.auth.signOut();
     setSession(null);
@@ -62,8 +68,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(() => loadProfile(session), [loadProfile, session]);
 
   const value = useMemo<SessionCtx>(
-    () => ({ session, profile, loading, signIn, signUp, signOut, refreshProfile }),
-    [session, profile, loading, signIn, signUp, signOut, refreshProfile],
+    () => ({ session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile }),
+    [session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

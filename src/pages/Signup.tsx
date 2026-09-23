@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { GoogleButton } from '../components/GoogleButton';
+import { Gumi } from '../components/Gumi';
 import { Input } from '../components/Input';
 import { vi } from '../content/vi';
 import { errorCode } from '../lib/errors';
@@ -42,12 +44,18 @@ export function Signup() {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 pt-2 lg:pt-10">
-      <div className="text-center">
-        <h1 className="text-headline font-bold">{vi.signup.title}</h1>
-        <p className="text-small text-muted">{vi.signup.subtitle}</p>
+    <div className="auth-hero relative mx-auto flex max-w-md flex-col gap-4 pt-2 lg:pt-8">
+      <div className="auth-glow" aria-hidden="true" />
+      <div className="relative flex flex-col items-center text-center">
+        <div className="auth-mascot"><Gumi state="bo_pho" size={112} interactive /></div>
+        <h1 className="mt-1 text-headline font-bold text-primary">{vi.signup.title}</h1>
+        <p className="mt-1 max-w-xs text-small text-muted">{vi.signup.subtitle}</p>
       </div>
       <Card>
+        <div className="mb-3 flex flex-col gap-3">
+          <GoogleButton />
+          <div className="flex items-center gap-3 text-caption text-muted"><span className="h-px flex-1 bg-border" />{vi.auth.or}<span className="h-px flex-1 bg-border" /></div>
+        </div>
         <form onSubmit={submit} className="flex flex-col gap-3" noValidate>
           <Input label={vi.signup.email} type="email" inputMode="email" autoComplete="email" value={email}
             onChange={(e) => setEmail(e.target.value)} error={err === 'email' ? vi.signup.errors.email : undefined} />
@@ -57,7 +65,7 @@ export function Signup() {
             onChange={(e) => setConfirm(e.target.value)} error={err === 'passwordMismatch' ? vi.signup.errors.passwordMismatch : undefined} />
           {err === 'emailExists' && <Banner kind="error">{vi.signup.errors.emailExists}</Banner>}
           <label className="flex items-start gap-2 text-small">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-5 w-5 shrink-0" aria-invalid={err === 'consent' ? true : undefined} />
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" aria-invalid={err === 'consent' ? true : undefined} />
             <span>{vi.signup.consentLabel} <Link to="/terms" className="text-primary underline underline-offset-2">{vi.signup.readTerms}</Link></span>
           </label>
           {err === 'consent' && <p className="text-caption text-danger">⚠ {vi.signup.consentError}</p>}

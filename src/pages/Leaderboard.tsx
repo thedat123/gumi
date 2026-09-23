@@ -2,8 +2,11 @@ import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
+import { Icon } from '../components/Icon';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
+
+const MEDAL_TINT = ['text-[#E0A800]', 'text-[#9AA6B0]', 'text-[#C08457]']; // vàng · bạc · đồng
 
 /** S12 — Bảng xếp hạng Sugar Slayer. */
 export function Leaderboard() {
@@ -11,7 +14,7 @@ export function Leaderboard() {
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <h1 className="text-headline font-bold">🏆 <span className="text-gradient">{vi.leaderboard.title}</span></h1>
+      <h1 className="flex items-center gap-2 text-headline font-bold"><Icon name="trophy" size={26} filled className="text-accent" /><span className="text-gradient">{vi.leaderboard.title}</span></h1>
       <AsyncView state={state} empty={<Banner kind="info">{vi.leaderboard.empty}</Banner>}>
         {(lb) => (
           <>
@@ -24,7 +27,7 @@ export function Leaderboard() {
                   return (
                     <li key={r.rank}>
                       <Card className={`flex items-center gap-3 p-3! ${r.isMe ? 'border-2 border-primary! bg-primary/8' : podium ?? ''}`}>
-                        <span className="w-7 text-center text-title font-bold" aria-label={`Hạng ${r.rank}`}>{r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank}</span>
+                        <span className="flex w-7 justify-center" aria-label={`Hạng ${r.rank}`}>{r.rank <= 3 ? <Icon name="medal" size={24} filled className={MEDAL_TINT[r.rank - 1]} /> : <span className="text-title font-bold text-muted">{r.rank}</span>}</span>
                         <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-pill bg-gumi-belly text-title shadow-soft">{r.avatar}</span>
                         <span className="min-w-0 flex-1 truncate font-semibold">{r.name}{r.isMe ? ` (${vi.leaderboard.me})` : ''}</span>
                         <span className="font-bold text-primary">{r.points}</span>

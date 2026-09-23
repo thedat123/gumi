@@ -5,8 +5,8 @@ type Act = 1 | 2 | 3 | 'room';
 
 interface Bit { g: Graphics; x: number; y: number; vx: number; vy: number; r: number; a: number; phase: number; sw: number }
 
-const TINT: Record<Act, number> = { 1: 0xdaf6b4, 2: 0xe9f6dc, 3: 0xffffff, room: 0xffe4b0 };
-const FOG: Record<Act, number> = { 1: 0xd8f0c0, 2: 0xd6ecd2, 3: 0xffffff, room: 0xffe0a6 };
+const TINT: Record<Act, number> = { 1: 0xdaf6b4, 2: 0xffe39a, 3: 0xffffff, room: 0xffe4b0 };
+const FOG: Record<Act, number> = { 1: 0xd8f0c0, 2: 0xe6d6f5, 3: 0xffffff, room: 0xffe0a6 };
 const COUNT: Record<Act, number> = { 1: 34, 2: 26, 3: 46, room: 22 };
 
 /**

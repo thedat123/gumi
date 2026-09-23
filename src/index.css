@@ -33,4 +33,9 @@ body {
 
 .spinner { animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } body { background: var(--color-bg); } }
+
+/* Chuyển trang mượt khi điều hướng (áp cho các màn nội dung, không phải màn nhập vai) */
+.page-in { animation: page-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } body { background: var(--color-bg); } .page-in { animation: none; } }

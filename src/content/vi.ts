@@ -57,6 +57,16 @@ export const vi = {
     stage: { crash: 'Sugar Crash (X_X)', sleepy: 'Sugar Sleepy', balanced: 'Sugar Balanced', charged: 'Sugar Charged', master: 'Sugar Master' },
   },
 
+  wardrobe: {
+    dock: 'Tủ đồ',
+    title: 'Tủ đồ của Gumi',
+    subtitle: 'Đi càng xa trong hành trình, Gumi càng mở khoá nhiều skin mới.',
+    using: 'Đang dùng',
+    locked: (n: number) => `Mở khoá khi xong ${n} ngày`,
+    progress: (have: number, total: number) => `Đã mở khoá ${have}/${total} skin`,
+    close: 'Đóng',
+  },
+
   pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Dùng Bùa Hồi Sinh?', body: 'Ngày bị lỡ sẽ nhận 0 điểm nhiệm vụ nhưng chuỗi ngày của bạn được giữ. Bạn có 3 Bùa cho cả hành trình.', confirm: 'Dùng Bùa', cancel: 'Để sau', success: 'Gumi bật dậy! Chuỗi của bạn được giữ.' },
 
   // ——— CỐT TRUYỆN (viết như một cuộc phiêu lưu) ———
@@ -198,6 +208,22 @@ export const vi = {
     uploading: 'Đang tải ảnh lên…', success: (pts: number) => `Xong! Bạn nhận +${pts} điểm.`,
     errors: { network: 'Mất kết nối. Ảnh của bạn vẫn được giữ, hãy thử lại.', notToday: 'Nhiệm vụ này không phải của hôm nay.', already: 'Bạn đã check-in ngày này rồi.', tooLarge: 'Ảnh quá lớn hoặc không phải ảnh. Hãy chọn ảnh khác.', level: 'Mức đường này không hợp lệ cho nhiệm vụ hôm nay.' },
     retry: 'Thử lại', back: 'Về hành trình',
+    ocr: {
+      checking: (p: number) => `Đang kiểm tra ảnh (nhận diện ly nước + đọc tem)…${p > 0 ? ' ' + p + '%' : ''}`,
+      okDrink: (what: string) => `Đã nhận diện ${what} trong ảnh ✔`,
+      okStamp: 'Đã nhận diện tem/hoá đơn ly nước ✔',
+      fail: 'Chưa nhận ra ly nước hay tem/hoá đơn trong ảnh. Hãy chụp rõ LY NƯỚC kèm tem/nhãn (tên đồ uống, size, % đường).',
+      unavailable: 'Thiết bị này chưa chạy được bộ nhận diện. Bạn có thể gửi để ban tổ chức duyệt tay (ảnh giả sẽ bị loại và trừ điểm).',
+      manual: 'Tôi xác nhận ảnh có ly nước / tem thật của tôi — gửi để ban tổ chức duyệt tay.',
+      okVlm: (drink: string) => `Đã nhận diện: ${drink || 'đồ uống'} ✔`,
+      sugarSeen: (pct: number) => `Nhãn ghi ~${pct}% đường`,
+      sugarNone: 'Không đọc rõ % đường trên tem',
+      declared: (pct: number) => `Bạn chọn ${pct}%`,
+      sugarMismatch: 'Mức đường trên tem cao hơn mức bạn chọn — hãy chọn đúng để công bằng nhé.',
+      vlmError: 'AI xác minh đang lỗi (mạng hoặc key). Hãy thử lại — không thể pass khi chưa xác minh được.',
+      hint: '[PHÁP LÝ] Ảnh cần thấy rõ LY NƯỚC hoặc tem/nhãn (tên đồ uống, size, % đường) để chống gian lận. Nhận diện chạy ngay trên máy bạn, ảnh không bị gửi đi khi kiểm tra.',
+      retake: 'Chụp lại ảnh khác',
+    },
   },
   leaderboard: {
     title: 'Sugar Slayer', me: 'Bạn', empty: 'Chưa có ai lên bảng. Hãy là người đầu tiên!', loading: 'Đang tải bảng xếp hạng…', error: 'Không tải được bảng xếp hạng.', retry: 'Thử lại',
@@ -213,7 +239,8 @@ export const vi = {
     nameHint: '2–30 ký tự', nameError: 'Tên cần từ 2 đến 30 ký tự.', submit: 'Nhận nuôi Gumi',
   },
   auth: {
-    login: 'Đăng nhập', email: 'Email', password: 'Mật khẩu', submit: 'Đăng nhập', wrong: 'Email hoặc mật khẩu chưa đúng.', emailInvalid: 'Email chưa đúng định dạng.',
+    login: 'Đăng nhập', welcome: 'Chào mừng trở lại', tagline: 'Gumi đang đợi bạn cùng vượt thử thách 21 ngày bớt ngọt 🐾', email: 'Email', password: 'Mật khẩu', submit: 'Đăng nhập', wrong: 'Email hoặc mật khẩu chưa đúng.', emailInvalid: 'Email chưa đúng định dạng.',
+    google: 'Tiếp tục với Google', or: 'hoặc', googleError: 'Không đăng nhập được bằng Google. Hãy thử lại.',
     forgot: 'Quên mật khẩu? Hãy nhắn cho ban tổ chức để được đặt lại.',
     inApp: 'Bạn đang mở trong ứng dụng nhúng (Zalo, Facebook…). Hãy mở bằng Chrome hoặc Safari để đăng nhập ổn định hơn.',
     consent: 'Bằng việc đăng ký, bạn đồng ý để ban tổ chức lưu và xem ảnh check-in của bạn trong thời gian chiến dịch.',
@@ -246,9 +273,9 @@ export const vi = {
     title: 'Level Down Challenge',
     subtitle: 'Đường bớt một nấc, chất thêm một bậc — 21 ngày cùng Gumi reset vị giác!' /* [PHÁP LÝ] */,
     bullets: [
-      { icon: '🗺️', text: 'Đi qua 3 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
-      { icon: '🔥', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
-      { icon: '🐱', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
+      { icon: 'map', text: 'Đi qua 3 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
+      { icon: 'flame', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
+      { icon: 'sparkle', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
     ],
     stats: { days: '21 ngày', players: '~100 người chơi', missions: '3 vùng đất' },
     ctaPrimary: 'Bắt đầu — nhận nuôi Gumi',
@@ -334,11 +361,128 @@ export const vi = {
     infographic: '[PHÁP LÝ] Uống nhiều đường làm đường huyết tăng vọt rồi tụt nhanh, khiến bạn mệt, cáu và thèm ngọt tiếp — gọi là "sugar crash". Nội dung này cần chuyên môn y tế xác nhận.',
     backHome: 'Về hành trình',
     puzzles: [
-      { emoji: '🧋⚫⚫⚫', options: ['Trà sữa trân châu', 'Cà phê đen', 'Nước lọc'], answer: 0 },
-      { emoji: '🥤🍊➕🍬', options: ['Trà mộc', 'Soda cam ngọt', 'Trà đào ít đường'], answer: 1 },
-      { emoji: '☕️🥛🍯', options: ['Cà phê sữa mật ong', 'Nước ép cần tây', 'Trà xanh không đường'], answer: 0 },
+      { emoji: '🧋⚫⚫⚫', options: ['Trà sữa trân châu', 'Cà phê đen', 'Nước lọc'], answer: 0, explain: '🧋 + hạt trân châu đen = trà sữa trân châu.' },
+      { emoji: '🥤🍊➕🍬', options: ['Trà mộc', 'Soda cam ngọt', 'Trà đào ít đường'], answer: 1, explain: 'Ly soda + cam + kẹo ngọt = soda cam ngọt.' },
+      { emoji: '☕️🥛🍯', options: ['Cà phê sữa mật ong', 'Nước ép cần tây', 'Trà xanh không đường'], answer: 0, explain: 'Cà phê + sữa + mật ong = cà phê sữa mật ong.' },
     ],
   },
+  // ——— MINIGAME cho các ngày GAME/KNOW/TRACKER (thay cho màn "chạm để hoàn thành") ———
+  minigames: {
+    common: {
+      start: 'Bắt đầu',
+      retry: 'Chơi lại',
+      backHome: 'Về hành trình',
+      check: 'Kiểm tra',
+      wrong: 'Chưa đúng, thử lại nhé!',
+      correct: 'Chuẩn luôn!',
+    },
+    // Ngày 6 — Đấu Trường Calo: xếp 5 ly theo độ ngọt.
+    sort: {
+      title: 'Ngày 6: Đấu Trường Calo',
+      intro: 'Sắp xếp 5 đồ uống từ ÍT đường nhất (trên cùng) đến NHIỀU đường nhất (dưới cùng). Dùng nút ▲ ▼ để đổi chỗ rồi bấm Kiểm tra.',
+      label: 'Ít đường ↑ · Nhiều đường ↓',
+      wrong: 'Thứ tự chưa đúng. Ngẫm lại độ ngọt rồi thử tiếp nhé!',
+      success: 'Xếp chuẩn! Giờ nhìn thực đơn là bạn biết ngay ly nào ngọt hơn.',
+      order: ['Nước lọc', 'Trà mộc không đường', 'Cà phê sữa đá', 'Trà đào ít đường', 'Trà sữa trân châu full topping'],
+    },
+    // Ngày 9 — Truy Tìm Mật Khẩu: bắt 5 tên đường ẩn giữa đám chữ.
+    wordHunt: {
+      title: 'Ngày 9: Truy Tìm Mật Khẩu',
+      intro: 'Boss giấu 5 cái tên đường trong đám chữ này. Chạm đúng cả 5 để phá mật khẩu.',
+      found: (n: number, total: number) => `Đã bắt: ${n}/${total}`,
+      wrong: 'Từ này không phải tên đường. Nhìn kỹ nhé!',
+      success: 'Phá mật khẩu thành công! Bạn đã bắt đủ 5 tên đường ẩn.',
+      note: '[PHÁP LÝ] Sucrose, Fructose, Glucose, Maltose, Lactose đều là các loại đường — cần chuyên môn dinh dưỡng xác nhận.',
+      words: ['Sucrose', 'Nước', 'Fructose', 'Muối', 'Glucose', 'Hương liệu', 'Maltose', 'Đá viên', 'Lactose', 'Vitamin', 'Chất xơ', 'Caffeine'],
+      sugars: ['Sucrose', 'Fructose', 'Glucose', 'Maltose', 'Lactose'],
+    },
+    // Ngày 12 & 18 — Lật thẻ trí nhớ (ghép cặp).
+    memory12: {
+      title: 'Ngày 12: Lật Thẻ Trí Nhớ',
+      intro: 'Lật thẻ và ghép mỗi loại đường với "biệt danh" của nó. Ghép hết các cặp!',
+      success: 'Ghép trọn bộ! Đầu bạn giờ nhớ vị thật hơn vị ngọt.',
+      pairs: [
+        { a: 'HFCS', b: 'Xi-rô ngô' },
+        { a: 'Sucrose', b: 'Đường mía' },
+        { a: 'Fructose', b: 'Đường trái cây' },
+        { a: 'Lactose', b: 'Đường sữa' },
+      ],
+    },
+    memory18: {
+      title: 'Ngày 18: Ghép Đôi Healthy',
+      intro: 'Lật thẻ và ghép các cặp đồ uống healthy giống nhau. Ghi nhớ vị trí nhé!',
+      success: 'Trọn bộ healthy! Đây là gu mới của bạn rồi.',
+      pairs: [
+        { a: '💧 Nước lọc', b: '💧 Nước lọc' },
+        { a: '🍵 Trà mộc', b: '🍵 Trà mộc' },
+        { a: '☕️ Cà phê đen', b: '☕️ Cà phê đen' },
+        { a: '🥛 Sữa hạt', b: '🥛 Sữa hạt' },
+      ],
+    },
+    // Ngày 14 — Energy Tracker: chọn mức tỉnh táo.
+    tracker: {
+      title: 'Ngày 14: Energy Tracker',
+      intro: 'Sau 2 tuần bớt ngọt, hôm nay bạn thấy mình tỉnh táo cỡ nào? Lắng nghe cơ thể một chút nhé.',
+      prompt: 'Chọn mức cảm nhận của bạn',
+      submit: 'Ghi nhận cảm nhận',
+      success: 'Đã ghi nhận! Chú ý tới năng lượng của mình là kỹ năng bạn giữ được sau hành trình.',
+      levels: [
+        { emoji: '😵', label: 'Còn uể oải' },
+        { emoji: '😐', label: 'Bình thường' },
+        { emoji: '🙂', label: 'Nhẹ nhõm hơn' },
+        { emoji: '😄', label: 'Tỉnh táo rõ' },
+        { emoji: '⚡', label: 'Tràn năng lượng' },
+      ],
+    },
+    // Ngày 19 — Vòng Quay May Mắn.
+    spin: {
+      title: 'Ngày 19: Vòng Quay May Mắn',
+      intro: 'Quay vòng nhận buff điểm ngẫu nhiên, tiếp sức trước ngày về đích!',
+      spin: 'Quay!',
+      spinning: 'Đang quay…',
+      result: (pts: number) => `Vòng quay dừng ở +${pts} điểm buff!`,
+      success: 'Nạp năng lượng xong — tiến thẳng tới Đỉnh 0%!',
+      segments: [10, 30, 15, 25, 20, 30],
+    },
+    // Ngày 7, 16, 17 — trắc nghiệm nhanh (chung một màn QuickQuiz).
+    quiz: {
+      intro: 'Chọn đáp án đúng cho mỗi câu. Trả lời nhanh nào!',
+      questionOf: (i: number, total: number) => `Câu ${i}/${total}`,
+      wrong: 'Chưa đúng, thử lại nhé!',
+      days: {
+        7: {
+          title: 'Ngày 7: Trắc Nghiệm Chớp Nhoáng',
+          note: '[PHÁP LÝ] Nội dung dinh dưỡng là minh hoạ, cần chuyên môn xác nhận trước khi công bố.',
+          questions: [
+            { prompt: 'WHO khuyến nghị đường tự do nên dưới bao nhiêu % năng lượng mỗi ngày để có lợi hơn cho sức khoẻ?', options: ['5%', '25%', '50%'], answer: 0, explain: 'WHO khuyến nghị đường tự do dưới 10%, lý tưởng dưới 5% năng lượng mỗi ngày.' },
+            { prompt: 'Một lon nước ngọt có ga 330ml chứa khoảng mấy thìa đường?', options: ['1–2 thìa', '8–9 thìa', '20 thìa'], answer: 1, explain: 'Một lon ~35g đường, tương đương 8–9 thìa cà phê.' },
+            { prompt: 'Cách nào giúp giảm đường bền vững nhất?', options: ['Nhịn hẳn một ngày rồi uống bù', 'Hạ dần từng nấc đường', 'Đổi sang nước tăng lực'], answer: 1, explain: 'Hạ dần từng nấc giúp vị giác thích nghi, ít thèm bù hơn.' },
+          ],
+        },
+        16: {
+          title: 'Ngày 16: Đuổi Hình Bắt Chữ · Vòng 2',
+          note: 'Giải nhanh chuỗi emoji thành tên đồ uống nhiều đường.',
+          questions: [
+            { prompt: '🧋🟤🟤🟤', options: ['Trà sữa trân châu', 'Nước lọc', 'Cà phê đen'], answer: 0, explain: '🧋 + trân châu = ly nhiều đường bậc nhất.' },
+            { prompt: '🥤🍋 ➕ 🍬', options: ['Trà mộc', 'Soda chanh ngọt', 'Trà xanh không đường'], answer: 1, explain: 'Nước có ga + siro chanh = lượng đường ẩn khá cao.' },
+            { prompt: '🧊☕️🍮', options: ['Cà phê không đường', 'Bạc xỉu / cà phê caramel', 'Nước dừa tươi'], answer: 1, explain: 'Cà phê nhiều sữa đặc + caramel rất ngọt.' },
+          ],
+        },
+        17: {
+          title: 'Ngày 17: Truy Tìm Sự Thật',
+          note: '[PHÁP LÝ] Các nhận định cần chuyên môn y tế xác nhận trước khi công bố.',
+          questions: [
+            { prompt: 'Nước ép trái cây đóng chai luôn "healthy" và ít đường.', options: ['Đúng', 'Sai'], answer: 1, explain: 'Nhiều loại nước ép đóng chai được thêm đường, không hề ít.' },
+            { prompt: 'Đường "ẩn" có thể xuất hiện cả trong đồ mặn như nước sốt, bánh mì.', options: ['Đúng', 'Sai'], answer: 0, explain: 'Đúng — nước sốt, bánh mì, đồ hộp đều có thể chứa đường.' },
+            { prompt: 'Uống nhiều đường một lúc có thể gây tụt năng lượng sau đó (sugar crash).', options: ['Đúng', 'Sai'], answer: 0, explain: 'Đường huyết tăng vọt rồi tụt nhanh khiến mệt và thèm ngọt tiếp.' },
+            { prompt: 'Đồ uống dán nhãn "không đường" chắc chắn không có chất tạo ngọt nào.', options: ['Đúng', 'Sai'], answer: 1, explain: '"Không đường" vẫn có thể dùng chất tạo ngọt thay thế.' },
+            { prompt: 'Giảm đường từ từ giúp vị giác quen dần và dễ duy trì hơn.', options: ['Đúng', 'Sai'], answer: 0, explain: 'Giảm dần dễ theo hơn là cắt đột ngột.' },
+          ],
+        },
+      },
+    },
+  },
+
   wall: {
     title: 'Ngày 21: Lời Nhắn Tốt Nghiệp',
     formPrompt: 'Viết một câu về việc cơ thể hoặc vị giác của bạn đã thay đổi ra sao sau 21 ngày.',

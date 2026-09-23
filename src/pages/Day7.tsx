@@ -1,67 +1,41 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
-import { ChapterTease } from '../components/ChapterTease';
-import { Gumi } from '../components/Gumi';
+import { GameShell } from '../components/GameShell';
+import { MissionDone } from '../components/MissionDone';
+import { QuizGame } from '../components/QuizGame';
+import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
 
-const PUZZLES = vi.day7.puzzles;
-
-/** S09 — Day 7: Emoji Catch + infographic Sugar Crash. Giải hết thì gửi submit_minigame(7). */
+/** S09 — Ngày 3: Đuổi Hình Bắt Chữ (đề emoji). Giải hết + xem infographic Sugar Crash rồi gửi submit_minigame(3). */
 export function Day7() {
-  const [step, setStep] = useState(0);
-  const [warn, setWarn] = useState(false);
-  const solved = step >= PUZZLES.length;
+  const day = 3;
+  const m = vi.missions[day - 1]!;
+  const [done, setDone] = useState(false);
 
-  const choose = (i: number) => {
-    const p = PUZZLES[step]!;
-    if (i === p.answer) {
-      setWarn(false);
-      const next = step + 1;
-      setStep(next);
-      if (next >= PUZZLES.length) api.submitMinigame(3).catch(() => {});
-    } else {
-      setWarn(true);
-    }
-  };
+  const questions = vi.day7.puzzles.map((p) => ({ prompt: p.emoji, options: p.options, answer: p.answer, explain: p.explain }));
 
-  if (solved) {
+  if (done) {
     return (
-      <div className="flex flex-col items-center gap-3 pt-4 text-center">
-        <Gumi state="bo_pho" size={140} event="cheer" eventKey={1} />
-        <Banner kind="success">{vi.day7.success}</Banner>
-        <Card className="text-left">
+      <div className="mx-auto flex max-w-md flex-col gap-3 pt-2">
+        <Card className="border-info! bg-info/8 text-left">
           <h2 className="text-title font-bold">{vi.day7.infographicTitle}</h2>
           <p className="mt-1 text-small text-muted">{vi.day7.infographic}</p>
         </Card>
-        <ChapterTease day={3} />
-        <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.day7.backHome}</Link>
+        <MissionDone day={day} points={m.points} />
       </div>
     );
   }
 
-  const p = PUZZLES[step]!;
   return (
-    <div className="flex flex-col gap-4 pt-2">
-      <div className="flex items-center justify-between">
-        <h1 className="text-title font-bold">{vi.day7.title}</h1>
-        <span className="text-small font-semibold text-muted">{vi.day7.puzzleOf(step + 1, PUZZLES.length)}</span>
+    <GameShell act={actOfDay(day)} title={vi.day7.title} intro={vi.day7.intro}>
+      <div className="flex flex-1 flex-col justify-center">
+        <QuizGame
+          questions={questions}
+          promptClass="text-[44px]"
+          onComplete={() => { api.submitMinigame(day).catch(() => {}); setDone(true); }}
+        />
       </div>
-      <p className="text-small text-muted">{vi.day7.intro}</p>
-      {warn && <Banner kind="error">{vi.day7.wrong}</Banner>}
-      <Card className="flex flex-col items-center gap-4">
-        <p className="text-headline" aria-label="Chuỗi emoji">{p.emoji}</p>
-        <div className="grid w-full gap-2">
-          {p.options.map((opt, i) => (
-            <button key={opt} type="button" onClick={() => choose(i)}
-              className="min-h-11 rounded-control border-2 border-border-strong bg-surface px-4 font-semibold">
-              {opt}
-            </button>
-          ))}
-        </div>
-      </Card>
-    </div>
+    </GameShell>
   );
 }

@@ -1,23 +1,34 @@
 import { useParams } from 'react-router-dom';
-import { vi } from '../content/vi';
 import { CheckIn } from './CheckIn';
 import { Day4 } from './Day4';
 import { Day7 } from './Day7';
 import { Quiz } from './Quiz';
-import { TapMission } from './TapMission';
 import { Wall } from './Wall';
+import { EnergyTracker } from './minigames/EnergyTracker';
+import { MemoryMatch } from './minigames/MemoryMatch';
+import { QuickQuiz } from './minigames/QuickQuiz';
+import { SortGame } from './minigames/SortGame';
+import { SpinWheel } from './minigames/SpinWheel';
+import { WordHunt } from './minigames/WordHunt';
 
-// Điều phối theo ngày cho hành trình 21 ngày:
-//  2 → Quiz (đoán thìa) · 3 → Đuổi hình bắt chữ · 11 → Vạch mặt đường ẩn · 21 → Bức tường tốt nghiệp.
-//  GAME/KNOW/TRACKER còn lại → TapMission (minigame đầy đủ lắp sau). DRINK/SHARE → check-in ảnh.
+// Điều phối màn chơi theo ngày cho hành trình 21 ngày. Mỗi ngày GAME/KNOW/TRACKER có minigame riêng;
+// các ngày DRINK/SHARE là check-in ảnh.
+//   2 Quiz (đoán thìa) · 3 & 16… đuổi hình · 6 xếp độ ngọt · 7 & 17 trắc nghiệm · 9 truy tìm mật khẩu
+//   11 vạch mặt đường ẩn · 12 & 18 lật thẻ trí nhớ · 14 energy tracker · 19 vòng quay · 21 bức tường tốt nghiệp.
 export function MissionRouter() {
   const { day } = useParams();
   const n = Number(day) || 1;
-  if (n === 2) return <Quiz />;
-  if (n === 3) return <Day7 />;
-  if (n === 11) return <Day4 />;
-  if (n === 21) return <Wall />;
-  const kind = vi.missions[n - 1]?.kind;
-  if (kind === 'GAME' || kind === 'KNOW' || kind === 'TRACKER') return <TapMission />;
-  return <CheckIn />;
+  switch (n) {
+    case 2: return <Quiz />;
+    case 3: return <Day7 />;
+    case 6: return <SortGame />;
+    case 7: case 16: case 17: return <QuickQuiz />;
+    case 9: return <WordHunt />;
+    case 11: return <Day4 />;
+    case 12: case 18: return <MemoryMatch />;
+    case 14: return <EnergyTracker />;
+    case 19: return <SpinWheel />;
+    case 21: return <Wall />;
+    default: return <CheckIn />; // DRINK / SHARE → check-in ảnh
+  }
 }

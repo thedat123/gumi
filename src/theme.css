@@ -1,15 +1,15 @@
 /* Sinh tự động từ tokens.json bằng `npm run tokens`. Không sửa tay. */
 @theme {
-  --color-bg: #FADED2;
+  --color-bg: #F6E9DF;
   --color-surface: #FFFFFF;
-  --color-text: #3A241E;
-  --color-muted: #6E4A3E;
-  --color-border: #F0D0C6;
+  --color-text: #33231D;
+  --color-muted: #775A4E;
+  --color-border: #EBD8CD;
   --color-border-strong: #845747;
   --color-primary: #B83556;
   --color-on-primary: #FFFFFF;
-  --color-accent: #FA990A;
-  --color-on-accent: #3A241E;
+  --color-accent: #EF9F2A;
+  --color-on-accent: #33231D;
   --color-pink: #DC97A5;
   --color-on-pink: #3A241E;
   --color-success: #1F7A4D;

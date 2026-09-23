@@ -176,6 +176,15 @@ export function createMockApi(): Api {
       emitAuth();
       return state.session;
     },
+    async signInWithGoogle() {
+      await delay(null, 500);
+      const key = 'ban.gumi@gmail.com';
+      if (!state.users[key]) state.users[key] = { password: '', userId: uid(), role: 'player' };
+      state.session = { userId: state.users[key]!.userId, email: key };
+      save();
+      emitAuth();
+      return state.session;
+    },
     async signOut() {
       await delay(null, 120);
       state.session = null;

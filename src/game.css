@@ -1,0 +1,62 @@
+/* ===== Khung minigame nhập vai + hiệu ứng "juice" (pop, rung, confetti, nền động) ===== */
+
+.game-shell { position: relative; }
+/* Nền động theo vùng đất (act) — gradient ấm + đốm sáng nổi lơ lửng cho có sức sống. */
+.game-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.game-bg::before {
+  content: ''; position: absolute; inset: -20%;
+  background: radial-gradient(70% 55% at 50% 8%, var(--g1) 0%, transparent 60%),
+              radial-gradient(80% 60% at 85% 100%, var(--g2) 0%, transparent 60%),
+              radial-gradient(70% 60% at 10% 90%, var(--g3) 0%, transparent 55%);
+  animation: game-hue 14s ease-in-out infinite alternate;
+}
+@keyframes game-hue { 0% { transform: scale(1) translateY(0); } 100% { transform: scale(1.08) translateY(-2%); } }
+.game-shell.act-1 { --g1: #FFD8B0; --g2: #F7B8C6; --g3: #C9E8CF; }
+.game-shell.act-2 { --g1: #F6CE90; --g2: #C9A9DC; --g3: #A9C7A4; }
+.game-shell.act-3 { --g1: #CFE6FA; --g2: #F3C9D8; --g3: #BFE0D6; }
+
+/* Bong bóng nổi trong nền */
+.game-bubble { position: absolute; bottom: -8%; border-radius: 999px; background: rgba(255,255,255,0.5); box-shadow: inset 0 4px 8px rgba(255,255,255,0.7); animation: bubble-rise linear infinite; }
+@keyframes bubble-rise { 0% { transform: translateY(0) scale(0.9); opacity: 0; } 15% { opacity: .8; } 100% { transform: translateY(-120vh) scale(1.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .game-bg::before, .game-bubble { animation: none; } }
+html.rm .game-bubble { display: none; }
+
+/* Xuất hiện mềm */
+.pop-in { animation: pop-in .4s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes pop-in { 0% { opacity: 0; transform: scale(.86) translateY(8px); } 100% { opacity: 1; transform: none; } }
+
+/* Rung khi sai */
+.shake { animation: shake .4s ease-in-out; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(4px); } }
+
+/* Nảy khi đúng */
+.bump { animation: bump .45s cubic-bezier(.2,1.5,.4,1); }
+@keyframes bump { 0% { transform: scale(1); } 45% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+/* Thẻ/ô game — bề mặt nổi, chạm lún */
+.game-tile { transition: transform .12s ease, box-shadow .12s ease; }
+.game-tile:active { transform: translateY(2px) scale(.98); }
+
+/* Thanh đo độ ngọt (SortGame) */
+.sweet-meter { display: block; height: 9px; border-radius: 999px; background: rgba(58,36,30,.12); overflow: hidden; }
+.sweet-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4F9E5D, #F5C542 55%, #E4574C); transition: width .35s cubic-bezier(.2,.8,.2,1); }
+
+/* Thẻ đang được kéo */
+.drag-ghost { box-shadow: 0 18px 36px -12px rgba(58,36,30,.45) !important; transform: scale(1.03); z-index: 40; }
+.drag-over { outline: 2px dashed var(--color-primary); outline-offset: -4px; }
+
+/* Đồng hồ đếm ngược (QuickQuiz) */
+.timer-track { height: 8px; border-radius: 999px; background: rgba(58,36,30,.12); overflow: hidden; }
+.timer-fill { height: 100%; background: linear-gradient(90deg, #4F9E5D, #F5C542); }
+
+/* Vòng quay phát sáng */
+.wheel-glow { filter: drop-shadow(0 10px 24px rgba(184,53,86,.35)); }
+
+/* ===== Confetti ===== */
+.confetti-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.confetti { position: absolute; top: -12px; width: 10px; height: 14px; border-radius: 2px; will-change: transform, opacity; animation: confetti-fall linear forwards; }
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .confetti-layer { display: none; } }

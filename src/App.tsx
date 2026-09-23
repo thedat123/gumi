@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { RequireAdmin, RequireAuth, RequireProfile } from './app/guards';
 import { SessionProvider } from './app/session';
+import { SkinProvider } from './app/skin';
 import { Admin } from './pages/Admin';
 import { ChapterIntro } from './pages/ChapterIntro';
 import { Dashboard } from './pages/Dashboard';
@@ -20,6 +21,7 @@ import { Terms } from './pages/Terms';
 export function App() {
   return (
     <SessionProvider>
+      <SkinProvider>
       <Routes>
         <Route element={<AppShell />}>
           {/* Công khai */}
@@ -43,6 +45,7 @@ export function App() {
           <Route path="*" element={<SystemState fixed="not_found" />} />
         </Route>
       </Routes>
+      </SkinProvider>
     </SessionProvider>
   );
 }

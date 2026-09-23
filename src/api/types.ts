@@ -149,6 +149,8 @@ export interface AuthApi {
   onChange(cb: (s: Session | null) => void): () => void;
   signUp(email: string, password: string): Promise<Session>;
   signIn(email: string, password: string): Promise<Session>;
+  /** Đăng nhập Google. Mock trả Session ngay; Supabase chuyển hướng OAuth rồi trả null (onChange bắt sau khi quay lại). */
+  signInWithGoogle(): Promise<Session | null>;
   signOut(): Promise<void>;
 }
 

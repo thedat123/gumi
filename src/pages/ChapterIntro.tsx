@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Banner } from '../components/Banner';
 import { DialogueLine } from '../components/Dialogue';
 import { Gumi } from '../components/Gumi';
+import { Icon } from '../components/Icon';
 import { RegionScene } from '../components/RegionScene';
 import { vi } from '../content/vi';
 import { actOfDay, isMilestone, TOTAL_DAYS } from '../lib/scoring';
@@ -27,30 +28,44 @@ export function ChapterIntro() {
   const big = isMilestone(day);
 
   return (
-    <div className="relative -mx-4 -mt-2 flex min-h-[82dvh] flex-col gap-4 overflow-hidden rounded-b-card px-4 pb-4 pt-3 lg:-mx-8 lg:rounded-card lg:px-8">
+    <div className="relative -mx-4 -mt-1 flex min-h-[calc(100dvh-4.75rem)] flex-col overflow-hidden px-4 pb-4 pt-3 lg:-mx-8 lg:px-8">
       <RegionScene act={act} />
 
-      <div className="relative z-10 flex items-center justify-between">
-        <div>
-          <p className="text-caption font-bold text-primary">{vi.story.ui.chapterOf(day)}</p>
-          <p className="text-caption font-semibold text-text">{a.icon} {a.name}</p>
-        </div>
-        <Link to="/" className="rounded-pill bg-surface/80 px-3 py-1 text-caption font-semibold text-muted shadow-soft backdrop-blur">✕ {vi.story.ui.backToMap}</Link>
-      </div>
-
-      <div className="beat relative z-10 flex flex-1 flex-col gap-4">
-        <div className="flex flex-col items-center gap-1 text-center">
-          <Gumi state="bo_pho" size={150} interactive progress={(day - 1) / TOTAL_DAYS} />
-          <span className="rounded-pill bg-surface px-3 py-1 text-caption font-bold text-primary shadow-pop">{big ? (day === TOTAL_DAYS ? '🏆 TỐT NGHIỆP' : '⚔️ CỬA ẢI') : `Ngày ${day}`} · {m.title}</span>
-        </div>
-
-        <div className="flex flex-col gap-3 lg:mx-auto lg:w-full lg:max-w-lg">
-          {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
+      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">
+        {/* Thanh trên: chương + thoát */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 rounded-pill bg-surface/85 px-3 py-1.5 shadow-soft backdrop-blur">
+            <span aria-hidden="true">{a.icon}</span>
+            <span className="text-caption font-bold text-primary">{vi.story.ui.chapterOf(day)}</span>
+            <span className="text-caption font-semibold text-text">· {a.name}</span>
+          </span>
+          <Link to="/" className="inline-flex items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:text-primary">
+            <Icon name="x" size={15} /> {vi.story.ui.backToMap}
+          </Link>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2 lg:mx-auto lg:w-full lg:max-w-md">
-          <Link to={`/mission/${day}`} className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.story.ui.startMission}</Link>
-          <Link to={`/mission/${day}`} className="inline-flex min-h-11 items-center justify-center rounded-pill bg-surface/75 px-4 text-small font-semibold text-muted shadow-soft backdrop-blur">{vi.story.ui.skip}</Link>
+        {/* Mascot ở giữa */}
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center">
+          <Gumi state="bo_pho" size={140} interactive progress={(day - 1) / TOTAL_DAYS} />
+          <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1 text-caption font-bold text-on-primary shadow-pop">
+            {big && <Icon name={day === TOTAL_DAYS ? 'trophy' : 'flag'} size={14} filled />}
+            {big ? (day === TOTAL_DAYS ? 'TỐT NGHIỆP' : 'CỬA ẢI') : `Ngày ${day}`} · {m.title}
+          </span>
+        </div>
+
+        {/* Panel thoại + CTA (kiểu visual-novel) */}
+        <div className="beat rounded-card border border-white/60 bg-surface/92 p-4 shadow-pop backdrop-blur-md">
+          <div className="flex flex-col gap-3">
+            {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row-reverse">
+            <Link to={`/mission/${day}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-5 font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]">
+              {vi.story.ui.startMission} <Icon name="arrow-right" size={18} />
+            </Link>
+            <Link to={`/mission/${day}`} className="inline-flex min-h-12 items-center justify-center rounded-control border border-border-strong/40 bg-surface px-5 text-small font-semibold text-muted transition-colors hover:text-text sm:flex-none">
+              {vi.story.ui.skip}
+            </Link>
+          </div>
         </div>
       </div>
     </div>

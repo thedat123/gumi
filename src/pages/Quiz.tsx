@@ -6,12 +6,16 @@ import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ChapterTease } from '../components/ChapterTease';
+import { GameShell, GameStat } from '../components/GameShell';
 import { Gumi } from '../components/Gumi';
+import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
+import { playSfx } from '../lib/sfx';
 import type { QuizQuestion, QuizResult } from '../api/types';
 
 type Phase = 'intro' | 'playing' | 'result';
+const DAY = 2;
 
 /** S07 — Quiz Day 2 (thanh trượt). Điểm chấm ở server (mock/RPC), client chỉ gửi số đoán. */
 export function Quiz() {
@@ -25,11 +29,11 @@ export function Quiz() {
 
   if (phase === 'result' && result) {
     return (
-      <div className="flex flex-col items-center gap-3 pt-4 text-center">
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 pt-4 text-center">
         <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.quiz.result(result.score, result.max)}</Banner>
         <p className="text-small text-muted">{vi.quiz.resultSub}</p>
-        <ChapterTease day={2} />
+        <ChapterTease day={DAY} />
         <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.quiz.backHome}</Link>
       </div>
     );
@@ -37,12 +41,12 @@ export function Quiz() {
 
   if (phase === 'intro') {
     return (
-      <div className="flex flex-col gap-4 pt-2">
-        <h1 className="text-headline font-bold">{vi.quiz.title}</h1>
-        <p className="text-small text-muted">{vi.quiz.intro}</p>
-        <Banner kind="info">{vi.quiz.note}</Banner>
-        <Button onClick={() => setPhase('playing')} block>{vi.quiz.start}</Button>
-      </div>
+      <GameShell act={actOfDay(DAY)} title={vi.quiz.title} intro={vi.quiz.intro}
+        footer={<Button onClick={() => setPhase('playing')} block>{vi.quiz.start}</Button>}>
+        <div className="flex flex-1 items-center justify-center">
+          <Banner kind="info">{vi.quiz.note}</Banner>
+        </div>
+      </GameShell>
     );
   }
 
@@ -52,36 +56,32 @@ export function Quiz() {
         const q = questions[step]!;
         const submitAll = async (all: Record<number, number>) => {
           setBusy(true);
-          try {
-            const r = await api.submitQuiz(all);
-            setResult(r);
-            setPhase('result');
-          } finally {
-            setBusy(false);
-          }
+          try { setResult(await api.submitQuiz(all)); playSfx('win'); setPhase('result'); }
+          finally { setBusy(false); }
         };
         const next = () => {
+          playSfx('pop');
           const all = { ...guesses, [q.id]: guess };
           setGuesses(all);
           if (step + 1 >= questions.length) submitAll(all);
           else { setStep(step + 1); setGuess(6); }
         };
+        const last = step + 1 >= questions.length;
         return (
-          <div className="flex flex-col gap-4 pt-2">
-            <div className="flex items-center justify-between">
-              <h1 className="text-title font-bold">{vi.quiz.title}</h1>
-              <span className="text-small font-semibold text-muted">{vi.quiz.questionOf(step + 1, questions.length)}</span>
+          <GameShell act={actOfDay(DAY)} title={vi.quiz.title}
+            hud={<GameStat icon="check" value={vi.quiz.questionOf(step + 1, questions.length)} tone="success" />}
+            footer={<Button onClick={next} loading={busy} block>{last ? vi.quiz.finish : vi.quiz.next}</Button>}>
+            <div className="flex flex-1 flex-col justify-center">
+              <Card className="flex flex-col gap-4">
+                <p className="text-body font-semibold">{q.drink}</p>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="guess" className="text-small">{vi.quiz.guessLabel} <span className="font-bold text-primary">{vi.quiz.spoons(guess)}</span></label>
+                  <input id="guess" type="range" min={q.min} max={q.max} value={guess} onChange={(e) => setGuess(Number(e.target.value))} className="h-11 w-full accent-primary" />
+                  <div className="flex justify-between text-caption text-muted"><span>{q.min}</span><span>{q.max} thìa</span></div>
+                </div>
+              </Card>
             </div>
-            <Card className="flex flex-col gap-4">
-              <p className="text-body font-semibold">{q.drink}</p>
-              <div className="flex flex-col gap-2">
-                <label htmlFor="guess" className="text-small">{vi.quiz.guessLabel} <span className="font-bold">{vi.quiz.spoons(guess)}</span></label>
-                <input id="guess" type="range" min={q.min} max={q.max} value={guess} onChange={(e) => setGuess(Number(e.target.value))} className="h-11 w-full accent-primary" />
-                <div className="flex justify-between text-caption text-muted"><span>{q.min}</span><span>{q.max} thìa</span></div>
-              </div>
-              <Button onClick={next} loading={busy} block>{step + 1 >= questions.length ? vi.quiz.finish : vi.quiz.next}</Button>
-            </Card>
-          </div>
+          </GameShell>
         );
       }}
     </AsyncView>

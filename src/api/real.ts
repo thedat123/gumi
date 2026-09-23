@@ -69,6 +69,11 @@ const auth: AuthApi = {
     if (error) throw new ApiError('wrong_password');
     return { userId: data.user.id, email: data.user.email ?? email };
   },
+  async signInWithGoogle(): Promise<Session | null> {
+    const { error } = await db().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    if (error) throw new ApiError('server', error.message);
+    return null; // trình duyệt chuyển hướng sang Google, phiên sẽ được onChange bắt sau khi quay lại
+  },
   async signOut() {
     await db().auth.signOut();
   },

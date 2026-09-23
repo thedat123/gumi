@@ -48,10 +48,10 @@
   border-radius: 999px; opacity: 0; will-change: transform, opacity;
 }
 
-/* --- Vùng 1: Đầm Lầy Ngọt --- */
-.scene--act1 .scene-grad { background: linear-gradient(180deg, #6f9a63 0%, #3f6a47 34%, #274c34 66%, #16321f 100%); }
-.scene--act1 .scene-scrim { background: linear-gradient(180deg, rgba(255,246,234,.94) 0%, rgba(255,246,234,.45) 16%, transparent 38%, transparent 78%, rgba(22,50,31,.35) 100%); }
-.scene--act1 .scene-bit { background: radial-gradient(circle at 34% 30%, #f0fce4, #a9db8a 70%, rgba(169,219,138,0) 100%); animation: bit-rise var(--dur, 9s) linear var(--delay, 0s) infinite; }
+/* --- Vùng 1: Đầm Lầy Ngọt (xanh ngọc tươi, sáng) --- */
+.scene--act1 .scene-grad { background: linear-gradient(180deg, #8FD1A6 0%, #3FA986 38%, #1E8069 70%, #0E4F41 100%); }
+.scene--act1 .scene-scrim { background: linear-gradient(180deg, rgba(255,246,234,.9) 0%, rgba(255,246,234,.4) 16%, transparent 40%, transparent 78%, rgba(14,79,65,.35) 100%); }
+.scene--act1 .scene-bit { background: radial-gradient(circle at 34% 30%, #f4ffe8, #b6ecc0 70%, rgba(182,236,192,0) 100%); animation: bit-rise var(--dur, 9s) linear var(--delay, 0s) infinite; }
 .scene--act1 .scene-near { animation: sway 7s ease-in-out infinite; transform-origin: 50% 100%; }
 @keyframes bit-rise {
   0% { transform: translate(0, 0) scale(.5); opacity: 0; }
@@ -62,11 +62,11 @@
 }
 @keyframes sway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
 
-/* --- Vùng 2: Rừng Đường Ẩn --- */
-.scene--act2 .scene-grad { background: linear-gradient(180deg, #4c7a4f 0%, #2c5333 40%, #1a3a22 74%, #10271a 100%); }
-.scene--act2 .scene-scrim { background: linear-gradient(180deg, rgba(255,246,234,.92) 0%, rgba(255,246,234,.4) 16%, transparent 40%); }
-.scene--act2 .scene-mist { background: radial-gradient(60% 100% at 50% 100%, rgba(214,236,214,.6), transparent 70%); }
-.scene--act2 .scene-bit { background: radial-gradient(circle, #eaf6e2, rgba(234,246,226,0) 70%); animation: bit-drift var(--dur, 12s) linear var(--delay, 0s) infinite; }
+/* --- Vùng 2: Rừng Đường Ẩn (hoàng hôn tím-chàm, đom đóm) --- */
+.scene--act2 .scene-grad { background: linear-gradient(180deg, #E7A66B 0%, #9E77A8 34%, #5B4E90 64%, #2C2456 100%); }
+.scene--act2 .scene-scrim { background: linear-gradient(180deg, rgba(255,241,224,.55) 0%, rgba(255,231,214,.2) 16%, transparent 40%, transparent 74%, rgba(44,36,86,.4) 100%); }
+.scene--act2 .scene-mist { background: radial-gradient(60% 100% at 50% 100%, rgba(230,214,245,.5), transparent 70%); }
+.scene--act2 .scene-bit { background: radial-gradient(circle, #FFE9A6, rgba(255,233,166,0) 68%); box-shadow: 0 0 8px 2px rgba(255,220,140,.6); animation: bit-drift var(--dur, 12s) linear var(--delay, 0s) infinite; }
 .scene--act2 .scene-near { animation: sway 9s ease-in-out infinite; transform-origin: 50% 100%; }
 @keyframes bit-drift {
   0% { transform: translate(0, 0) scale(.6); opacity: 0; }
@@ -85,11 +85,20 @@
   100% { transform: translate(18px, 78vh) scale(1); opacity: 0; }
 }
 
+/* Mây/quầng sáng trôi ngang — chuyển động rõ để cảnh "sống". */
+.scene-cloud {
+  top: var(--cy, 12%); left: 0; width: var(--cw, 150px); height: var(--ch, 46px);
+  border-radius: 999px; background: radial-gradient(closest-side, rgba(255,255,255,.85), rgba(255,255,255,0));
+  filter: blur(4px); opacity: var(--co, .55); will-change: transform;
+  animation: cloud-drift var(--cd, 46s) linear var(--cdelay, 0s) infinite;
+}
+@keyframes cloud-drift { from { transform: translateX(-40%); } to { transform: translateX(340%); } }
+
 @media (prefers-reduced-motion: reduce) {
   .node-today, .beat, .line-in,
-  .scene-mist, .scene-bit, .scene-near { animation: none !important; }
+  .scene-mist, .scene-bit, .scene-near, .scene-cloud { animation: none !important; }
   .scene-bit { display: none; }
 }
 html.rm .node-today, html.rm .beat, html.rm .line-in,
-html.rm .scene-mist, html.rm .scene-bit, html.rm .scene-near { animation: none !important; }
+html.rm .scene-mist, html.rm .scene-bit, html.rm .scene-near, html.rm .scene-cloud { animation: none !important; }
 html.rm .scene-bit { display: none; }
