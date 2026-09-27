@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { vi } from '../content/vi';
 import { useAnimationPause } from '../hooks/useAnimationPause';
-import { useSkin } from '../app/skin';
-import { skinById, type Skin } from '../lib/skins';
+import { useOutfit } from '../app/skin';
+import { BODY_COLORS, type Outfit } from '../lib/wardrobe';
 import { playSfx, type Sfx } from '../lib/sfx';
 import type { GumiEvent, GumiState } from '../api/types';
 
@@ -16,50 +16,201 @@ interface Props {
   interactive?: boolean;
   /** Tiến độ 0..1: càng cao, bụng Gumi càng nhỏ (khoẻ dần) trước khi tiến hoá hẳn ở Day 21. */
   progress?: number;
-  /** Ép dùng một skin cụ thể (xem trước ở tủ đồ). Bỏ trống thì dùng skin đang chọn. */
-  skinId?: string;
+  /** Ép dùng một outfit cụ thể (xem trước ở tủ đồ). Bỏ trống thì dùng outfit đang mặc. */
+  outfit?: Outfit;
   /** Tín hiệu "cho ăn" từ ngoài (kéo-thả đồ ăn). Đổi key để Gumi ăn món mới. */
   feed?: { food: string; key: number } | null;
   onEventEnd?: () => void;
 }
 
-/** Phụ kiện theo skin, vẽ quanh đầu Gumi (đầu: cx100 cy88 r46; tai đỉnh ~y22). */
-function SkinAccessory({ skin }: { skin: Skin }): ReactElement | null {
-  const c = skin.accessoryColor ?? '#F5C542';
-  switch (skin.accessory) {
+/* ===== PHỤ KIỆN PHỐI TỰ DO — vẽ quanh đầu Gumi (đầu: cx100 cy88 r46; tai đỉnh ~y22; mắt cx80/120 cy90). ===== */
+function Hat({ id }: { id: string }): ReactElement | null {
+  switch (id) {
     case 'cap':
       return (
         <g>
-          <path d="M58 52 Q100 12 142 52 Q100 40 58 52 Z" fill={c} />
-          <rect x="118" y="48" width="42" height="8" rx="4" fill={c} />
-          <circle cx="100" cy="20" r="4" fill={c} />
+          <path d="M56 50 Q100 8 144 50 Q100 40 56 50 Z" fill="#4f9e5d" />
+          <rect x="118" y="46" width="44" height="9" rx="4.5" fill="#3f8a4d" />
+          <circle cx="100" cy="16" r="4.5" fill="#3f8a4d" />
+        </g>
+      );
+    case 'bow':
+      return (
+        <g transform="translate(72 40)">
+          <path d="M0 0 L-18 -12 Q-24 0 -18 12 Z" fill="#E7799B" />
+          <path d="M0 0 L18 -12 Q24 0 18 12 Z" fill="#E7799B" />
+          <path d="M0 0 L-18 -12 Q-14 -4 -8 -2 Z" fill="#D45E82" />
+          <path d="M0 0 L18 -12 Q14 -4 8 -2 Z" fill="#D45E82" />
+          <circle r="5" fill="#F3A7C0" />
+        </g>
+      );
+    case 'beanie':
+      return (
+        <g>
+          <path d="M54 52 Q100 4 146 52 Z" fill="#C9603F" />
+          <path d="M60 40 Q100 18 140 40" fill="none" stroke="#A94E32" strokeWidth="3" opacity="0.6" />
+          <rect x="52" y="46" width="96" height="12" rx="6" fill="#E0754F" />
+          <circle cx="100" cy="12" r="8" fill="#F0A488" />
+        </g>
+      );
+    case 'party':
+      return (
+        <g>
+          <path d="M100 2 L82 50 L118 50 Z" fill="#F5C542" stroke="#DCAF2E" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M88 38 L112 38 M92 26 L108 26" stroke="#E7799B" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="100" cy="2" r="5" fill="#E7799B" />
         </g>
       );
     case 'headband':
       return (
         <g>
-          <rect x="54" y="44" width="92" height="12" rx="6" fill={c} />
-          <path d="M146 40 l18 -8 l-4 16 l6 12 l-18 -6 z" fill={c} />
+          <rect x="54" y="44" width="92" height="12" rx="6" fill="#B3261E" />
+          <path d="M146 40 l18 -8 l-4 16 l6 12 l-18 -6 z" fill="#B3261E" />
         </g>
       );
     case 'helmet':
       return (
-        <g fill="none" stroke={c} strokeWidth="5" opacity="0.85">
-          <circle cx="100" cy="86" r="60" />
-          <path d="M70 54 Q86 40 104 44" strokeWidth="4" opacity="0.7" />
+        <g>
+          <circle cx="100" cy="86" r="60" fill="none" stroke="#7EC9E0" strokeWidth="6" opacity="0.75" />
+          <path d="M70 54 Q86 40 104 44" fill="none" stroke="#EAF6FB" strokeWidth="4" opacity="0.8" />
         </g>
       );
     case 'crown':
       return (
         <g>
-          <path d="M62 52 L62 28 L80 42 L100 22 L120 42 L138 28 L138 52 Z" fill={c} stroke="#C79A3E" strokeWidth="2" strokeLinejoin="round" />
-          <circle cx="100" cy="34" r="3.5" fill="#B3261E" />
-          <circle cx="72" cy="40" r="3" fill="#1F7A4D" />
-          <circle cx="128" cy="40" r="3" fill="#1F7A4D" />
+          <path d="M62 52 L62 26 L80 42 L100 20 L120 42 L138 26 L138 52 Z" fill="#F5C542" stroke="#C79A3E" strokeWidth="2" strokeLinejoin="round" />
+          <circle cx="100" cy="32" r="3.5" fill="#B3261E" />
+          <circle cx="72" cy="38" r="3" fill="#1F7A4D" />
+          <circle cx="128" cy="38" r="3" fill="#1F7A4D" />
         </g>
       );
     case 'halo':
-      return <ellipse cx="100" cy="18" rx="30" ry="8" fill="none" stroke={c} strokeWidth="5" opacity="0.9" />;
+      return <ellipse cx="100" cy="16" rx="30" ry="8" fill="none" stroke="#F2C879" strokeWidth="5" opacity="0.95" />;
+    default:
+      return null;
+  }
+}
+
+function Glasses({ id }: { id: string }): ReactElement | null {
+  switch (id) {
+    case 'sunglasses':
+      return (
+        <g>
+          <rect x="62" y="80" width="32" height="21" rx="9" fill="#2A2320" />
+          <rect x="106" y="80" width="32" height="21" rx="9" fill="#2A2320" />
+          <path d="M94 87 h12" stroke="#2A2320" strokeWidth="4" strokeLinecap="round" />
+          <path d="M62 84 l-10 -4 M138 84 l10 -4" stroke="#2A2320" strokeWidth="3" strokeLinecap="round" />
+          <path d="M68 85 q6 -3 12 0" stroke="#5a5048" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
+        </g>
+      );
+    case 'round':
+      return (
+        <g fill="rgba(255,255,255,0.14)" stroke="#C79A3E" strokeWidth="4">
+          <circle cx="80" cy="90" r="13" /><circle cx="120" cy="90" r="13" />
+          <path d="M93 90 h14" strokeWidth="3.5" /><path d="M67 88 l-12 -4 M133 88 l12 -4" strokeWidth="3" strokeLinecap="round" fill="none" />
+        </g>
+      );
+    case 'star':
+      return (
+        <g fill="#F5C542" stroke="#DCAF2E" strokeWidth="1.5">
+          <path d="M80 78 l3.2 6.5 l7.2 .8 l-5.4 4.9 l1.6 7.1 l-6.2 -3.7 l-6.2 3.7 l1.6 -7.1 l-5.4 -4.9 l7.2 -.8z" />
+          <path d="M120 78 l3.2 6.5 l7.2 .8 l-5.4 4.9 l1.6 7.1 l-6.2 -3.7 l-6.2 3.7 l1.6 -7.1 l-5.4 -4.9 l7.2 -.8z" />
+          <path d="M92 88 h16" stroke="#DCAF2E" strokeWidth="3" fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case 'monocle':
+      return (
+        <g>
+          <circle cx="120" cy="90" r="13" fill="rgba(255,255,255,0.16)" stroke="#C79A3E" strokeWidth="4" />
+          <path d="M120 103 q-2 18 -14 24" fill="none" stroke="#C79A3E" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+function Neck({ id }: { id: string }): ReactElement | null {
+  switch (id) {
+    case 'scarf':
+      return (
+        <g>
+          <path d="M66 124 q34 20 68 0 l0 13 q-34 18 -68 0 z" fill="#5B8AC9" />
+          <path d="M122 134 l16 34 l-13 4 l-11 -30 z" fill="#436FAB" />
+          <path d="M66 124 q34 20 68 0" fill="none" stroke="#7AA6DD" strokeWidth="2" opacity="0.6" />
+        </g>
+      );
+    case 'bowtie':
+      return (
+        <g transform="translate(100 132)">
+          <path d="M0 0 L-20 -11 Q-26 0 -20 11 Z" fill="#B3261E" />
+          <path d="M0 0 L20 -11 Q26 0 20 11 Z" fill="#B3261E" />
+          <rect x="-5" y="-7" width="10" height="14" rx="3" fill="#8E1C16" />
+        </g>
+      );
+    case 'necklace':
+      return (
+        <g>
+          <path d="M72 126 q28 26 56 0" fill="none" stroke="#E7C86B" strokeWidth="2.5" />
+          {[78, 90, 100, 110, 122].map((x, i) => <circle key={x} cx={x} cy={128 + (i === 2 ? 8 : i === 1 || i === 3 ? 5 : 1)} r="2.6" fill="#F5C542" />)}
+          <path d="M100 138 l-4 8 l4 4 l4 -4 z" fill="#B3261E" stroke="#F5C542" strokeWidth="1" />
+        </g>
+      );
+    case 'cape':
+      return (
+        <g>
+          <path d="M68 118 Q100 132 132 118 L150 176 Q100 190 50 176 Z" fill="#7A4DB3" opacity="0.92" />
+          <path d="M68 118 Q100 130 132 118 L128 128 Q100 138 72 128 Z" fill="#8E63C4" />
+          <circle cx="82" cy="122" r="4" fill="#F5C542" /><circle cx="118" cy="122" r="4" fill="#F5C542" />
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+/** Lớp NỀN phía sau Gumi (chọn ở tủ đồ). Vẽ trong viewBox 200x220, đứng sau thân. */
+function Backdrop({ id }: { id: string }): ReactElement | null {
+  switch (id) {
+    case 'spotlight':
+      return <ellipse cx="100" cy="116" rx="96" ry="104" fill="url(#bgSpot)" />;
+    case 'sunburst':
+      return (
+        <g>
+          <g className="bg-spin" style={{ transformOrigin: '100px 116px' }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <path key={i} d="M100 116 L92 -30 L108 -30 Z" fill="#FFD27A" opacity="0.28" transform={`rotate(${i * 30} 100 116)`} />
+            ))}
+          </g>
+          <circle cx="100" cy="116" r="70" fill="url(#bgSpot)" />
+        </g>
+      );
+    case 'hearts':
+      return (
+        <g fill="#F4A6C0" opacity="0.75">
+          {[[34, 60, 0.9, 0], [168, 80, 0.7, 0.6], [30, 150, 0.6, 1.2], [172, 150, 0.8, 0.9], [150, 40, 0.5, 1.6]].map(([x, y, s, d], i) => (
+            <path key={i} className="bg-float" style={{ animationDelay: `${d}s` }} transform={`translate(${x} ${y}) scale(${s})`}
+              d="M0 6 C-10 -4 -7 -16 0 -9 C7 -16 10 -4 0 6" />
+          ))}
+        </g>
+      );
+    case 'stars':
+      return (
+        <g fill="#DCEBFB">
+          {[[30, 54, 1], [172, 70, 0.8], [26, 140, 0.7], [176, 150, 1], [150, 34, 0.6], [54, 30, 0.7], [120, 24, 0.5]].map(([x, y, s], i) => (
+            <path key={i} className="bg-twinkle" style={{ animationDelay: `${i * 0.3}s` }} transform={`translate(${x} ${y}) scale(${s})`}
+              d="M0 -7 l2 5 l5 .5 l-3.8 3.4 l1.2 5 l-4.4 -2.8 l-4.4 2.8 l1.2 -5 l-3.8 -3.4 l5 -.5z" />
+          ))}
+        </g>
+      );
+    case 'confetti':
+      return (
+        <g>
+          {[['#F4A6C0', 34, 50], ['#8FD0B0', 168, 66], ['#FFD27A', 40, 130], ['#9EC6E6', 166, 140], ['#E7799B', 150, 34], ['#8FD0B0', 60, 28], ['#FFD27A', 128, 22]].map(([c, x, y], i) => (
+            <rect key={i} className="bg-float" style={{ animationDelay: `${i * 0.25}s` }} x={x as number} y={y as number} width="8" height="12" rx="2" fill={c as string} transform={`rotate(${i * 40} ${x as number} ${y as number})`} />
+          ))}
+        </g>
+      );
     default:
       return null;
   }
@@ -84,9 +235,10 @@ const SPARKLES = [
 ];
 
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
-export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, progress = 0, skinId, feed = null, onEventEnd }: Props) {
-  const { skinId: ctxSkin } = useSkin();
-  const skin = skinById(skinId ?? ctxSkin);
+export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, progress = 0, outfit: propOutfit, feed = null, onEventEnd }: Props) {
+  const { outfit: ctxOutfit } = useOutfit();
+  const outfit = propOutfit ?? ctxOutfit;
+  const col = BODY_COLORS[outfit.color] ?? BODY_COLORS.default!;
   const ref = useRef<HTMLDivElement>(null);
   const paused = useAnimationPause(ref);
   const hopDelay = useMemo(() => Math.round(Math.random() * 4000) / 1000, []);
@@ -151,9 +303,9 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
   const style = {
     '--gumi-size': `${size}px`,
     '--hop-delay': `${hopDelay}s`,
-    ...(skin.colors?.gumi ? { '--color-gumi': skin.colors.gumi } : {}),
-    ...(skin.colors?.dark ? { '--color-gumi-dark': skin.colors.dark } : {}),
-    ...(skin.colors?.belly ? { '--color-gumi-belly': skin.colors.belly } : {}),
+    '--color-gumi': col.gumi,
+    '--color-gumi-dark': col.dark,
+    '--color-gumi-belly': col.belly,
   } as CSSProperties;
 
   return (
@@ -170,7 +322,9 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
         <defs>
           <radialGradient id="gHi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffffff" stopOpacity="0.6" /><stop offset="1" stopColor="#ffffff" stopOpacity="0" /></radialGradient>
           <radialGradient id="gCore" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#2A1A15" stopOpacity="0.2" /><stop offset="1" stopColor="#2A1A15" stopOpacity="0" /></radialGradient>
+          <radialGradient id="bgSpot" cx="0.5" cy="0.46" r="0.55"><stop offset="0" stopColor="#FFF0C8" stopOpacity="0.9" /><stop offset="0.55" stopColor="#FFE0A0" stopOpacity="0.4" /><stop offset="1" stopColor="#FFE0A0" stopOpacity="0" /></radialGradient>
         </defs>
+        {outfit.background !== 'none' && <Backdrop id={outfit.background} />}
         <ellipse cx="100" cy="210" rx={fit ? 58 : 80} ry="11" fill="rgba(0,0,0,0.06)" />
         <ellipse className="g-shadow" cx="100" cy="208" rx={fit ? 46 : 64} ry="8" />
         <g className="g-actor" key={`${poke}-${eventKey}`}>
@@ -213,13 +367,22 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
             )}
             {shown === 'tien_hoa' && (
               <g>
-                <rect className="g-lens" x="64" y="78" width="30" height="20" rx="8" />
-                <rect className="g-lens" x="106" y="78" width="30" height="20" rx="8" />
-                <path className="g-stroke" d="M94 86 h12" />
+                {outfit.glasses === 'none' ? (
+                  <>
+                    <rect className="g-lens" x="64" y="78" width="30" height="20" rx="8" />
+                    <rect className="g-lens" x="106" y="78" width="30" height="20" rx="8" />
+                    <path className="g-stroke" d="M94 86 h12" />
+                  </>
+                ) : (
+                  <><circle className="g-ink" cx="80" cy="90" r="5" /><circle className="g-ink" cx="120" cy="90" r="5" /></>
+                )}
                 <path className="g-stroke" d="M86 114 q14 10 28 0" />
               </g>
             )}
-            <SkinAccessory skin={skin} />
+            {/* Phụ kiện phối tự do (khăn dưới → kính → mũ trên cùng) */}
+            <Neck id={outfit.neck} />
+            <Glasses id={outfit.glasses} />
+            <Hat id={outfit.hat} />
           </g>
         </g>
         <circle className="g-flash" cx="100" cy="120" r="96" />

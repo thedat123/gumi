@@ -72,7 +72,10 @@ export function Signup() {
           <Button type="submit" loading={busy} block>{vi.signup.submit}</Button>
         </form>
       </Card>
-      <Link to="/login" className="text-center text-small text-primary underline underline-offset-2">{vi.signup.haveAccount}</Link>
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-small text-muted">{vi.auth.haveAccount}</p>
+        <Button variant="secondary" block onClick={() => nav('/login')}>{vi.auth.login}</Button>
+      </div>
     </div>
   );
 }

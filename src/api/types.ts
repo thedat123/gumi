@@ -1,7 +1,8 @@
 // Mô hình miền + hợp đồng API. UI chỉ phụ thuộc file này, không biết dữ liệu đến từ mock hay Supabase.
 import type { SugarLevel } from '../lib/sugar';
 
-export type MissionKind = 'DRINK' | 'KNOW' | 'SHARE' | 'FINAL';
+// Khớp ràng buộc missions.kind trong supabase/migrations/0001_init.sql.
+export type MissionKind = 'DRINK' | 'KNOW' | 'SHARE' | 'GAME' | 'FINAL';
 export type DayState = 'checked' | 'passed' | 'open' | 'dying' | 'missed' | 'rejected' | 'future';
 export type GumiState = 'bo_pho' | 'hap_hoi' | 'tien_hoa';
 export type GumiEvent = 'cheer' | 'revive' | 'evolve';
@@ -115,6 +116,31 @@ export interface AdminCheckin {
   flag?: string;
 }
 
+/** Một dòng người chơi trong bảng quản lý của admin. */
+export interface AdminPlayer {
+  id: string;
+  name: string;
+  avatar: string;
+  daysDone: number;   // số ngày đã hoàn thành (duyệt)
+  points: number;
+  streak: number;
+  eligible: boolean;  // đạt chỉ tiêu nhận quà (>= 14/21 ngày)
+  finished: boolean;  // hoàn thành đủ 21 ngày
+  usedPass: boolean;  // đã từng dùng Sugar Pass (ảnh hưởng ưu tiên xếp hạng)
+}
+
+/** Thống kê tổng quan cho màn Admin. */
+export interface AdminStats {
+  totalPlayers: number;
+  activePlayers: number;   // đang chơi (đã làm >=1 ngày, chưa hoàn thành)
+  eligibleCount: number;   // đạt chỉ tiêu >= 14/21 ngày
+  finishedCount: number;   // hoàn thành đủ 21 ngày
+  avgPoints: number;
+  avgDaysDone: number;
+  pendingCheckins: number; // số ảnh đang chờ duyệt (gồm cả cần duyệt tay)
+  players: AdminPlayer[];
+}
+
 export interface CreateProfileInput {
   name: string;
   avatar: string;
@@ -152,9 +178,16 @@ export interface AuthApi {
   /** Đăng nhập Google. Mock trả Session ngay; Supabase chuyển hướng OAuth rồi trả null (onChange bắt sau khi quay lại). */
   signInWithGoogle(): Promise<Session | null>;
   signOut(): Promise<void>;
+  /** Gửi email đặt lại mật khẩu. Không tiết lộ email có tồn tại hay không (chống dò tài khoản). */
+  resetPassword(email: string): Promise<void>;
+  /** Đặt mật khẩu mới cho phiên hiện tại (sau khi bấm link khôi phục trong email, hoặc khi đã đăng nhập). */
+  updatePassword(newPassword: string): Promise<void>;
+  /** Đổi mật khẩu khi đang đăng nhập: xác thực lại mật khẩu hiện tại rồi mới đặt mật khẩu mới. */
+  changePassword(currentPassword: string, newPassword: string): Promise<void>;
 }
 
 export interface AdminApi {
+  getStats(): Promise<AdminStats>;
   listCheckins(day: number): Promise<AdminCheckin[]>;
   listFlags(): Promise<AdminCheckin[]>;
   setCheckinStatus(id: string, status: CheckinStatus, reason?: string): Promise<void>;

@@ -15,7 +15,10 @@ export function MissionDone({ day, points, note }: { day: number; points: number
       <Banner kind="success">{vi.checkin.success(points)}</Banner>
       {note && <p className="text-small text-muted">{note}</p>}
       <ChapterTease day={day} />
-      <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.minigames.common.backHome}</Link>
+      <div className="mt-1 flex w-full max-w-xs flex-col items-stretch gap-2 sm:max-w-md sm:flex-row">
+        <Link to="/journey" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+        <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-border-strong/50 bg-surface px-5 font-semibold text-muted">{vi.minigames.common.backToRoom}</Link>
+      </div>
     </div>
   );
 }

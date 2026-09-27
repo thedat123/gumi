@@ -1,6 +1,5 @@
-@import "@fontsource/be-vietnam-pro/400.css";
-@import "@fontsource/be-vietnam-pro/600.css";
-@import "@fontsource/be-vietnam-pro/700.css";
+/* Font UI: Plus Jakarta Sans (variable 200–800, self-host, có subset tiếng Việt) — chuẩn production. */
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "tailwindcss";
 @import "./theme.css";
 @import "./gumi.css";
@@ -18,6 +17,11 @@ body {
 }
 #root { min-height: 100dvh; }
 :focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
+
+/* Con trỏ BÀN TAY cho mọi phần tử bấm được → nhìn chuyên nghiệp; disabled thì hiện "cấm". */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]), a[href], label[for], summary, select, [role="tab"], [role="option"] { cursor: pointer; }
+button:disabled, [aria-disabled="true"], input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; }
+
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 

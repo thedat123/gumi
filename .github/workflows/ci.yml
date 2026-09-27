@@ -1,0 +1,84 @@
+name: CI/CD
+
+# Chạy kiểm thử cho mọi PR/đẩy lên main; deploy Cloudflare Pages khi merge vào main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Huỷ lần chạy cũ khi có commit mới trên cùng nhánh (tiết kiệm CI).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------- 1) Kiểm thử: typecheck + test + build ----------
+  check:
+    name: Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_DATA_SOURCE: ${{ vars.VITE_DATA_SOURCE || 'auto' }}
+          VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
+          VITE_GCV_API_KEY: ${{ secrets.VITE_GCV_API_KEY }}
+
+      - name: Lưu bản build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 3
+
+  # ---------- 2) Deploy Cloudflare Pages (chỉ khi push vào main) ----------
+  # Bật bằng cách đặt biến repo DEPLOY_TO_CF = 'true' và thêm secrets bên dưới.
+  # Nếu bạn dùng tích hợp Git sẵn của Cloudflare Pages thì bỏ qua job này (để DEPLOY_TO_CF trống).
+  deploy:
+    name: Deploy → Cloudflare Pages
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_TO_CF == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tải bản build từ job check
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish lên Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT || 'gumi' }} --branch=main
+#
+# ── Cấu hình cần có (Settings → Secrets and variables → Actions) ──
+#   Secrets (build & deploy):
+#     VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ADMIN_EMAILS, VITE_GCV_API_KEY (tuỳ chọn)
+#     CLOUDFLARE_API_TOKEN   (quyền "Cloudflare Pages: Edit")
+#     CLOUDFLARE_ACCOUNT_ID
+#   Variables:
+#     DEPLOY_TO_CF = true        (bật job deploy)
+#     CF_PAGES_PROJECT = gumi    (tên project trên Cloudflare Pages, mặc định "gumi")
+#     VITE_DATA_SOURCE = auto    (tuỳ chọn)

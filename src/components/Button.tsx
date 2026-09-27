@@ -27,7 +27,7 @@ export function Button({ variant = 'primary', loading = false, block = false, cl
       {...rest}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-5 text-body font-semibold transition-all duration-150 active:scale-[0.97] disabled:opacity-60 disabled:shadow-none ${block ? 'w-full' : ''} ${VARIANT[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-5 text-body font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface active:scale-[0.97] disabled:opacity-60 disabled:shadow-none ${block ? 'w-full' : ''} ${VARIANT[variant]} ${className}`}
     >
       {loading && <Spinner />}
       {children}

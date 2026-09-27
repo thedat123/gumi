@@ -10,7 +10,7 @@ const KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 const ENV_MODEL = import.meta.env.VITE_GEMINI_MODEL as string | undefined;
 const MODELS = ENV_MODEL ? [ENV_MODEL] : ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.5-flash'];
 const urlOf = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${KEY}`;
-const TIMEOUT_MS = 11000; // bỏ qua model treo sau 11s
+const TIMEOUT_MS = 4500; // bỏ qua model treo sau 4.5s (ưu tiên trả nhanh)
 
 export const vlmAvailable = !!KEY;
 
@@ -52,11 +52,12 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
   if (!KEY) return EMPTY;
   try {
     const { compressImage } = await import('./image');
-    const small = await compressImage(file, 1024, 0.82); // thu nhỏ để gửi nhanh
+    const small = await compressImage(file, 1280, 0.8); // 1280px: đọc được TEM nhỏ trên ly; vẫn nhẹ để upload + suy diễn nhanh
     const { mime, data } = await toBase64(small);
     const body = JSON.stringify({
       contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data } }] }],
-      generationConfig: { temperature: 0, responseMimeType: 'application/json' },
+      // thinkingBudget: 0 → TẮT bước "suy nghĩ" của Gemini 2.5 Flash-Lite (giảm mạnh độ trễ, thường về dưới ~1s).
+      generationConfig: { temperature: 0, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 }, maxOutputTokens: 220 },
     });
 
     for (const model of MODELS) {

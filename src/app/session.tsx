@@ -12,6 +12,9 @@ interface SessionCtx {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const Ctx = createContext<SessionCtx | null>(null);
@@ -67,9 +70,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(() => loadProfile(session), [loadProfile, session]);
 
+  const resetPassword = useCallback((email: string) => api.auth.resetPassword(email), []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    await api.auth.updatePassword(newPassword);
+    // Sau khi đổi (từ link khôi phục), đồng bộ lại phiên/hồ sơ để vào app ngay.
+    const s = await api.auth.getSession();
+    setSession(s);
+    await loadProfile(s);
+  }, [loadProfile]);
+
+  const changePassword = useCallback((currentPassword: string, newPassword: string) => api.auth.changePassword(currentPassword, newPassword), []);
+
   const value = useMemo<SessionCtx>(
-    () => ({ session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile }),
-    [session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile],
+    () => ({ session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile, resetPassword, updatePassword, changePassword }),
+    [session, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile, resetPassword, updatePassword, changePassword],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -7,6 +7,7 @@ import {
   ApiError,
   type AdminApi,
   type AdminCheckin,
+  type AdminStats,
   type Api,
   type AuthApi,
   type CampaignState,
@@ -70,16 +71,38 @@ const auth: AuthApi = {
     return { userId: data.user.id, email: data.user.email ?? email };
   },
   async signInWithGoogle(): Promise<Session | null> {
-    const { error } = await db().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    // Có dấu "/" cuối để khớp mẫu allowlist ".../**" của Supabase (origin trần đôi khi không khớp).
+    const { error } = await db().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/` } });
     if (error) throw new ApiError('server', error.message);
     return null; // trình duyệt chuyển hướng sang Google, phiên sẽ được onChange bắt sau khi quay lại
   },
   async signOut() {
     await db().auth.signOut();
   },
+  async resetPassword(email) {
+    // Gửi email chứa link khôi phục; link mở /reset-password (Supabase gắn token khôi phục vào URL).
+    const { error } = await db().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+    if (error) throw new ApiError('server', error.message);
+  },
+  async updatePassword(newPassword) {
+    // Sau khi vào từ link khôi phục, Supabase đã có phiên tạm → đổi mật khẩu ngay.
+    const { error } = await db().auth.updateUser({ password: newPassword });
+    if (error) throw new ApiError('server', error.message);
+  },
+  async changePassword(currentPassword, newPassword) {
+    const { data } = await db().auth.getUser();
+    const email = data.user?.email;
+    if (!email) throw new ApiError('forbidden');
+    // Xác thực lại mật khẩu hiện tại trước khi cho đổi (updateUser không tự kiểm mật khẩu cũ).
+    const { error: reauth } = await db().auth.signInWithPassword({ email, password: currentPassword });
+    if (reauth) throw new ApiError('wrong_password');
+    const { error } = await db().auth.updateUser({ password: newPassword });
+    if (error) throw new ApiError('server', error.message);
+  },
 };
 
 const admin: AdminApi = {
+  getStats: () => rpc<AdminStats>('admin_stats'),
   listCheckins: (day) => rpc<AdminCheckin[]>('admin_list_checkins', { p_day: day }),
   listFlags: () => rpc<AdminCheckin[]>('admin_list_flags'),
   async setCheckinStatus(id, status: CheckinStatus, reason) {

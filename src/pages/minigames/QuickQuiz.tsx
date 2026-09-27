@@ -29,6 +29,7 @@ export function QuickQuiz() {
         <QuizGame
           questions={cfg.questions}
           promptClass={isRebus ? 'text-[44px]' : 'text-title'}
+          seconds={10}
           onComplete={(correct) => {
             api.submitMinigame(day).catch(() => {});
             setNote(`Bạn trả lời đúng ${correct}/${cfg.questions.length} câu. ${cfg.note}`);

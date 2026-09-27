@@ -30,11 +30,11 @@ export function GameShell({ act = 1, title, intro, hud, footer, children }: {
   act?: 1 | 2 | 3; title: string; intro?: string; hud?: ReactNode; footer?: ReactNode; children: ReactNode;
 }) {
   return (
-    <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-4.75rem)] flex-col overflow-hidden px-4 pb-4 pt-3 sm:mx-auto sm:my-3 sm:min-h-[calc(100dvh-7.5rem)] sm:max-w-md sm:rounded-[28px] sm:border sm:border-white/60 sm:px-5 sm:shadow-pop`}>
+    <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col">
+      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">
         <header className="mb-3 flex items-center gap-3">
-          <Link to="/" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface/85 text-muted shadow-soft backdrop-blur transition-transform active:scale-90">
+          <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface/85 text-muted shadow-soft backdrop-blur transition-transform active:scale-90">
             <Icon name="x" size={20} />
           </Link>
           <div className="min-w-0 flex-1">

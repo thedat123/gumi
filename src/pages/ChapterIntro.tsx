@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Banner } from '../components/Banner';
 import { DialogueLine } from '../components/Dialogue';
@@ -5,6 +6,7 @@ import { Gumi } from '../components/Gumi';
 import { Icon } from '../components/Icon';
 import { RegionScene } from '../components/RegionScene';
 import { vi } from '../content/vi';
+import { useNarration } from '../lib/narration';
 import { actOfDay, isMilestone, TOTAL_DAYS } from '../lib/scoring';
 
 /** Nhịp MỞ CHƯƠNG: kể chuyện Gumi/Boss Đường rồi dẫn vào nhiệm vụ thật (/mission/:day). */
@@ -13,12 +15,20 @@ export function ChapterIntro() {
   const day = Number(dayParam);
   const chapter = vi.story.chapters[day - 1];
   const m = vi.missions[day - 1];
+  const { speak, stop, speaking, supported } = useNarration();
+
+  // Tự đọc cốt truyện khi vừa vào chương (điều hướng tới đây tính là một cú bấm → trình duyệt cho phát tiếng). Dừng khi rời trang.
+  useEffect(() => {
+    if (!chapter) return;
+    const id = setTimeout(() => speak(chapter.intro), 350);
+    return () => { clearTimeout(id); stop(); };
+  }, [day, chapter, speak, stop]);
 
   if (!chapter || !m || day < 1 || day > TOTAL_DAYS) {
     return (
       <div className="flex flex-col items-center gap-3 pt-10 text-center">
         <Banner kind="error">Không có chương này.</Banner>
-        <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.story.ui.backToMap}</Link>
+        <Link to="/journey" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.story.ui.backToMap}</Link>
       </div>
     );
   }
@@ -28,7 +38,7 @@ export function ChapterIntro() {
   const big = isMilestone(day);
 
   return (
-    <div className="relative -mx-4 -mt-1 flex min-h-[calc(100dvh-4.75rem)] flex-col overflow-hidden px-4 pb-4 pt-3 lg:-mx-8 lg:px-8">
+    <div className="relative -mx-4 -mb-6 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
       <RegionScene act={act} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">
@@ -39,7 +49,7 @@ export function ChapterIntro() {
             <span className="text-caption font-bold text-primary">{vi.story.ui.chapterOf(day)}</span>
             <span className="text-caption font-semibold text-text">· {a.name}</span>
           </span>
-          <Link to="/" className="inline-flex items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:text-primary">
+          <Link to="/journey" className="inline-flex items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:text-primary">
             <Icon name="x" size={15} /> {vi.story.ui.backToMap}
           </Link>
         </div>
@@ -55,6 +65,19 @@ export function ChapterIntro() {
 
         {/* Panel thoại + CTA (kiểu visual-novel) */}
         <div className="beat rounded-card border border-white/60 bg-surface/92 p-4 shadow-pop backdrop-blur-md">
+          {supported && (
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => (speaking ? stop() : speak(chapter.intro))}
+                aria-pressed={speaking}
+                className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-caption font-bold shadow-soft transition-colors ${speaking ? 'bg-primary text-on-primary' : 'bg-surface text-primary ring-1 ring-primary/30 hover:bg-primary/5'}`}
+              >
+                <Icon name="volume" size={15} filled />
+                {speaking ? vi.story.ui.narrateStop : vi.story.ui.narrate}
+              </button>
+            </div>
+          )}
           <div className="flex flex-col gap-3">
             {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
           </div>

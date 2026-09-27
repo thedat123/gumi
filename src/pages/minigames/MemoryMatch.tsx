@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { api } from '../../api';
 import { Banner } from '../../components/Banner';
 import { Confetti, GameShell, GameStat } from '../../components/GameShell';
+import { Gumi } from '../../components/Gumi';
 import { Icon } from '../../components/Icon';
 import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
 import { vi } from '../../content/vi';
 import { playSfx } from '../../lib/sfx';
+
+const TIME_LIMIT = 30; // brief: hoàn thành trong 30 giây
 
 interface MCard { id: number; pairId: number; text: string }
 
@@ -31,12 +34,35 @@ export function MemoryMatch() {
   const [moves, setMoves] = useState(0);
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [failed, setFailed] = useState(false);
+
+  // Đồng hồ đếm ngược 30 giây. Hết giờ khi chưa ghép đủ → THUA, khoá màn, tiêu ngày (không cho thử lại).
+  useEffect(() => {
+    if (done || failed || matched.length >= cfg.pairs.length) return;
+    if (timeLeft <= 0) {
+      setFailed(true);
+      playSfx('wrong');
+      api.submitMinigame(day).catch(() => {});
+      return;
+    }
+    const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timeLeft, done, failed, day, matched.length, cfg.pairs.length]);
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
   if (done) return <MissionDone day={day} points={m.points} note={`Ghép xong trong ${moves} lượt lật! ${cfg.success}`} />;
+  if (failed) return (
+    <div className="flex flex-col items-center gap-3 pt-6 text-center">
+      <Gumi state="hap_hoi" size={140} />
+      <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
+      <p className="max-w-xs text-small text-muted">{vi.minigames.common.timeUpMemory(matched.length, cfg.pairs.length)}</p>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+    </div>
+  );
 
   const flip = (i: number) => {
-    if (busy || flipped.includes(i) || matched.includes(cards[i]!.pairId)) return;
+    if (busy || failed || flipped.includes(i) || matched.includes(cards[i]!.pairId)) return;
     playSfx('pop');
     const next = [...flipped, i];
     setFlipped(next);
@@ -60,7 +86,7 @@ export function MemoryMatch() {
 
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
-      hud={<GameStat icon="sparkle" value={`${moves}`} tone="accent" />}
+      hud={<><GameStat icon="clock" value={`${timeLeft}s`} tone={timeLeft <= 5 ? 'accent' : 'info'} /><GameStat icon="sparkle" value={`${moves}`} tone="accent" /></>}
       footer={<p className="text-center text-caption font-semibold text-muted">Đã ghép {matched.length}/{cfg.pairs.length} cặp</p>}>
       <div className="grid flex-1 grid-cols-2 content-center gap-3">
         {cards.map((c, i) => {

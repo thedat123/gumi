@@ -26,6 +26,23 @@
 @keyframes npc-fall { 0% { top: -6%; transform: rotate(0deg); } 100% { top: 108%; transform: rotate(220deg); } }
 /* Cá bơi trong bình (đổi hướng giữa chừng) */
 @keyframes npc-swim { 0% { transform: translateX(-7px) scaleX(1); } 48% { transform: translateX(7px) scaleX(1); } 50% { transform: translateX(7px) scaleX(-1); } 98% { transform: translateX(-7px) scaleX(-1); } 100% { transform: translateX(-7px) scaleX(1); } }
+
+/* ===== Bể cá LỚN: cá bơi qua lại + lật hướng tại chỗ, quẫy đuôi, nhấp nhô; rong đung đưa; bong bóng nổi ===== */
+.aq-fish { transform-box: fill-box; transform-origin: center; will-change: transform; }
+@keyframes aq-swim {
+  0%   { transform: translateX(0) scaleX(1); }
+  46%  { transform: translateX(var(--d, 70px)) scaleX(1); }
+  50%  { transform: translateX(var(--d, 70px)) scaleX(-1); }
+  96%  { transform: translateX(0) scaleX(-1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+.aq-tail { transform-box: fill-box; transform-origin: right center; animation: aq-wag 0.45s ease-in-out infinite; }
+@keyframes aq-wag { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(13deg); } }
+@keyframes aq-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.aq-sway { transform-box: fill-box; animation: aq-sway 3.4s ease-in-out infinite; }
+@keyframes aq-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.aq-bubble { animation: aq-bubble 2.6s ease-in infinite; }
+@keyframes aq-bubble { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 0.75; } 100% { transform: translateY(-42px) scale(1.1); opacity: 0; } }
 /* Bánh xe robot hút bụi */
 @keyframes npc-roll { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 

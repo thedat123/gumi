@@ -8,6 +8,8 @@ import {
   ApiError,
   type AdminApi,
   type AdminCheckin,
+  type AdminPlayer,
+  type AdminStats,
   type Api,
   type AuthApi,
   type CampaignState,
@@ -28,12 +30,29 @@ import {
 const KEY = 'ld_mock_v3';
 const START_LEVEL: SugarLevel = 100;
 const PASSES = 3;
+
+// Allowlist admin: CHỈ các email cấu hình ở VITE_ADMIN_EMAILS (ngăn cách dấu phẩy) mới được quyền admin.
+// Không đặt biến → không có admin (an toàn mặc định). So khớp chính xác, không phân biệt hoa/thường.
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+const isAdminEmail = (email: string): boolean => ADMIN_EMAILS.includes(email.trim().toLowerCase());
+
+// ⚙️ TÀI KHOẢN TEST CỐ ĐỊNH (chỉ ở mock/demo) — đăng nhập là MỞ HẾT: tự có hồ sơ (bỏ onboarding),
+// mọi ngày trên bản đồ bấm được, làm nhiệm vụ ngày nào cũng chạy, xem được mọi màn (kể cả Summary/Admin).
+const TEST_ACCOUNTS: Record<string, { password: string; admin?: boolean; name: string; avatar: string }> = {
+  'test@gumi.vn': { password: 'test1234', name: 'Người Test', avatar: '🐱' },
+  'test2@gumi.vn': { password: 'test1234', name: 'Người Test 2', avatar: '🐰' },
+  'admin@gumi.vn': { password: 'test1234', admin: true, name: 'Admin Test', avatar: '🦊' },
+};
+const testAccount = (email: string) => TEST_ACCOUNTS[email.trim().toLowerCase()];
 // Ánh xạ ngày → loại nhiệm vụ cho hành trình 21 ngày (khớp vi.missions và MissionRouter).
 const LEVEL_DAYS = [1, 5, 15, 20]; // DRINK có chọn mức đường + dùng tính đường đã cắt
 const DRINK_DAYS = [1, 5, 10, 15, 20]; // ngày DRINK (đếm ly healthy)
 const SHARE_DAYS = [4, 8, 13]; // check-in ảnh, không chọn mức
 const PHOTO_DAYS = [...DRINK_DAYS, ...SHARE_DAYS]; // mọi ngày check-in ảnh
-const MINIGAME_DAYS = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19]; // GAME/KNOW/TRACKER (quiz Day2, wall Day21 tách riêng)
+const MINIGAME_DAYS = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19, 21]; // GAME/KNOW/TRACKER + 3 cửa ải boss (7,14,21 hoàn thành bằng submitMinigame). Quiz Day2 tách riêng.
 
 interface Persisted {
   session: Session | null;
@@ -69,6 +88,40 @@ const ADMIN_SEED: AdminCheckin[] = [
   { id: 'c5', user: 'Phương Linh', day: 3, status: 'pending', emoji: '☕️', flag: 'ảnh trùng ngày khác' },
   { id: 'c6', user: 'Đức Minh', day: 3, status: 'pending', emoji: '🥛', flag: 'nghi ngờ chỉnh sửa' },
 ];
+
+// Ngưỡng đạt chỉ tiêu nhận quà: hoàn thành từ 14/21 ngày trở lên (theo brief mục VI).
+const ELIGIBLE_MIN = 14;
+
+// Kho tên + avatar để dựng danh sách người chơi giả cho màn quản lý của admin.
+const NAME_POOL = [
+  'Mai Anh', 'Quang Huy', 'Bảo Ngọc', 'Thanh Tùng', 'Phương Linh', 'Đức Minh', 'Khánh Vy', 'Hoàng Nam', 'Ngọc Diệp', 'Gia Bảo',
+  'Tuấn Kiệt', 'Hà My', 'Minh Châu', 'Đăng Khoa', 'Thu Trang', 'Nhật Hào', 'Kim Oanh', 'Phú Quý', 'Diễm Quỳnh', 'Trọng Nghĩa',
+  'Lan Chi', 'Việt Anh', 'Hồng Nhung', 'Anh Tú', 'Bích Phương', 'Duy Khang', 'Cẩm Tú', 'Gia Hân', 'Hải Đăng', 'Yến Nhi',
+];
+const AVATAR_POOL = ['🐱', '🦊', '🐰', '🐻', '🐼', '🐯', '🐨', '🦁', '🐸', '🐷', '🐹', '🐮'];
+
+/** Sinh danh sách người chơi ổn định (không random) để thống kê nhất quán giữa các lần tải. */
+function genPlayers(count: number): AdminPlayer[] {
+  const list: AdminPlayer[] = [];
+  for (let i = 0; i < count; i++) {
+    // Phân bổ tiến độ đa dạng: một số về đích, một số đạt chỉ tiêu, phần còn lại đang chơi/bỏ giữa chừng.
+    const daysDone = Math.max(0, Math.min(TOTAL_DAYS, Math.round(((i * 37 + 11) % 25) - 2)));
+    const finished = daysDone >= TOTAL_DAYS;
+    const eligible = daysDone >= ELIGIBLE_MIN;
+    const usedPass = (i * 7) % 5 === 0;
+    const streak = Math.max(0, daysDone - ((i * 3) % 4));
+    const points = daysDone * 15 + (daysDone >= 5 ? 10 : 0) + (daysDone >= 10 ? 20 : 0) + (eligible ? 30 : 0) + (finished ? 50 : 0);
+    list.push({
+      id: `p${i + 1}`,
+      name: NAME_POOL[i % NAME_POOL.length]! + (i >= NAME_POOL.length ? ` ${Math.floor(i / NAME_POOL.length) + 1}` : ''),
+      avatar: AVATAR_POOL[i % AVATAR_POOL.length]!,
+      daysDone, points, streak, eligible, finished, usedPass,
+    });
+  }
+  return list.sort((a, b) => b.points - a.points);
+}
+
+const PLAYERS_SEED = genPlayers(78);
 
 function fresh(): Persisted {
   return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES };
@@ -118,9 +171,12 @@ export function createMockApi(): Api {
     return state.session;
   };
   const emitAuth = () => listeners.forEach((cb) => cb(state.session));
+  // Phiên hiện tại có phải tài khoản test không → dùng để MỞ HẾT gating.
+  const isTestSession = () => !!state.session && !!testAccount(state.session.email);
 
   const progress = () => ({
-    campaignDay: state.campaignDay,
+    // Tài khoản test: coi như đã tới ngày cuối → mọi nút trên bản đồ bấm được (ngày chưa làm hiện "missed" vẫn là Link).
+    campaignDay: isTestSession() ? TOTAL_DAYS : state.campaignDay,
     completed: new Set(state.completed),
     passed: new Set(state.passed),
     rejected: new Set(state.rejected),
@@ -149,7 +205,7 @@ export function createMockApi(): Api {
       const key = email.trim().toLowerCase();
       if (!emailRe.test(key)) throw new ApiError('wrong_password', 'Email không hợp lệ');
       if (state.users[key]) throw new ApiError('email_exists');
-      const role = key.startsWith('admin') ? 'admin' : 'player';
+      const role = isAdminEmail(key) ? 'admin' : 'player';
       const userId = uid();
       state.users[key] = { password, userId, role };
       state.session = { userId, email: key };
@@ -160,11 +216,28 @@ export function createMockApi(): Api {
     async signIn(email, password) {
       await delay(null, 400);
       const key = email.trim().toLowerCase();
+      // Tài khoản test cố định: mật khẩu riêng, tự cấp hồ sơ để mở hết màn (bỏ onboarding).
+      const t = testAccount(key);
+      if (t) {
+        if (password !== t.password) throw new ApiError('wrong_password');
+        const role = t.admin || isAdminEmail(key) ? 'admin' : 'player';
+        const userId = state.users[key]?.userId ?? uid();
+        state.users[key] = { password: t.password, userId, role };
+        state.session = { userId, email: key };
+        if (!state.profile || state.profile.id !== userId) {
+          state.profile = { id: userId, name: t.name, avatar: t.avatar, level: 100, drinksPerWeek: 7, role, sugarPassAvailable: true };
+        } else {
+          state.profile.role = role;
+        }
+        save();
+        emitAuth();
+        return state.session;
+      }
       const u = state.users[key];
       // Cho phép đăng nhập demo nhanh với mật khẩu gumi1234 nếu chưa từng đăng ký.
       if (!u) {
         if (password !== 'gumi1234') throw new ApiError('wrong_password');
-        const role = key.startsWith('admin') ? 'admin' : 'player';
+        const role = isAdminEmail(key) ? 'admin' : 'player';
         const userId = uid();
         state.users[key] = { password, userId, role };
         state.session = { userId, email: key };
@@ -179,7 +252,7 @@ export function createMockApi(): Api {
     async signInWithGoogle() {
       await delay(null, 500);
       const key = 'ban.gumi@gmail.com';
-      if (!state.users[key]) state.users[key] = { password: '', userId: uid(), role: 'player' };
+      if (!state.users[key]) state.users[key] = { password: '', userId: uid(), role: isAdminEmail(key) ? 'admin' : 'player' };
       state.session = { userId: state.users[key]!.userId, email: key };
       save();
       emitAuth();
@@ -191,9 +264,51 @@ export function createMockApi(): Api {
       save();
       emitAuth();
     },
+    async resetPassword(email) {
+      await delay(null, 400);
+      const key = email.trim().toLowerCase();
+      if (!emailRe.test(key)) throw new ApiError('wrong_password', 'Email không hợp lệ');
+      // Mock: luôn coi như đã gửi mail (không lộ email có tồn tại hay không). Bản thật gọi resetPasswordForEmail.
+    },
+    async updatePassword(newPassword) {
+      const s = requireSession();
+      await delay(null, 300);
+      if (newPassword.length < 8) throw new ApiError('wrong_password', 'Mật khẩu quá ngắn');
+      const u = state.users[s.email];
+      if (u) u.password = newPassword;
+      save();
+    },
+    async changePassword(currentPassword, newPassword) {
+      const s = requireSession();
+      await delay(null, 400);
+      if (newPassword.length < 8) throw new ApiError('wrong_password', 'Mật khẩu quá ngắn');
+      const u = state.users[s.email];
+      // Xác thực lại mật khẩu hiện tại (tài khoản đăng nhập Google mock có password rỗng → bỏ qua bước này).
+      if (u && u.password && u.password !== currentPassword) throw new ApiError('wrong_password');
+      if (u) u.password = newPassword;
+      save();
+    },
   };
 
   const admin: AdminApi = {
+    async getStats(): Promise<AdminStats> {
+      requireSession();
+      if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
+      const players = PLAYERS_SEED;
+      const total = players.length;
+      const sumPoints = players.reduce((s, p) => s + p.points, 0);
+      const sumDays = players.reduce((s, p) => s + p.daysDone, 0);
+      return delay({
+        totalPlayers: total,
+        activePlayers: players.filter((p) => p.daysDone > 0 && !p.finished).length,
+        eligibleCount: players.filter((p) => p.eligible).length,
+        finishedCount: players.filter((p) => p.finished).length,
+        avgPoints: total ? Math.round(sumPoints / total) : 0,
+        avgDaysDone: total ? Math.round((sumDays / total) * 10) / 10 : 0,
+        pendingCheckins: ADMIN_SEED.filter((c) => c.status === 'pending').length,
+        players,
+      });
+    },
     async listCheckins(day) {
       requireSession();
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
@@ -240,19 +355,20 @@ export function createMockApi(): Api {
     },
 
     async getCampaignState(): Promise<CampaignState> {
-      return delay({ phase: phaseOf(), day: Math.min(state.campaignDay, TOTAL_DAYS), startDate: '2026-01-01' });
+      const testing = isTestSession();
+      return delay({ phase: testing ? 'running' : phaseOf(), day: testing ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS), startDate: '2026-01-01' });
     },
 
     async getJourney(): Promise<Journey> {
       requireSession();
       const p = progress();
       const days = computeDays(p);
-      const phase = phaseOf();
+      const phase = isTestSession() ? 'running' : phaseOf();
       const points = totalPoints(p, days);
       const rejectedDay = state.rejected[0];
       return delay({
         phase,
-        day: Math.min(state.campaignDay, TOTAL_DAYS),
+        day: isTestSession() ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS),
         days,
         totalPoints: points,
         streak: longestStreak(days),
@@ -283,10 +399,11 @@ export function createMockApi(): Api {
     async submitCheckin(day, level, fileName): Promise<CheckinResult> {
       requireSession();
       await delay(null, 700);
+      const testing = isTestSession();
       if (!fileName) throw new ApiError('photo_invalid');
-      if (day !== state.campaignDay) throw new ApiError('not_today');
+      if (!testing && day !== state.campaignDay) throw new ApiError('not_today');
       if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
-      if (state.completed.includes(day)) throw new ApiError('already_done');
+      if (!testing && state.completed.includes(day)) throw new ApiError('already_done');
       if (LEVEL_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
       if (LEVEL_DAYS.includes(day)) state.levels[day] = level;
       advance(day);
@@ -354,7 +471,7 @@ export function createMockApi(): Api {
       requireSession();
       const p = progress();
       const days = computeDays(p);
-      const eligible = days[TOTAL_DAYS - 1] === 'checked';
+      const eligible = isTestSession() || days[TOTAL_DAYS - 1] === 'checked';
       const grams = sugarCut(state.levels);
       const lowest = (Object.values(state.levels).sort((a, b) => a - b)[0] ?? START_LEVEL) as SugarLevel;
       return delay({

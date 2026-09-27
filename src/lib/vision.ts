@@ -36,16 +36,25 @@ const OK_THRESHOLD = 0.5; // tổng xác suất các đề "đồ uống" phải
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Classifier = (input: string, labels: string[]) => Promise<any>;
+const build = (task: string, model: string, opts: Record<string, unknown>) =>
+  (pipeline as unknown as (t: string, m: string, o?: Record<string, unknown>) => Promise<Classifier>)(task, model, opts);
+
 let clsP: Promise<Classifier> | null = null;
 async function classifier(): Promise<Classifier> {
   if (!clsP) {
     // CLIP ViT-B/32 (OpenAI) — bản Xenova cho web, tải 1 lần rồi cache trong trình duyệt.
-    clsP = (pipeline as unknown as (task: string, model: string, opts?: Record<string, unknown>) => Promise<Classifier>)(
-      'zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' },
-    );
+    // Ưu tiên WebGPU (nhanh gấp nhiều lần CPU/wasm) → suy diễn dưới ~1s; máy không có GPU thì rơi về wasm q8.
+    const hasGPU = typeof navigator !== 'undefined' && 'gpu' in navigator;
+    clsP = (hasGPU
+      ? build('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { device: 'webgpu', dtype: 'fp16' })
+          .catch(() => build('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { device: 'wasm', dtype: 'q8' }))
+      : build('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { device: 'wasm', dtype: 'q8' }));
   }
   return clsP;
 }
+
+/** Tải/khởi động model TRƯỚC (gọi khi mở màn check-in) để lúc chụp ảnh nhận diện chạy ngay, dưới ~2s. */
+export function warm(): void { classifier().catch(() => { clsP = null; }); }
 
 /** Tải ảnh từ File/Blob thành <img> để đưa vào model. */
 export function fileToImage(file: Blob): Promise<HTMLImageElement> {

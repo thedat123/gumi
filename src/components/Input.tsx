@@ -14,7 +14,7 @@ export function Input({ label, error, hint, className = '', ...rest }: Props) {
         {...rest}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? msgId : undefined}
-        className={`min-h-11 rounded-control border-2 bg-surface px-3 text-body ${error ? 'border-danger' : 'border-border-strong'} ${className}`}
+        className={`min-h-11 rounded-control border-2 bg-surface px-3 text-body outline-none transition-shadow ${error ? 'border-danger focus:ring-4 focus:ring-danger/15' : 'border-border-strong focus:border-primary focus:ring-4 focus:ring-primary/15'} ${className}`}
       />
       {(error || hint) && (
         <p id={msgId} className={`text-caption ${error ? 'text-danger' : 'text-muted'}`}>{error ? `⚠ ${error}` : hint}</p>

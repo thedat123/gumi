@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
+import { InstallButton } from './InstallButton';
 import { useSession } from '../app/session';
 
 /**
@@ -39,26 +40,29 @@ export function AppShell() {
             <span aria-hidden="true" className="grad-brand flex h-9 w-9 items-center justify-center rounded-[11px] text-body shadow-pop ring-2 ring-surface">🐱</span>
             <span className="text-gradient text-body font-extrabold tracking-tight sm:text-title">{vi.app.name}</span>
           </NavLink>
-          {session ? (
-            <button
-              onClick={() => signOut()}
-              aria-label={vi.common.logout}
-              className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-border bg-surface/80 px-3.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:border-danger/40 hover:text-danger active:scale-95"
-            >
-              <Icon name="logout" size={15} strokeWidth={2} />
-              <span className="hidden sm:inline">{vi.common.logout}</span>
-            </button>
-          ) : (
-            <span className="flex items-center gap-1.5">
-              {pathname !== '/login' && <NavLink to="/login" className={`h-9 items-center whitespace-nowrap rounded-control px-3 text-small font-semibold text-primary transition-colors hover:bg-primary/5 ${pathname !== '/signup' ? 'hidden sm:inline-flex' : 'inline-flex'}`}>{vi.auth.login}</NavLink>}
-              {pathname !== '/signup' && <NavLink to="/signup" className="inline-flex h-9 items-center whitespace-nowrap rounded-control bg-primary px-3.5 text-small font-semibold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-95">{vi.signup.title}</NavLink>}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <InstallButton />
+            {session ? (
+              <button
+                onClick={() => signOut()}
+                aria-label={vi.common.logout}
+                className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-border bg-surface/80 px-3.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:border-danger/40 hover:text-danger active:scale-95"
+              >
+                <Icon name="logout" size={15} strokeWidth={2} />
+                <span className="hidden sm:inline">{vi.common.logout}</span>
+              </button>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                {pathname !== '/login' && <NavLink to="/login" className={`h-9 items-center whitespace-nowrap rounded-control px-3 text-small font-semibold text-primary transition-colors hover:bg-primary/5 ${pathname !== '/signup' ? 'hidden sm:inline-flex' : 'inline-flex'}`}>{vi.auth.login}</NavLink>}
+                {pathname !== '/signup' && <NavLink to="/signup" className="inline-flex h-9 items-center whitespace-nowrap rounded-control bg-primary px-3.5 text-small font-semibold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-95">{vi.signup.title}</NavLink>}
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className={`flex-1 ${isRoom ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
-        <div key={pathname} className={`mx-auto w-full ${immersive ? '' : 'page-in'} ${isRoom || isChapter ? 'max-w-none' : isMission ? 'max-w-md' : isJourney ? 'max-w-3xl' : !session ? 'max-w-3xl' : 'max-w-md'}`}>
+      <main className={`flex-1 ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
+        <div key={pathname} className={`mx-auto w-full ${immersive || isJourney ? '' : 'page-in'} ${isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-md'}`}>
           <Outlet />
         </div>
       </main>

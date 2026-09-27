@@ -1,0 +1,19 @@
+# Cloudflare Pages — quy tắc cache. Asset có hash tên → cache vĩnh viễn;
+# HTML/service worker → luôn kiểm tra mới để người chơi nhận bản cập nhật ngay.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/models/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/index.html
+  Cache-Control: no-cache
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache

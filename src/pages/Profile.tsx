@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { vi } from '../content/vi';
+import { errorCode } from '../lib/errors';
 import { useSession } from '../app/session';
 
 const AVATARS = ['🐱', '🦊', '🐰', '🐻', '🐼', '🐯', '🐨', '🦁'];
 
-/** S16 — Hồ sơ: đổi tên, avatar, đăng xuất. */
+/** S16 — Hồ sơ: đổi tên, avatar, đổi mật khẩu, đăng xuất. */
 export function Profile() {
   const nav = useNavigate();
   const { profile, session, refreshProfile, signOut } = useSession();
@@ -50,7 +52,56 @@ export function Profile() {
       </fieldset>
 
       <Button onClick={save} loading={busy} disabled={!nameOk} block>{vi.profile.save}</Button>
+
+      <ChangePassword />
+
       <Button variant="secondary" onClick={async () => { await signOut(); nav('/welcome'); }} block>{vi.profile.logout}</Button>
     </div>
+  );
+}
+
+/** Đổi mật khẩu khi đang đăng nhập: xác thực mật khẩu hiện tại rồi đặt mật khẩu mới. */
+function ChangePassword() {
+  const { changePassword } = useSession();
+  const t = vi.profile.password;
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [err, setErr] = useState<'wrongCurrent' | 'short' | 'mismatch' | 'error' | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [changed, setChanged] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (next.length < 8) return setErr('short');
+    if (next !== confirm) return setErr('mismatch');
+    setErr(null);
+    setBusy(true);
+    try {
+      await changePassword(current, next);
+      setChanged(true);
+      setCurrent(''); setNext(''); setConfirm('');
+    } catch (e2) {
+      setErr(errorCode(e2) === 'wrong_password' ? 'wrongCurrent' : 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <form onSubmit={submit} className="flex flex-col gap-3" noValidate>
+        <div>
+          <h2 className="font-semibold">{t.title}</h2>
+          <p className="mt-0.5 text-caption text-muted">{t.hint}</p>
+        </div>
+        {changed && <Banner kind="success">{t.changed}</Banner>}
+        <Input label={t.current} type="password" autoComplete="current-password" value={current} onChange={(e) => { setCurrent(e.target.value); setChanged(false); }} error={err === 'wrongCurrent' ? t.wrongCurrent : undefined} />
+        <Input label={t.next} type="password" autoComplete="new-password" value={next} onChange={(e) => { setNext(e.target.value); setChanged(false); }} error={err === 'short' ? t.short : undefined} />
+        <Input label={t.confirm} type="password" autoComplete="new-password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setChanged(false); }} error={err === 'mismatch' ? t.mismatch : undefined} />
+        {err === 'error' && <Banner kind="error">{t.error}</Banner>}
+        <Button type="submit" loading={busy} disabled={!current || !next || !confirm} block>{t.submit}</Button>
+      </form>
+    </Card>
   );
 }

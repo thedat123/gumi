@@ -39,9 +39,12 @@ const P3: Record<1 | 2 | 3, {
   wall: string; wallTop: string; floor: string; floorLine: string; ceiling: number; rug: number; rugRim: number;
   amb: number; hemi: number; lamp: number; bg: number; leaf: number[]; wood: number;
 }> = {
-  1: { wall: '#EAD3C6', wallTop: '#F6E7DE', floor: '#D8B084', floorLine: '#B07C4E', ceiling: 0xFBF1EA, rug: 0xE6B6C1, rugRim: 0xCf98a6, amb: 0xFFEAD8, hemi: 0xFFF3E4, lamp: 0xFFC873, bg: 0xF3E1D6, leaf: [0x5AA867, 0x74BC7C, 0x468C54], wood: 0xB98A5E },
-  2: { wall: '#A7BCA1', wallTop: '#C2D2BC', floor: '#C0946A', floorLine: '#835833', ceiling: 0xCBDAC6, rug: 0xE0BE93, rugRim: 0xC29a6b, amb: 0xF0DCBB, hemi: 0xF3DEBB, lamp: 0xFFB25A, bg: 0x3B3160, leaf: [0x5FA870, 0x7CBE86, 0x4C8C5C], wood: 0xA9784E },
-  3: { wall: '#CBDBE8', wallTop: '#E6EFF6', floor: '#C6AE91', floorLine: '#9C8168', ceiling: 0xEAF1F8, rug: 0xC7E1EE, rugRim: 0xA9c7d6, amb: 0xE1ECF6, hemi: 0xEDF4FC, lamp: 0xFFE1A0, bg: 0xE6EFF6, leaf: [0x6FB6A0, 0x8CCBB6, 0x59A088], wood: 0xB49a7e },
+  // Hồi 1 — kem ấm · gỗ nhạt · sage (pastel, nhã)
+  1: { wall: '#E7DFD2', wallTop: '#F6F0E7', floor: '#C6A47C', floorLine: '#9E7A52', ceiling: 0xFBF5EE, rug: 0xE1D7C6, rugRim: 0xCBBAA3, amb: 0xFFEEDF, hemi: 0xFFF5EA, lamp: 0xFFCE86, bg: 0xF4E6DB, leaf: [0x6E9E79, 0x88B591, 0x557E62], wood: 0x8A6A47 },
+  // Hồi 2 — greige xanh nhã · gỗ óc chó ấm
+  2: { wall: '#BFCBB8', wallTop: '#D8E0D2', floor: '#C0A073', floorLine: '#8E6E48', ceiling: 0xD5E0CF, rug: 0xDCD1BF, rugRim: 0xC4B399, amb: 0xF2E2C6, hemi: 0xF4E4C6, lamp: 0xFFBE6A, bg: 0x3E3663, leaf: [0x6B9E78, 0x86B78E, 0x547E60], wood: 0x7C5A3C },
+  // Hồi 3 — xanh bạc · marble sáng (lạnh nhã)
+  3: { wall: '#D6E0E9', wallTop: '#EDF3F9', floor: '#CBB89A', floorLine: '#A48D72', ceiling: 0xEFF5FB, rug: 0xDBE3E9, rugRim: 0xBECDD8, amb: 0xE6EFF7, hemi: 0xEFF5FC, lamp: 0xFFE6AE, bg: 0xE9F1F8, leaf: [0x77B0A2, 0x93C6BA, 0x62998C], wood: 0x9A886F },
 };
 
 /* ===== Thời tiết / thời điểm (mood) — được nội suy MƯỢT khi đổi ===== */
@@ -53,13 +56,13 @@ interface MoodP {
   glass: number; rainW: number; snowW: number; fogNear: number; fogFar: number;
 }
 const MOOD: Record<Weather, MoodP> = {
-  day:    { exposure: 1.02, ambI: 0.6,  ambTint: 0xFFFFFF, ambMix: 0.0,  sunI: 1.3,  sunColor: 0xFFF0D8, sunPos: [-5, 7, 4],     envI: 0.4,  bgMul: 1.0,  bloom: 0.12, lamp: 3.0, hemiMul: 1.0,  glass: 0x9a9a9a, rainW: 0, snowW: 0, fogNear: 12, fogFar: 24 },
-  cloudy: { exposure: 0.96, ambI: 0.66, ambTint: 0xAAB4BE, ambMix: 0.32, sunI: 0.5,  sunColor: 0xE6ECF0, sunPos: [-4, 7.5, 4],   envI: 0.44, bgMul: 0.9,  bloom: 0.08, lamp: 4.6, hemiMul: 0.9,  glass: 0x8c94a0, rainW: 0, snowW: 0, fogNear: 11, fogFar: 22 },
-  sunset: { exposure: 1.0,  ambI: 0.52, ambTint: 0xE68A4A, ambMix: 0.4,  sunI: 1.15, sunColor: 0xFF9048, sunPos: [-6.5, 3.4, 4], envI: 0.32, bgMul: 0.82, bloom: 0.26, lamp: 6.4, hemiMul: 0.8,  glass: 0xC98A5A, rainW: 0, snowW: 0, fogNear: 11, fogFar: 22 },
-  rain:   { exposure: 0.9,  ambI: 0.58, ambTint: 0x5E6E7E, ambMix: 0.46, sunI: 0.22, sunColor: 0xBFCAD6, sunPos: [-3, 6, 4],     envI: 0.34, bgMul: 0.7,  bloom: 0.09, lamp: 6.8, hemiMul: 0.72, glass: 0x6E7A88, rainW: 1, snowW: 0, fogNear: 9,  fogFar: 20 },
-  snow:   { exposure: 1.04, ambI: 0.72, ambTint: 0xD6E2EE, ambMix: 0.4,  sunI: 0.5,  sunColor: 0xE8F0F8, sunPos: [-4, 6, 4],     envI: 0.42, bgMul: 0.92, bloom: 0.16, lamp: 5.5, hemiMul: 0.85, glass: 0xAEBECB, rainW: 0, snowW: 1, fogNear: 8,  fogFar: 19 },
-  fog:    { exposure: 0.95, ambI: 0.64, ambTint: 0xB6BCC2, ambMix: 0.5,  sunI: 0.35, sunColor: 0xCED4DA, sunPos: [-4, 6.5, 4],   envI: 0.36, bgMul: 0.86, bloom: 0.1,  lamp: 5.6, hemiMul: 0.8,  glass: 0xB8BEC4, rainW: 0, snowW: 0, fogNear: 3.5, fogFar: 13 },
-  night:  { exposure: 0.82, ambI: 0.4,  ambTint: 0x38386A, ambMix: 0.62, sunI: 0.16, sunColor: 0x8FA0D6, sunPos: [-3, 4, 4],     envI: 0.2,  bgMul: 0.48, bloom: 0.4,  lamp: 9.4, hemiMul: 0.6,  glass: 0x2E3A5C, rainW: 0, snowW: 0, fogNear: 12, fogFar: 24 },
+  day:    { exposure: 1.04, ambI: 0.84, ambTint: 0xFFFFFF, ambMix: 0.0,  sunI: 1.32, sunColor: 0xFFF3E0, sunPos: [-5, 7, 4],     envI: 0.52, bgMul: 1.04, bloom: 0.06, lamp: 2.8, hemiMul: 1.16, glass: 0x9a9a9a, rainW: 0, snowW: 0, fogNear: 13, fogFar: 26 },
+  cloudy: { exposure: 0.97, ambI: 0.68, ambTint: 0xAAB4BE, ambMix: 0.32, sunI: 0.5,  sunColor: 0xE6ECF0, sunPos: [-4, 7.5, 4],   envI: 0.44, bgMul: 0.9,  bloom: 0.05, lamp: 3.8, hemiMul: 0.92, glass: 0x8c94a0, rainW: 0, snowW: 0, fogNear: 11, fogFar: 22 },
+  sunset: { exposure: 0.99, ambI: 0.58, ambTint: 0xE68A4A, ambMix: 0.36, sunI: 1.05, sunColor: 0xFF9048, sunPos: [-6.5, 3.4, 4], envI: 0.32, bgMul: 0.82, bloom: 0.12, lamp: 4.6, hemiMul: 0.86, glass: 0xC98A5A, rainW: 0, snowW: 0, fogNear: 11, fogFar: 22 },
+  rain:   { exposure: 0.92, ambI: 0.6,  ambTint: 0x5E6E7E, ambMix: 0.44, sunI: 0.22, sunColor: 0xBFCAD6, sunPos: [-3, 6, 4],     envI: 0.34, bgMul: 0.7,  bloom: 0.06, lamp: 5.0, hemiMul: 0.76, glass: 0x6E7A88, rainW: 1, snowW: 0, fogNear: 9,  fogFar: 20 },
+  snow:   { exposure: 1.0,  ambI: 0.74, ambTint: 0xD6E2EE, ambMix: 0.38, sunI: 0.5,  sunColor: 0xE8F0F8, sunPos: [-4, 6, 4],     envI: 0.42, bgMul: 0.92, bloom: 0.09, lamp: 4.4, hemiMul: 0.88, glass: 0xAEBECB, rainW: 0, snowW: 1, fogNear: 8,  fogFar: 19 },
+  fog:    { exposure: 0.95, ambI: 0.66, ambTint: 0xB6BCC2, ambMix: 0.48, sunI: 0.35, sunColor: 0xCED4DA, sunPos: [-4, 6.5, 4],   envI: 0.36, bgMul: 0.86, bloom: 0.07, lamp: 4.6, hemiMul: 0.82, glass: 0xB8BEC4, rainW: 0, snowW: 0, fogNear: 3.5, fogFar: 13 },
+  night:  { exposure: 0.86, ambI: 0.48, ambTint: 0x38386A, ambMix: 0.58, sunI: 0.16, sunColor: 0x8FA0D6, sunPos: [-3, 4, 4],     envI: 0.22, bgMul: 0.5,  bloom: 0.18, lamp: 6.2, hemiMul: 0.64, glass: 0x2E3A5C, rainW: 0, snowW: 0, fogNear: 12, fogFar: 24 },
 };
 /** Không truyền weather → tự chọn theo GIỜ THẬT (sáng/chiều/tối). */
 function autoWeather(): Weather {
@@ -125,12 +128,43 @@ function skyTexture(w: Weather): THREE.Texture {
     case 'day': grad('#3E92D6', '#A6D8EA'); disc(190, 62, 26, '#FFF7D2', 'rgba(255,232,150,0.5)'); break;
     case 'cloudy': grad('#8C9AA8', '#C4CED8'); break;
     case 'sunset': grad('#F4A552', '#E27C93'); disc(120, 150, 30, '#FFEEC2', 'rgba(255,180,120,0.55)'); break;
-    case 'rain': grad('#5C6975', '#93A0AC'); break;
-    case 'snow': grad('#9DB2C4', '#DCE7EF'); break;
+    case 'rain': grad('#5C6975', '#93A0AC'); break;   // mưa rơi = lớp phủ ĐỘNG riêng (precipTexture)
+    case 'snow': grad('#9DB2C4', '#DCE7EF'); break;   // tuyết rơi = lớp phủ ĐỘNG riêng
     case 'fog': grad('#AEB6BE', '#CDD3D9'); break;
     case 'night': grad('#0A1030', '#243056'); disc(190, 58, 22, '#F6F3E0', 'rgba(235,235,205,0.28)'); break;
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+/** Màn hình TV "đang bật" — cảnh mèo Gumi ngồi ngắm hoàng hôn (kênh GUMI TV). Vẽ tay, độ nét cao. */
+function tvScreenTexture(): THREE.Texture {
+  const W = 768, H = 432; const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d')!;
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#FFD39A'); sky.addColorStop(0.5, '#FBA4B4'); sky.addColorStop(1, '#B98BC4');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  // mặt trời dịu (đĩa nhỏ + quầng mềm, không cháy)
+  const cx = W * 0.72, cy = H * 0.36;
+  const halo = g.createRadialGradient(cx, cy, 8, cx, cy, 150); halo.addColorStop(0, 'rgba(255,244,214,0.55)'); halo.addColorStop(1, 'rgba(255,244,214,0)');
+  g.fillStyle = halo; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#FFF1CE'; g.beginPath(); g.arc(cx, cy, 30, 0, 7); g.fill();
+  // dải đồi xếp lớp (hoàng hôn tím) — nét, không banding
+  const hill = (y: number, col: string, amp: number) => { g.fillStyle = col; g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(W * 0.3, y - amp, W * 0.7, y + amp, W, y - amp * 0.4); g.lineTo(W, H); g.lineTo(0, H); g.closePath(); g.fill(); };
+  hill(H * 0.66, '#C286AE', 26); hill(H * 0.78, '#9C5F8E', 22); hill(H * 0.9, '#7A4670', 18);
+  // mèo ngồi (bóng) nhìn về phía mặt trời — canh giữa
+  const mx = W * 0.42, my = H * 0.86; g.fillStyle = '#3A2838';
+  g.beginPath(); g.ellipse(mx, my, 58, 30, 0, 0, 7); g.fill();                                  // thân
+  g.beginPath(); g.arc(mx, my - 52, 33, 0, 7); g.fill();                                         // đầu
+  g.beginPath(); g.moveTo(mx - 22, my - 78); g.lineTo(mx - 30, my - 108); g.lineTo(mx - 8, my - 82); g.closePath(); g.fill();  // tai trái
+  g.beginPath(); g.moveTo(mx + 22, my - 78); g.lineTo(mx + 30, my - 108); g.lineTo(mx + 8, my - 82); g.closePath(); g.fill();  // tai phải
+  g.strokeStyle = '#3A2838'; g.lineWidth = 11; g.lineCap = 'round'; g.beginPath(); g.moveTo(mx + 52, my + 6); g.quadraticCurveTo(mx + 104, my - 20, mx + 92, my - 66); g.stroke(); // đuôi
+  // nhãn kênh Ở ĐÁY (tránh bị HUD phía trên che), có nền mờ cho dễ đọc
+  g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(0, H - 52, W, 52);
+  g.fillStyle = 'rgba(255,255,255,0.96)'; g.font = 'bold 30px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillText('GUMI TV', 22, H - 26);
+  g.fillStyle = '#FF6B81'; g.beginPath(); g.arc(W - 96, H - 26, 7, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = 'bold 22px system-ui, sans-serif'; g.fillText('LIVE', W - 82, H - 25);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 16; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+  return t;
 }
 
 function fabricBump(): THREE.Texture {
@@ -144,11 +178,166 @@ function fabricBump(): THREE.Texture {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); return t;
 }
 
+
+/** Đá MARBLE ĐẬM có vân — cho backsplash/mặt đá kiểu bếp nhà hàng 5 sao. */
+function marbleTexture(base: string, vein: string, gold = '#B79A5A'): THREE.Texture {
+  const S = 512; const c = document.createElement('canvas'); c.width = S; c.height = S; const g = c.getContext('2d')!;
+  const bg = g.createLinearGradient(0, 0, S, S); bg.addColorStop(0, base); bg.addColorStop(1, '#1A2024'); g.fillStyle = bg; g.fillRect(0, 0, S, S);
+  const vein_ = (col: string, n: number, w0: number, a: number) => {
+    g.strokeStyle = col; g.globalAlpha = a; g.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      let x = Math.random() * S, y = Math.random() * S; g.lineWidth = w0 * (0.4 + Math.random());
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 6; k++) { x += (Math.random() - 0.5) * 170; y += (Math.random() - 0.25) * 130; g.lineTo(x, y); }
+      g.stroke();
+    }
+  };
+  vein_(vein, 6, 4.5, 0.5); vein_(vein, 16, 1.4, 0.3); vein_(gold, 4, 1.8, 0.3);
+  g.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+
+/** Mặt tiền toà nhà buổi tối — ô cửa sổ sáng đèn ngẫu nhiên (skyline nhìn từ ban công). */
+function cityTexture(): THREE.Texture {
+  const S = 128; const c = document.createElement('canvas'); c.width = S; c.height = S; const g = c.getContext('2d')!;
+  g.fillStyle = '#232735'; g.fillRect(0, 0, S, S);
+  const cols = 5, rows = 7, pad = 9, gap = 6;
+  const ww = (S - pad * 2 - gap * (cols - 1)) / cols, wh = (S - pad * 2 - gap * (rows - 1)) / rows;
+  for (let r = 0; r < rows; r++) for (let cc = 0; cc < cols; cc++) {
+    g.fillStyle = Math.random() < 0.5 ? (Math.random() < 0.72 ? '#FFE29A' : '#BFE0FF') : '#2C3446';
+    g.fillRect(pad + cc * (ww + gap), pad + r * (wh + gap), ww, wh);
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+  return t;
+}
+
+/** Lớp mưa/tuyết TRONG SUỐT để phủ lên kính cửa sổ rồi CUỘN xuống → mưa/tuyết rơi chân thực nhìn qua cửa sổ. */
+function precipTexture(kind: 'rain' | 'snow'): THREE.Texture {
+  const S = 256; const c = document.createElement('canvas'); c.width = S; c.height = S; const g = c.getContext('2d')!;
+  g.fillStyle = '#000'; g.fillRect(0, 0, S, S); // nền ĐEN → additive blending cộng 0 (vô hình); chỉ vệt sáng hiện
+  if (kind === 'rain') {
+    // Vệt MẢNH, nhiều hạt → hạt nhỏ & dày như mưa thật (repeat lớn hơn khiến mỗi hạt nhìn càng nhỏ).
+    g.strokeStyle = 'rgba(220,236,255,0.85)'; g.lineWidth = 1.6; g.lineCap = 'round';
+    for (let i = 0; i < 42; i++) { const x = Math.random() * S, y = Math.random() * S, len = 22 + Math.random() * 26; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 5, y + len); g.stroke(); }
+  } else {
+    g.fillStyle = 'rgba(255,255,255,0.95)';
+    for (let i = 0; i < 48; i++) { const x = Math.random() * S, y = Math.random() * S, r = 1.1 + Math.random() * 1.7; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  // TẮT mipmap → vệt mưa/tuyết luôn SẮC, không bị mờ khi thu nhỏ trên cửa sổ nhỏ.
+  t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+  // repeat lớn → tiling dày, mỗi hạt nhìn nhỏ lại (mưa dày hơn tuyết).
+  t.repeat.set(kind === 'rain' ? 2 : 2, kind === 'rain' ? 3 : 2.2);
+  return t;
+}
+
+/* ===== TRANH NỔI TIẾNG — vẽ tay trên canvas (không cần tải ảnh, chạy offline). ===== */
+/** Đưa ảnh/canvas về khổ POWER-OF-TWO 512×512 rồi tạo texture có mipmap → thu nhỏ MỊN, hết nhiễu/rung
+ *  ở mọi máy (UV giữ tỉ lệ nên map lên khung đúng tỉ lệ vẫn KHÔNG méo). */
+function potTexture(src: CanvasImageSource, aniso = 8): THREE.Texture {
+  const pot = document.createElement('canvas'); pot.width = 512; pot.height = 512;
+  pot.getContext('2d')!.drawImage(src, 0, 0, 512, 512);
+  const t = new THREE.CanvasTexture(pot); t.colorSpace = THREE.SRGBColorSpace;
+  t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = aniso;
+  return t;
+}
+function texFromCanvas(c: HTMLCanvasElement): THREE.Texture { return potTexture(c); }
+export type Painting = 'mona' | 'wave' | 'starry';
+/** Trả canvas kèm tỉ lệ khung (w:h) để đặt khung tranh cho đúng dáng. */
+function paintingTexture(kind: Painting): { tex: THREE.Texture; ratio: number } {
+  if (kind === 'wave') {
+    // Sóng lừng ngoài khơi Kanagawa — Hokusai
+    const c = document.createElement('canvas'); c.width = 440; c.height = 300; const g = c.getContext('2d')!;
+    const sky = g.createLinearGradient(0, 0, 0, 300); sky.addColorStop(0, '#EFE4C7'); sky.addColorStop(1, '#E4D3AF');
+    g.fillStyle = sky; g.fillRect(0, 0, 440, 300);
+    g.fillStyle = '#5C7592'; g.beginPath(); g.moveTo(262, 150); g.lineTo(322, 214); g.lineTo(202, 214); g.closePath(); g.fill(); // núi Phú Sĩ
+    g.fillStyle = '#F4EFE4'; g.beginPath(); g.moveTo(262, 150); g.lineTo(284, 176); g.lineTo(272, 172); g.lineTo(262, 182); g.lineTo(252, 172); g.lineTo(240, 176); g.closePath(); g.fill();
+    g.fillStyle = '#254E82'; g.beginPath(); g.moveTo(0, 214); g.bezierCurveTo(130, 182, 320, 248, 440, 206); g.lineTo(440, 300); g.lineTo(0, 300); g.closePath(); g.fill();
+    g.fillStyle = '#12386A'; g.beginPath(); g.moveTo(0, 150); g.bezierCurveTo(70, 30, 170, 26, 208, 128); g.bezierCurveTo(224, 176, 158, 188, 150, 148); g.bezierCurveTo(146, 122, 176, 120, 180, 140); g.bezierCurveTo(128, 224, 44, 232, 0, 214); g.closePath(); g.fill();
+    g.fillStyle = '#3C6BA6'; g.beginPath(); g.moveTo(12, 162); g.bezierCurveTo(64, 66, 152, 66, 186, 132); g.bezierCurveTo(132, 198, 54, 206, 12, 194); g.closePath(); g.fill();
+    g.fillStyle = '#F6F1E5'; for (const [fx, fy, fr] of [[160, 58, 11], [182, 82, 9], [198, 110, 7], [128, 48, 10], [98, 54, 8], [70, 72, 7], [206, 138, 6]] as const) { g.beginPath(); g.arc(fx, fy, fr, 0, 7); g.fill(); }
+    g.strokeStyle = '#38311F'; g.lineWidth = 3; g.beginPath(); g.moveTo(214, 236); g.quadraticCurveTo(248, 252, 288, 236); g.stroke();
+    g.beginPath(); g.moveTo(300, 244); g.quadraticCurveTo(330, 258, 366, 244); g.stroke();
+    return { tex: texFromCanvas(c), ratio: 440 / 300 };
+  }
+  if (kind === 'starry') {
+    // Đêm đầy sao — Van Gogh
+    const c = document.createElement('canvas'); c.width = 420; c.height = 320; const g = c.getContext('2d')!;
+    const night = g.createLinearGradient(0, 0, 0, 320); night.addColorStop(0, '#12224E'); night.addColorStop(1, '#1E3164');
+    g.fillStyle = night; g.fillRect(0, 0, 420, 320);
+    g.lineWidth = 3; g.lineCap = 'round';
+    const swirl = (cx: number, cy: number, r0: number, turns: number, col: string) => { g.strokeStyle = col; g.beginPath(); for (let a = 0; a < turns * 6.28; a += 0.3) { const r = r0 + a * 3.4; const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.8; a === 0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); };
+    swirl(150, 120, 6, 2.4, '#6E8AC8'); swirl(150, 120, 3, 2.0, '#AFC3E8'); swirl(270, 96, 5, 1.8, '#5A79B6');
+    for (let i = 0; i < 9; i++) { const x = 20 + i * 46 + (i % 2) * 14, y = 40 + (i % 3) * 26; const gr = g.createRadialGradient(x, y, 0, x, y, 16); gr.addColorStop(0, '#FCE38A'); gr.addColorStop(0.4, 'rgba(250,220,120,0.6)'); gr.addColorStop(1, 'rgba(250,220,120,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, 16, 0, 7); g.fill(); g.fillStyle = '#FFF4C2'; g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); }
+    const mg = g.createRadialGradient(360, 58, 4, 360, 58, 34); mg.addColorStop(0, '#FFEC9E'); mg.addColorStop(0.5, 'rgba(255,224,130,0.7)'); mg.addColorStop(1, 'rgba(255,224,130,0)'); g.fillStyle = mg; g.beginPath(); g.arc(360, 58, 34, 0, 7); g.fill(); // trăng
+    g.fillStyle = '#0C1A16'; g.beginPath(); g.moveTo(56, 320); g.bezierCurveTo(20, 210, 60, 120, 46, 40); g.bezierCurveTo(92, 120, 96, 220, 92, 320); g.closePath(); g.fill(); // cây bách
+    g.fillStyle = '#243A4A'; g.beginPath(); g.moveTo(0, 320); g.lineTo(0, 258); g.quadraticCurveTo(210, 232, 420, 262); g.lineTo(420, 320); g.closePath(); g.fill(); // đồi
+    g.fillStyle = '#182A38'; for (const [hx, hw] of [[150, 40], [200, 30], [250, 46], [312, 34]] as const) { g.fillRect(hx, 272, hw, 30); g.beginPath(); g.moveTo(hx - 3, 272); g.lineTo(hx + hw / 2, 258); g.lineTo(hx + hw + 3, 272); g.closePath(); g.fill(); }
+    g.fillStyle = '#20344a'; g.beginPath(); g.moveTo(268, 272); g.lineTo(276, 236); g.lineTo(284, 272); g.closePath(); g.fill(); // gác chuông
+    g.fillStyle = '#FFD873'; for (const [wx, wy] of [[160, 284], [214, 286], [262, 284], [322, 286], [352, 288]] as const) g.fillRect(wx, wy, 5, 7);
+    return { tex: texFromCanvas(c), ratio: 420 / 320 };
+  }
+  // Mona Lisa — Da Vinci
+  const c = document.createElement('canvas'); c.width = 300; c.height = 400; const g = c.getContext('2d')!;
+  const bg = g.createLinearGradient(0, 0, 0, 400); bg.addColorStop(0, '#6C6440'); bg.addColorStop(0.5, '#4A4026'); bg.addColorStop(1, '#241B10');
+  g.fillStyle = bg; g.fillRect(0, 0, 300, 400);
+  g.fillStyle = 'rgba(120,140,120,0.5)'; g.fillRect(0, 120, 78, 70); g.fillStyle = 'rgba(150,165,150,0.45)'; g.fillRect(224, 96, 76, 66); // phong cảnh mờ hai bên
+  g.strokeStyle = 'rgba(150,150,120,0.4)'; g.lineWidth = 3; g.beginPath(); g.moveTo(232, 150); g.quadraticCurveTo(268, 138, 300, 150); g.stroke();
+  g.fillStyle = '#2A2116'; g.beginPath(); g.moveTo(150, 214); g.bezierCurveTo(40, 250, 10, 340, 20, 400); g.lineTo(280, 400); g.bezierCurveTo(290, 340, 260, 250, 150, 214); g.closePath(); g.fill(); // áo choàng
+  g.fillStyle = '#241A11'; g.beginPath(); g.ellipse(150, 300, 92, 70, 0, Math.PI, 0, true); g.fill();
+  g.fillStyle = '#E8C79E'; g.beginPath(); g.ellipse(150, 300, 30, 20, 0.5, 0, 7); g.fill(); g.beginPath(); g.ellipse(176, 306, 26, 17, 0.3, 0, 7); g.fill(); // đôi tay đan
+  g.fillStyle = '#28211A'; g.beginPath(); g.ellipse(150, 150, 84, 96, 0, 0, 7); g.fill(); // tóc/khăn
+  g.fillStyle = '#E6C199'; g.beginPath(); g.ellipse(150, 168, 46, 60, 0, 0, 7); g.fill(); // mặt
+  g.fillStyle = '#DDB88C'; g.fillRect(126, 210, 48, 34); // cổ
+  g.fillStyle = '#3A2E22'; g.beginPath(); g.ellipse(132, 160, 8, 4, 0, 0, 7); g.fill(); g.beginPath(); g.ellipse(168, 160, 8, 4, 0, 0, 7); g.fill(); // mắt
+  g.fillStyle = '#241B12'; g.beginPath(); g.arc(132, 160, 2.4, 0, 7); g.fill(); g.beginPath(); g.arc(168, 160, 2.4, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(90,66,44,0.6)'; g.lineWidth = 2; g.beginPath(); g.moveTo(150, 162); g.quadraticCurveTo(156, 180, 149, 186); g.stroke(); // mũi
+  g.beginPath(); g.moveTo(136, 198); g.quadraticCurveTo(150, 206, 164, 197); g.stroke(); // nụ cười
+  g.fillStyle = 'rgba(210,150,110,0.25)'; g.beginPath(); g.arc(120, 182, 12, 0, 7); g.fill(); g.beginPath(); g.arc(180, 182, 12, 0, 7); g.fill();
+  g.fillStyle = 'rgba(120,80,30,0.14)'; g.fillRect(0, 0, 300, 400); // lớp vecni ám vàng
+  return { tex: texFromCanvas(c), ratio: 300 / 400 };
+}
+/** Biển tên đồng khắc chữ (kiểu bảo tàng) đặt dưới khung tranh. */
+function plateTexture(text: string): THREE.Texture {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 48; const g = c.getContext('2d')!;
+  const gr = g.createLinearGradient(0, 0, 0, 48); gr.addColorStop(0, '#E9C877'); gr.addColorStop(0.5, '#B8912F'); gr.addColorStop(1, '#7C5E1C');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 48);
+  g.fillStyle = 'rgba(60,40,10,0.9)'; g.font = 'bold 22px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, 128, 26);
+  return texFromCanvas(c);
+}
+
+/* Ảnh tranh THẬT lấy trực tiếp trên mạng (Wikimedia Commons, có CORS). Special:FilePath tự trỏ tới file hiện hành. */
+const PAINTING_URL: Record<Painting, string> = {
+  mona: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
+  wave: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/640px-Tsunami_by_hokusai_19th_century.jpg',
+  starry: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/640px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+};
+const webPaintingCache = new Map<Painting, Promise<THREE.Texture>>(); // dùng lại giữa các lần dựng phòng; KHÔNG dispose (chỉ 3 ảnh)
+function loadWebPainting(kind: Painting): Promise<THREE.Texture> {
+  let p = webPaintingCache.get(kind);
+  if (!p) {
+    // Tải ảnh THẬT → vẽ vào canvas POWER-OF-TWO 512 → texture mipmap → thu nhỏ MỊN, hết nhiễu hoàn toàn.
+    p = new Promise<THREE.Texture>((res, rej) => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => { try { res(potTexture(img, 16)); } catch (e) { rej(e); } };
+      img.onerror = rej;
+      img.src = PAINTING_URL[kind];
+    });
+    webPaintingCache.set(kind, p);
+  }
+  return p;
+}
+
 /** Bối cảnh phòng 3D — dựng MỘT LẦN, mood (ngày/đêm/thời tiết) đổi MƯỢT bằng nội suy trong vòng lặp. */
-export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 | 2 | 3; variant?: RoomVariant; weather?: Weather }) {
+export function RoomScene3D({ act = 1, variant = 'living', weather, lights = true }: { act?: 1 | 2 | 3; variant?: RoomVariant; weather?: Weather; lights?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const weatherRef = useRef<Weather>(weather ?? autoWeather());
   useEffect(() => { weatherRef.current = weather ?? autoWeather(); }, [weather]);
+  const lightsRef = useRef(lights);
+  useEffect(() => { lightsRef.current = lights; }, [lights]);
 
   useEffect(() => {
     const el = host.current;
@@ -222,15 +411,18 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
 
     // ===== Ánh sáng (giữ tham chiếu để nội suy) =====
     const ambient = new THREE.AmbientLight(ambColor(M0), M0.ambI); scene.add(ambient);
-    const baseHemi = garden ? 0.85 : 0.55;
-    const hemi = new THREE.HemisphereLight(p.hemi, 0x5a4436, baseHemi * M0.hemiMul); scene.add(hemi);
+    // Hemisphere MẠNH hơn = ánh sáng phủ ĐỀU khắp phòng (không đốm, không góc tối); ground color nhạt hơn để đáy phòng cũng sáng.
+    const baseHemi = garden ? 0.9 : 1.15;
+    const hemi = new THREE.HemisphereLight(p.hemi, 0x8a7a68, baseHemi * M0.hemiMul); scene.add(hemi);
     const sun = new THREE.DirectionalLight(M0.sunColor, M0.sunI);
     sun.position.set(M0.sunPos[0], M0.sunPos[1], M0.sunPos[2]);
     sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); // 1024 đủ đẹp, dựng cảnh nhanh hơn
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 26;
     sun.shadow.camera.left = -8; sun.shadow.camera.right = 8; sun.shadow.camera.top = 8; sun.shadow.camera.bottom = -6;
-    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.018; sun.shadow.radius = 3.2; scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.3 * M0.hemiMul); fill.position.set(5, 3.5, 5); scene.add(fill);
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.018; sun.shadow.radius = 5.5; scene.add(sun); // bóng mềm hơn → ít mảng tối gắt
+    // Fill HAI BÊN (đối xứng) để giảm tương phản bóng đổ, ánh sáng đều cả hai phía.
+    const fill = new THREE.DirectionalLight(0xffffff, 0.34 * M0.hemiMul); fill.position.set(5, 3.5, 6); scene.add(fill);
+    const fillL = new THREE.DirectionalLight(0xffffff, 0.3 * M0.hemiMul); fillL.position.set(-5, 3.5, 6); scene.add(fillL);
 
     // ===== Sàn =====
     const floorMat = track(new THREE.MeshStandardMaterial({ map: track(woodTexture(p.floor, p.floorLine)), roughness: 0.85 }));
@@ -261,6 +453,10 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
     (['day', 'cloudy', 'sunset', 'rain', 'snow', 'fog', 'night'] as Weather[]).forEach((w) => { const t = skyTexture(w); t.anisotropy = maxAniso; skyTexes[w] = track(t); });
     const glassMat = track(new THREE.MeshBasicMaterial({ map: skyTexes[mood], color: new THREE.Color(0xB2B2B2), toneMapped: false })); // trời giữ màu thật (texture sạch nên không cháy)
+    // Lớp MƯA/TUYẾT động phủ lên kính (dùng chung 1 material cho mọi cửa sổ; cuộn + đổi map trong vòng lặp).
+    const rainFx = track(precipTexture('rain')), snowFx = track(precipTexture('snow'));
+    const fxMat = track(new THREE.MeshBasicMaterial({ map: rainFx, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending })); // nền đen cộng 0, vệt sáng hiện
+    let fxKind: 'rain' | 'snow' | 'none' = 'none';
     const cloth: THREE.Object3D[] = [];
     const window3D = (x: number, z: number, ry = 0) => {
       const g = new THREE.Group(); g.position.set(x, 3.1, z); g.rotation.y = ry;
@@ -268,6 +464,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       box(2.7, 2.5, 0.16, frame, 0, 0, 0.02, true, g);
       const glass = new THREE.Mesh(track(new THREE.PlaneGeometry(2.3, 2.1)), glassMat);
       glass.position.set(0, 0, 0.14); g.add(glass); // ra TRƯỚC mặt khung (0.10) để hết z-fighting
+      const fx = new THREE.Mesh(track(new THREE.PlaneGeometry(2.3, 2.1)), fxMat); fx.position.set(0, 0, 0.162); fx.renderOrder = 2; g.add(fx); // mưa/tuyết rơi trên kính (trước kính, sau nan cửa)
       box(0.09, 2.1, 0.14, frame, 0, 0, 0.17, false, g); box(2.3, 0.09, 0.14, frame, 0, 0, 0.17, false, g);
       box(2.95, 0.22, 0.4, mat(0xEAE0D4, 0.7), 0, -1.35, 0.12, true, g);
       cyl(0.05, 0.05, 3.3, 12, mat(0x9C6B4A, 0.5, 0.3), 0, 1.42, 0.24, false, g).rotation.z = Math.PI / 2;
@@ -307,7 +504,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       const baseY = withTable ? 1.06 : 0.02;
       cyl(0.12, 0.2, 0.08, 24, mat(0x8B5E3C, 0.5, 0.2), 0, baseY + 0.04, 0, true, g);
       cyl(0.035, 0.045, 0.85, 12, mat(0xC9A24B, 0.35, 0.7), 0, baseY + 0.5, 0, true, g);
-      const shadeMat = track(new THREE.MeshStandardMaterial({ color: 0xFFE9BE, roughness: 0.5, emissive: p.lamp, emissiveIntensity: 0.75, side: THREE.DoubleSide }));
+      const shadeMat = track(new THREE.MeshStandardMaterial({ color: 0xFFE9BE, roughness: 0.5, emissive: p.lamp, emissiveIntensity: 0.42, side: THREE.DoubleSide }));
       cyl(0.32, 0.44, 0.42, 32, shadeMat, 0, baseY + 1.05, 0, true, g);
       const cap = new THREE.Mesh(track(new THREE.CircleGeometry(0.32, 32)), track(new THREE.MeshBasicMaterial({ color: 0xFFF3D6 })));
       cap.rotation.x = -Math.PI / 2; cap.position.y = baseY + 1.26; g.add(cap);
@@ -317,10 +514,59 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       scene.add(g); return pl;
     };
 
-    const artFrame = (x: number, y: number, w: number, h: number, top: string, bot: string) => {
-      box(w + 0.16, h + 0.16, 0.08, mat(0xE9C79E, 0.6), x, y, -2.94);
-      const art = new THREE.Mesh(track(new THREE.PlaneGeometry(w, h)), track(new THREE.MeshBasicMaterial({ map: track(gradTexture(top, bot)) })));
-      art.position.set(x, y, -2.89); scene.add(art);
+    // Khung tranh treo tường. Truyền `art` = tên tranh nổi tiếng (Mona Lisa / Sóng / Đêm sao) hoặc gradient trơn.
+    const artFrame = (x: number, y: number, w: number, h: number, opts: { art?: Painting; top?: string; bot?: string; gold?: boolean; plate?: string; light?: boolean } = {}) => {
+      const frameCol = opts.gold ? 0xC9A24B : 0xE9C79E;
+      // Tách RÕ độ sâu 3 lớp (khung sau → lớp lót → mặt tranh trước) để KHÔNG z-fighting (hết mảng trắng nhấp nháy).
+      box(w + 0.22, h + 0.22, 0.1, mat(frameCol, 0.45, opts.gold ? 0.6 : 0.05), x, y, -2.96); // gờ khung (sâu nhất)
+      box(w + 0.09, h + 0.09, 0.02, mat(0xF7F1E6, 0.9), x, y, -2.86);                          // passe-partout (mờ trắng)
+      const tex = opts.art ? track(paintingTexture(opts.art).tex) : track(gradTexture(opts.top ?? '#F6C9A0', opts.bot ?? '#E38FA8'));
+      // Tranh nổi tiếng: toneMapped=false để GIỮ MÀU THẬT, luôn rõ & nổi bật dù phòng sáng/tối.
+      const artMat = track(new THREE.MeshBasicMaterial({ map: tex, toneMapped: !opts.art }));
+      const art = new THREE.Mesh(track(new THREE.PlaneGeometry(w, h)), artMat);
+      art.position.set(x, y, -2.8); scene.add(art);                                            // mặt tranh (trước nhất)
+      // Nạp ẢNH THẬT trên mạng, thay vào khi tải xong (tranh vẽ tay là placeholder/fallback khi offline).
+      if (opts.art) loadWebPainting(opts.art).then((webTex) => { if (!disposed) { artMat.map = webTex; artMat.needsUpdate = true; } }).catch(() => { /* giữ tranh vẽ tay */ });
+      if (opts.plate) {
+        box(0.62, 0.12, 0.03, mat(0xB8912F, 0.4, 0.7), x, y - h / 2 - 0.15, -2.84);
+        const pl = new THREE.Mesh(track(new THREE.PlaneGeometry(0.58, 0.09)), track(new THREE.MeshBasicMaterial({ map: track(plateTexture(opts.plate)) })));
+        pl.position.set(x, y - h / 2 - 0.15, -2.79); scene.add(pl);
+      }
+      if (opts.light) { // đèn rọi tranh (thanh vàng + ánh ấm) — làm tranh nổi bật & phòng sáng hơn
+        box(w * 0.6, 0.05, 0.12, mat(0xC9A24B, 0.4, 0.6), x, y + h / 2 + 0.22, -2.66);
+        cyl(0.02, 0.02, 0.16, 8, mat(0xC9A24B, 0.4, 0.6), x, y + h / 2 + 0.13, -2.62).rotation.x = Math.PI / 2;
+        const l = new THREE.PointLight(0xFFF0CE, 1.7, 3.4, 2); l.position.set(x, y + h / 2 + 0.1, -2.3); scene.add(l);
+      }
+    };
+    // Đồng hồ tường CHẠY THẬT (kim giờ/phút/giây theo giờ máy). Giữ refs để quay trong vòng lặp.
+    let clock3D: { h: THREE.Object3D; m: THREE.Object3D; s: THREE.Object3D } | null = null;
+    const wallClock = (x: number, y: number, r = 0.5) => {
+      const g = new THREE.Group(); g.position.set(x, y, -2.86);
+      cyl(r + 0.05, r + 0.05, 0.08, 36, mat(0x3A2E24, 0.5, 0.3), 0, 0, -0.04, false, g).rotation.x = Math.PI / 2; // vành
+      cyl(r, r, 0.03, 36, mat(0xFBF4EA, 0.8), 0, 0, 0, false, g).rotation.x = Math.PI / 2;                       // mặt
+      for (let i = 0; i < 12; i++) { const a = (i / 12) * 6.283; box(0.02, i % 3 === 0 ? 0.09 : 0.05, 0.02, mat(0x4A3B2E, 0.6), Math.sin(a) * (r - 0.08), Math.cos(a) * (r - 0.08), 0.02, false, g); }
+      const hH = box(0.035, r * 0.5, 0.02, mat(0x2A211A, 0.5), 0, 0, 0.04, false, g); hH.geometry.translate(0, r * 0.25, 0);
+      const mH = box(0.025, r * 0.72, 0.02, mat(0x2A211A, 0.5), 0, 0, 0.05, false, g); mH.geometry.translate(0, r * 0.36, 0);
+      const sH = box(0.012, r * 0.8, 0.02, mat(0xB3261E, 0.5), 0, 0, 0.06, false, g); sH.geometry.translate(0, r * 0.4, 0);
+      cyl(0.03, 0.03, 0.03, 12, mat(0x2A211A, 0.4), 0, 0, 0.07, false, g).rotation.x = Math.PI / 2;
+      scene.add(g); clock3D = { h: hH, m: mH, s: sH };
+    };
+    // Đèn tường (sconce) — bát đèn + ánh ấm hắt lên, tăng độ sáng và đối xứng sang trọng.
+    const sconce = (x: number, y: number) => {
+      box(0.1, 0.24, 0.08, mat(0xB8912F, 0.4, 0.6), x, y, -2.84);
+      const cup = new THREE.Mesh(track(new THREE.SphereGeometry(0.13, 16, 8, 0, 6.28, 0, 1.7)), track(new THREE.MeshStandardMaterial({ color: 0xFFEAB8, roughness: 0.5, emissive: 0xFFD98A, emissiveIntensity: 0.45, side: THREE.DoubleSide })));
+      cup.position.set(x, y + 0.14, -2.74); scene.add(cup);
+      const l = new THREE.PointLight(0xFFE3AE, 2.1, 4.3, 2); l.position.set(x, y + 0.2, -2.4); scene.add(l);
+    };
+    // Đèn dây (fairy lights) vắt ngang đỉnh tường — bóng nhỏ phát sáng, ấm & lung linh.
+    const fairyLights = (y = 8.1) => {
+      for (let i = 0; i <= 16; i++) {
+        const x = -8 + i * 1.0; const dy = y - Math.sin((i / 16) * Math.PI) * 0.5; // võng nhẹ
+        const bulb = new THREE.Mesh(track(new THREE.SphereGeometry(0.06, 8, 6)), track(new THREE.MeshBasicMaterial({ color: i % 2 ? 0xFFE7A6 : 0xFFF3D6 })));
+        bulb.position.set(x, dy, -2.8); scene.add(bulb);
+      }
+      const l1 = new THREE.PointLight(0xFFE7B0, 0.85, 10, 2); l1.position.set(-3, 7.6, -1.5); scene.add(l1);
+      const l2 = new THREE.PointLight(0xFFE7B0, 0.85, 10, 2); l2.position.set(3, 7.6, -1.5); scene.add(l2);
     };
 
     // Tường ĐIỂM NHẤN (feature wall) — phủ màu đậm hơn để bật màu nội thất.
@@ -336,7 +582,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       shade.position.set(x, shadeY, z); shade.castShadow = true; scene.add(shade);
       const bulb = new THREE.Mesh(track(new THREE.SphereGeometry(0.13, 12, 10)), track(new THREE.MeshBasicMaterial({ color: 0xFFF3D0 })));
       bulb.position.set(x, shadeY - 0.16, z); scene.add(bulb);
-      const light = new THREE.PointLight(0xFFE6B0, 3.2, 8, 2); light.position.set(x, shadeY - 0.25, z); scene.add(light);
+      const light = new THREE.PointLight(0xFFE6B0, 2.5, 8, 2); light.position.set(x, shadeY - 0.25, z); scene.add(light);
       return light;
     };
 
@@ -362,48 +608,140 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       }
     };
 
+    // TV màn hình phẳng treo tường: viền đen mảnh + màn "đang bật" + đèn hắt ấm dịu (không chân đế).
+    const flatTV = (x: number, y: number, z: number, w = 2.4) => {
+      const h = w * 9 / 16;
+      box(w + 0.1, h + 0.1, 0.07, mat(0x161616, 0.45, 0.4), x, y, z, true);            // viền mảnh
+      const scr = new THREE.Mesh(track(new THREE.PlaneGeometry(w, h)), track(new THREE.MeshBasicMaterial({ map: track(tvScreenTexture()), toneMapped: false })));
+      scr.position.set(x, y, z + 0.045); scene.add(scr);
+      const glow = new THREE.PointLight(0xFFD9B0, 0.7, 6, 2); glow.position.set(x, y, z + 0.7); scene.add(glow);
+    };
+
     if (variant === 'living') {
-      featureWall(0x59788A);                                   // TƯỜNG ĐIỂM NHẤN xanh xám → bật màu nội thất
-      window3D(-2.3, -2.9);
-      artFrame(1.4, 3.55, 1.15, 1.45, '#F6C9A0', '#E38FA8');   // tranh treo tường
-      artFrame(2.85, 3.85, 0.7, 0.9, '#BFE3D6', '#7FB6C9');
-      decoShelf(4.4, 4.2, 1.6);                                 // KỆ TRANG TRÍ nổi (cây nhỏ + sách + bình)
-      decoShelf(4.55, 5.4, 1.25);
-      trailingPlant(-6.4, 5.3, -2.2);                          // CÂY LEO/RỦ treo góc trái cao
-      pendant(-2.7, -0.6);                                      // ĐÈN THẢ TRẦN trên bàn trà (ánh ấm)
-      // Bố cục + bảng màu hiện đại: sofa xanh sage, ghế mustard, bàn gỗ, tủ trắng kem — tương phản, "có gu".
-      place('rugRounded', -2.4, 0.03, -0.7, 3.4, 0, 0xB9A6C4);       // thảm tím nhạt định khu
-      place('loungeSofa', -3.8, 0, -2.15, 3.2, Math.PI, 0x6E9C86);  // sofa xanh sage
-      place('tableCoffee', -2.9, 0, -0.6, 1.5, 0, 0x9C6B4A);        // bàn trà gỗ óc chó
-      place('sideTable', -5.7, 0, -2.0, 0.85, 0, 0x8A5E3C);         // bàn phụ gỗ
-      place('cabinetTelevision', 0.6, 0, -2.7, 2.3, 0, 0xEDE6DA);   // tủ TV trắng kem
-      place('bookcaseOpen', 5.1, 0, -2.65, 2.4, 0, 0xB78A5A);       // kệ sách gỗ ấm
-      place('loungeChair', 3.1, 0, -0.1, 1.45, -0.7, 0xE0A43B);     // ghế bành mustard
-      place('pottedPlant', -5.6, 0, -0.6, 1.55, 0);                 // cây (giữ màu gốc: lá xanh + chậu)
-      place('lampRoundFloor', 5.3, 0, -1.0, 2.3, 0, 0xF3E7CE, (o) => { lampModel = o; }); // đèn cây kem (BẤM bật/tắt)
-      const pl = new THREE.PointLight(p.lamp, 5.5, 7.5, 2); pl.position.set(5.3, 1.9, -1.0); scene.add(pl); lamp = pl;
-      contact(-3.8, -2.15, 3.9); contact(3.1, -0.1, 1.9); contact(5.3, -1.0, 1.6); contact(-2.9, -0.6, 1.5);
+      featureWall(0xE4DBCC);                                    // tường greige ấm, phẳng sang trọng
+      // Ánh sáng tổng dịu, CÂN ĐỐI hai bên (villa: đều, không đốm)
+      const ceilGlow = new THREE.PointLight(0xFFF4E6, 1.35, 18, 2); ceilGlow.position.set(0, 7.4, 0.4); scene.add(ceilGlow);
+      const ceilL = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilL.position.set(-3.2, 7.0, -0.4); scene.add(ceilL);
+      const ceilR = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilR.position.set(3.2, 7.0, -0.4); scene.add(ceilR);
+      fairyLights();                                            // đèn dây vắt ngang đỉnh tường
+      window3D(-5.2, -2.9); window3D(5.2, -2.9);                // HAI cửa sổ đối xứng hai bên tường
+
+      // ===== TƯỜNG CHÍNH — TRANH bên TRÁI · ĐỒNG HỒ bên PHẢI → chừa GIỮA cho HUD/Gumi, KHÔNG bị che =====
+      artFrame(-2.6, 3.05, 1.3, 1.65, { art: 'mona', gold: true, light: true, plate: 'LA GIOCONDA' }); // MONA LISA lệch TRÁI (bạn thích → giữ)
+      wallClock(2.6, 3.15, 0.58);                              // ĐỒNG HỒ lệch PHẢI — lấy GIỜ HỆ THỐNG thật, chạy realtime
+      sconce(-2.6, 4.25); sconce(2.6, 4.25);                   // đèn tường ôm tranh & đồng hồ (đối xứng)
+      decoShelf(-5.6, 4.7, 1.1); decoShelf(5.6, 4.7, 1.1);    // kệ nổi đối xứng hai góc cao
+      trailingPlant(-6.5, 5.2, -2.2); trailingPlant(6.5, 5.2, -2.2); // cây rủ đối xứng hai góc
+
+      // ===== NỘI THẤT — bố cục ĐỐI XỨNG quanh trục giữa =====
+      // Tủ TV áp tường chính giữa + cây bàn nhỏ đối xứng + 2 cây cảnh lớn hai bên
+      place('cabinetTelevision', 0, 0, -2.75, 2.7, 0, 0x40342A);   // tủ TV gỗ óc chó ĐẬM — nổi bật trên tường sáng
+      flatTV(0, 2.45, -2.9, 2.0);                                   // TV treo tường trên tủ, nhỏ & hạ thấp để không bị HUD che (kênh GUMI TV)
+      place('plantSmall1', -1.05, 1.28, -2.62, 0.55, 0); place('plantSmall1', 1.05, 1.28, -2.62, 0.55, 0);
+      place('pottedPlant', -4.0, 0, -2.5, 1.55, 0); place('pottedPlant', 4.0, 0, -2.5, 1.55, 0);
+      // Thảm định khu CHÍNH GIỮA
+      place('rugRounded', 0, 0.03, -0.5, 4.6, 0, 0xDED3C2);
+      // HAI sofa ngà QUAY MẶT VÀO NHAU quanh bàn trà (cụm tiếp khách đối xứng)
+      place('loungeSofa', -2.7, 0, -0.5, 3.0, Math.PI / 2, 0x46433F);   // sofa trái, hướng vào giữa
+      place('loungeSofa', 2.7, 0, -0.5, 3.0, -Math.PI / 2, 0x46433F);   // sofa phải, hướng vào giữa
+      // Bàn trà gỗ óc chó chính giữa + sách xếp gọn
+      place('tableCoffee', 0, 0, -0.5, 1.6, 0, 0x40342A);
+      place('books', 0, 0.47, -0.5, 0.5, 0.25, 0xC7A96E);            // sách tông đồng/brass → nổi trên mặt bàn đậm
+      // Hai bàn phụ đối xứng ngoài hai đầu sofa
+      place('sideTable', -4.5, 0, -1.5, 0.9, 0, 0x40342A); place('sideTable', 4.5, 0, -1.5, 0.9, 0, 0x40342A);
+      // Hai đèn cây đối xứng phía sau hai đầu sofa (trái BẤM bật/tắt)
+      place('lampRoundFloor', -4.4, 0, 0.5, 2.3, 0, 0xF3ECDD, (o) => { lampModel = o; });
+      place('lampRoundFloor', 4.4, 0, 0.5, 2.3, 0, 0xF3ECDD);
+      const plL = new THREE.PointLight(p.lamp, 3.0, 7.0, 2); plL.position.set(-4.4, 1.9, 0.5); scene.add(plL); lamp = plL;
+      const plR = new THREE.PointLight(p.lamp, 3.0, 7.0, 2); plR.position.set(4.4, 1.9, 0.5); scene.add(plR);
+      pendant(0, -0.5);                                         // đèn thả trần CHÍNH GIỮA trên bàn trà
+      contact(-2.7, -0.5, 3.4); contact(2.7, -0.5, 3.4); contact(0, -0.5, 1.6); contact(-4.0, -2.5, 1.7); contact(4.0, -2.5, 1.7);
     } else if (variant === 'kitchen') {
-      window3D(2.5, -2.9);
-      // Dãy bếp module hiện đại: tủ lạnh thép, tủ trắng, bếp đen, mặt bàn gỗ nhạt.
-      place('kitchenFridge', -5.2, 0, -2.3, 2.6, 0, 0xC3CBD2);        // tủ lạnh inox
-      place('kitchenCabinet', -3.5, 0, -2.5, 1.5, 0, 0xEDE6DA);      // tủ trắng kem
-      place('kitchenSink', -2.0, 0, -2.5, 1.5, 0, 0xE4DDCF);
-      place('kitchenStove', -0.5, 0, -2.5, 1.5, 0, 0x3B3B40);        // bếp đen
-      place('kitchenCabinet', 1.0, 0, -2.5, 1.5, 0, 0xEDE6DA);
-      place('kitchenCoffeeMachine', 3.0, 0.95, -2.4, 0.6, 0, 0xB23556);
-      place('kitchenCabinetUpper', -3.5, 3.9, -2.7, 1.5, 0, 0xEDE6DA);
-      place('kitchenCabinetUpper', -0.5, 3.9, -2.7, 1.5, 0, 0xEDE6DA);
-      place('pottedPlant', 4.2, 0, -1.4, 1.4, 0);
-      lamp = tableLamp(4.2, -1.2, false);
+      featureWall(0xEDE6D8);                                          // tường kem sang, phẳng
+      // TẤM ĐÁ MARBLE ĐẬM liền sau bếp (feature slab từ mặt quầy lên hút mùi) — kiểu 5 sao, KHÔNG phủ hết tường
+      const marbleTex = track(marbleTexture('#262D33', '#8C97A2')); marbleTex.repeat.set(1.4, 1.4);
+      const splash = new THREE.Mesh(track(new THREE.PlaneGeometry(2.7, 2.75)), track(new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.24, metalness: 0.2 })));
+      splash.position.set(0, 2.5, -2.87); splash.receiveShadow = true; scene.add(splash);
+      window3D(-2.75, -2.9); window3D(2.75, -2.9);                   // hai cửa sổ TRÊN QUẦY, ôm hai bên tấm đá & hút mùi (không đâm vào tủ/tủ lạnh)
+
+      // DÃY BẾP DƯỚI — căn đều 1.6m, BẾP + HÚT MÙI CHÍNH GIỮA, hai bên cân đối
+      place('kitchenStove', 0, 0, -2.5, 1.55, 0, 0x2E2E33);          // bếp CHÍNH GIỮA (dưới hút mùi)
+      place('kitchenCabinet', -1.6, 0, -2.5, 1.55, 0, 0x2F4539);
+      place('kitchenSink', -3.2, 0, -2.5, 1.55, 0, 0x2F4539);      // xanh rêu đậm, tay nắm ẩn
+      place('kitchenCabinet', -4.8, 0, -2.5, 1.55, 0, 0x2F4539);
+      place('kitchenCabinet', 1.6, 0, -2.5, 1.55, 0, 0x2F4539);
+      place('kitchenCabinet', 3.2, 0, -2.5, 1.55, 0, 0x2F4539);
+      place('kitchenFridge', 5.0, 0, -2.35, 2.7, 0, 0xCED6DC);       // tủ lạnh inox đầu phải
+      place('kitchenCoffeeMachine', 3.2, 0.98, -2.42, 0.55, 0, 0x8A8F96);
+      place('plantSmall1', -1.6, 1.22, -2.5, 0.5, 0);                // cây nhỏ trên quầy (trái)
+
+      // MÁY HÚT MÙI thép không gỉ kiểu CHIMNEY (nhà hàng 5 sao)
+      box(1.7, 0.36, 0.82, mat(0xC7CDD2, 0.32, 0.75), 0, 3.32, -2.5);       // chụp hút hộp thép
+      box(1.74, 0.06, 0.86, mat(0xADB3B9, 0.28, 0.85), 0, 3.12, -2.48);     // viền dưới sáng
+      box(0.62, 1.15, 0.32, mat(0xC7CDD2, 0.32, 0.75), 0, 4.1, -2.6);       // ống khói lên trần
+
+      // ===== BẾP GAS CHUYÊN NGHIỆP (5 sao) — mặt thép đen, 4 bếp + kiềng gang + núm thép =====
+      const hobY = 1.02;
+      box(1.48, 0.05, 0.68, mat(0x22222A, 0.3, 0.62), 0, hobY, -2.42);      // mặt bếp thép đen
+      for (const bx of [-0.4, 0.4]) for (const bz of [-2.56, -2.28]) {
+        cyl(0.12, 0.14, 0.025, 22, mat(0x18181B, 0.35, 0.5), bx, hobY + 0.03, bz);   // đế bếp gang
+        cyl(0.075, 0.085, 0.03, 18, mat(0x45454A, 0.3, 0.7), bx, hobY + 0.055, bz);  // vành phun lửa
+        box(0.32, 0.02, 0.028, mat(0x121214, 0.4, 0.4), bx, hobY + 0.085, bz);       // kiềng gang ngang
+        box(0.028, 0.02, 0.32, mat(0x121214, 0.4, 0.4), bx, hobY + 0.085, bz);       // kiềng gang dọc
+      }
+      for (const kx of [-0.55, -0.19, 0.19, 0.55]) cyl(0.028, 0.028, 0.05, 14, mat(0xBEC2C7, 0.3, 0.78), kx, hobY + 0.015, -2.12); // núm vặn thép
+
+      // LÒ NƯỚNG ÂM TỦ — mặt kính đen + tay nắm thép + bảng điều khiển (bên phải bếp)
+      box(0.92, 0.52, 0.03, mat(0x141416, 0.12, 0.55), 1.6, 0.52, -2.16);   // cửa kính lò
+      box(0.72, 0.05, 0.06, mat(0xBEC2C7, 0.3, 0.85), 1.6, 0.77, -2.11);    // tay nắm thép ngang
+      box(0.44, 0.1, 0.02, mat(0x26262B, 0.3, 0.5), 1.6, 0.86, -2.13);      // bảng điều khiển
+
+      // Tường trên TỐI GIẢN: cửa sổ ôm hai bên tấm đá + đồng hồ căn giữa (bỏ tủ trên → thoáng, sáng, 5 sao)
+      wallClock(0, 5.05, 0.42);                                      // đồng hồ căn GIỮA trên hút mùi (giờ hệ thống thật)
+
+      // ĐÈN THẢ trần trên ĐẢO BẾP — hai chao đối xứng
+      pendant(-0.85, -0.3, 0x3A3A3F, 5.0); pendant(0.85, -0.3, 0x3A3A3F, 5.0);
+
+      // ===== ĐẢO BẾP kiểu WATERFALL (mặt đá tràn xuống 2 cạnh) — nét hiện đại nhất =====
+      box(2.8, 1.0, 1.3, mat(0xEDE7DC, 0.55), 0, 0.5, -0.3);            // thân đảo phẳng LÌ, không tay nắm (handleless)
+      box(3.12, 0.13, 1.54, mat(0x6F4E34, 0.35, 0.12), 0, 1.06, -0.3); // mặt bàn gỗ óc chó dày
+      box(0.13, 1.06, 1.54, mat(0x6F4E34, 0.35, 0.12), -1.495, 0.53, -0.3); // waterfall cạnh TRÁI
+      box(0.13, 1.06, 1.54, mat(0x6F4E34, 0.35, 0.12), 1.495, 0.53, -0.3);  // waterfall cạnh PHẢI
+      // 2 ghế đẩu tối giản (chân đen mảnh + đệm gỗ)
+      for (const sx of [-0.78, 0.78]) { cyl(0.15, 0.18, 0.72, 22, mat(0x2A2A2E, 0.4, 0.55), sx, 0.36, 0.64); cyl(0.2, 0.2, 0.05, 26, mat(0x5A4636, 0.5), sx, 0.73, 0.64); contact(sx, 0.64, 0.85); }
+      // Điểm nhấn TỐI GIẢN trên đảo: 1 chậu cây + khay phẳng (đã bỏ nồi/thớt/dao thô)
+      place('plantSmall1', -0.65, 1.13, -0.35, 0.5, 0);
+      box(0.52, 0.03, 0.3, mat(0x2E2E33, 0.35, 0.3), 0.55, 1.14, -0.1);   // khay decor phẳng, gọn
+
+      // Thảm runner CHÍNH GIỮA · cây góc đối xứng · đèn tổng
+      place('rugRectangle', 0, 0.02, 0.9, 3.4, 0, 0xDCD2C2);
+      place('pottedPlant', -5.2, 0, 0.6, 1.4, 0); place('pottedPlant', 5.2, 0, 0.6, 1.4, 0);
+      const kGlow = new THREE.PointLight(0xFFF1D6, 2.4, 15, 2); kGlow.position.set(0, 6.7, 0.6); scene.add(kGlow);
+      lamp = tableLamp(5.2, -1.2, false);                           // đèn đứng góc phải (BẤM bật/tắt)
+      contact(0, -0.3, 3.6); contact(-5.2, 0.6, 1.6); contact(5.2, 0.6, 1.6);
     } else {
       floorMat.map!.repeat.set(3, 3);
-      const railMat = mat(0xD8A15E, 0.85);
-      for (let x = -5; x <= 5; x += 0.7) box(0.14, 1.2, 0.14, railMat, x, 0.6, -2.6);
-      box(11, 0.18, 0.24, mat(0xC98545, 0.85), 0, 1.25, -2.6);
-      box(11, 0.18, 0.24, mat(0xB4835A, 0.85), 0, 0.1, -2.6, false);
-      const hill = new THREE.Mesh(track(new THREE.SphereGeometry(6, 28, 18)), mat(0x7BBE6C, 1)); hill.position.set(-3, -3.4, -9); hill.scale.set(1.6, 0.5, 1); scene.add(hill);
-      const hill2 = new THREE.Mesh(track(new THREE.SphereGeometry(6, 28, 18)), mat(0x9BD08A, 1)); hill2.position.set(4, -3.6, -11); hill2.scale.set(1.8, 0.5, 1); scene.add(hill2);
+      // LAN CAN gỗ + tay vịn
+      const railMat = mat(0xE8D3A8, 0.8);
+      for (let x = -5; x <= 5; x += 0.6) box(0.12, 1.2, 0.12, railMat, x, 0.6, -2.62);
+      box(11, 0.2, 0.3, mat(0xD9B87E, 0.8), 0, 1.26, -2.62);
+      box(11, 0.2, 0.3, mat(0xC49A63, 0.8), 0, 0.1, -2.62, false);
+      // ===== TẦM NHÌN XUỐNG THÀNH PHỐ — skyline nhiều lớp, cửa sổ sáng đèn (chill buổi tối) =====
+      const cityBase = track(cityTexture());
+      const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+      for (const [zc, count, tint, topMax] of [[-30, 12, 0.68, 3.4], [-22, 10, 0.82, 2.4], [-15, 8, 1.0, 1.4]] as const) {
+        for (let i = 0; i < count; i++) {
+          const w = rnd(1.6, 3.4), d = rnd(1.6, 3.0), bh = rnd(4, 11), top = rnd(-0.8, topMax);
+          const tex = track(cityBase.clone()); tex.needsUpdate = true;
+          tex.repeat.set(Math.max(1, Math.round(w)), Math.max(2, Math.round(bh / 1.5)));
+          const bm = track(new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); bm.color.setScalar(tint);
+          const bld = new THREE.Mesh(track(new THREE.BoxGeometry(w, bh, d)), bm);
+          bld.position.set(rnd(-16, 16), top - bh / 2, zc + rnd(-2.5, 2.5)); scene.add(bld);
+        }
+      }
+      // Dải sáng đô thị mờ ở chân trời (glow ấm) cho có chiều sâu
+      const glow = new THREE.Mesh(track(new THREE.PlaneGeometry(44, 6)), track(new THREE.MeshBasicMaterial({ color: 0xFFCE86, transparent: true, opacity: 0.16, toneMapped: false, depthWrite: false })));
+      glow.position.set(0, 0.4, -33); scene.add(glow);
       const cloudMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
       const puffs: [number, number, number][] = [[0, 0, 0.9], [0.8, -0.1, 0.7], [-0.8, -0.1, 0.6], [0.3, 0.3, 0.6]];
       for (const [cx, cy, cz, cs] of [[-3.5, 4.2, -12, 1.1], [2.8, 5, -13, 1.4], [5, 3.6, -11, 0.8]] as const) {
@@ -411,12 +749,46 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
         for (const [dx, dy, r] of puffs) { const puff = new THREE.Mesh(track(new THREE.SphereGeometry(r * cs, 14, 10)), cloudMat); puff.position.set(dx * cs, dy * cs, 0); cl.add(puff); }
         scene.add(cl);
       }
-      plant(-3.4, -1.1, 1.2); plant(3.4, -1.0, 1.0);
-      cyl(0.07, 0.09, 1.0, 12, mat(0x9c6b4a, 0.6), 2.2, 0.5, -0.4);
-      cyl(0.7, 0.7, 0.12, 28, mat(0xEAD9C2, 0.7), 2.2, 1.05, -0.4);
-      contact(2.2, -0.4, 1.8);
-      lamp = tableLamp(-3.0, -0.5, false);
+      // BỒN CÂY đều nhau dọc lan can (bụi xanh + hoa) — đối xứng
+      for (const px of [-4.5, -1.5, 1.5, 4.5]) {
+        box(1.3, 0.34, 0.34, mat(0xA9764E, 0.7), px, 1.5, -2.55);
+        for (const dx of [-0.42, -0.14, 0.14, 0.42]) { const bush = new THREE.Mesh(track(new THREE.SphereGeometry(0.19, 12, 10)), mat(p.leaf[(Math.abs(dx * 10) | 0) % 3]!, 0.72)); bush.position.set(px + dx, 1.78, -2.55); bush.castShadow = true; scene.add(bush); }
+        for (const [dx, fc] of [[-0.3, 0xF2A0B8], [0.28, 0xFFD27A]] as const) { const f = new THREE.Mesh(track(new THREE.SphereGeometry(0.07, 8, 8)), mat(fc, 0.6)); f.position.set(px + dx, 1.93, -2.5); scene.add(f); }
+      }
+      // ĐÈN DÂY festoon vắt ngang ban công (bóng ấm) + 2 đèn điểm
+      for (let i = 0; i <= 14; i++) { const t = i / 14, bx = -5 + t * 10, byy = 3.2 - Math.sin(t * Math.PI) * 0.6; const bulb = new THREE.Mesh(track(new THREE.SphereGeometry(0.07, 8, 6)), track(new THREE.MeshBasicMaterial({ color: i % 2 ? 0xFFE29A : 0xFFF3D6 }))); bulb.position.set(bx, byy, -1.2); scene.add(bulb); }
+      const fl1 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl1.position.set(-2.4, 3, -0.8); scene.add(fl1);
+      const fl2 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl2.position.set(2.4, 3, -0.8); scene.add(fl2);
+      // Thảm ngoài trời CHÍNH GIỮA
+      place('rugRounded', 0, 0.02, 0.6, 3.8, 0, 0xDBCBB2);
+      // BÀN BISTRO CHÍNH GIỮA + 2 tách nước đối xứng
+      cyl(0.08, 0.1, 0.95, 12, mat(0x8A5E3C, 0.6), 0, 0.48, 0.3); cyl(0.64, 0.64, 0.12, 28, mat(0xEAD9C2, 0.7), 0, 1.02, 0.3); contact(0, 0.3, 1.7);
+      cyl(0.09, 0.07, 0.1, 12, mat(0xFFFFFF, 0.5), -0.28, 1.13, 0.3); cyl(0.09, 0.07, 0.1, 12, mat(0xFFFFFF, 0.5), 0.28, 1.13, 0.3);
+      // Đèn nến trên bàn — ánh ấm chill buổi tối
+      box(0.15, 0.2, 0.15, track(new THREE.MeshStandardMaterial({ color: 0xE8C98A, roughness: 0.4, emissive: 0xFFD98A, emissiveIntensity: 0.6 })), 0, 1.16, 0.3);
+      const candle = new THREE.PointLight(0xFFCE86, 1.1, 3.2, 2); candle.position.set(0, 1.34, 0.3); scene.add(candle);
+      // Nệm ngồi bệt (pouf) — góc thư giãn ngắm phố
+      cyl(0.42, 0.46, 0.34, 24, mat(0xC97A5A, 0.9), -3.0, 0.17, 1.9); contact(-3.0, 1.9, 1.35);
+      // HAI ghế MÀU ĐỒNG NHẤT (ngà), đối xứng, cùng hướng vào bàn
+      place('loungeChair', -1.7, 0, 0.5, 1.2, 0.5, 0x4E4E52); place('loungeChair', 1.7, 0, 0.5, 1.2, -0.5, 0x4E4E52);
+      contact(-1.7, 0.5, 1.5); contact(1.7, 0.5, 1.5);
+      // ĐÈN LỒNG phát sáng ở 2 góc ĐỐI XỨNG (ấm cúng)
+      for (const [lx, lz] of [[-4.7, 0.9], [4.7, 0.9]] as const) {
+        box(0.34, 0.5, 0.34, track(new THREE.MeshStandardMaterial({ color: 0xE8B15A, roughness: 0.4, emissive: 0xFFD98A, emissiveIntensity: 0.75 })), lx, 0.55, lz);
+        box(0.42, 0.08, 0.42, mat(0x6E4B2E, 0.6), lx, 0.85, lz);
+        const ll = new THREE.PointLight(0xFFD98A, 1.6, 6, 2); ll.position.set(lx, 0.7, lz); scene.add(ll);
+      }
+      // CHẬU CÂY + cây rủ treo — đối xứng từng cặp
+      place('pottedPlant', -5.3, 0, 1.2, 1.4, 0); place('pottedPlant', 5.3, 0, 1.2, 1.4, 0);
+      plant(-3.5, 1.5, 1.1); plant(3.5, 1.5, 1.1);
+      trailingPlant(-2.5, 3.1, -1.0); trailingPlant(2.5, 3.1, -1.0);
+      lamp = tableLamp(-4.7, -1.2, false);
+      contact(-4.7, -1.2, 1.6);
     }
+
+    // Gom mọi ĐÈN ĐIỂM của phòng (trừ đèn bàn `lamp` xử lý riêng ở vòng lặp) để công tắc đèn giảm/tắt được.
+    const dimLights: { l: THREE.PointLight; base: number }[] = [];
+    scene.traverse((o) => { const pl = o as THREE.PointLight; if (pl.isPointLight && pl !== lamp) dimLights.push({ l: pl, base: pl.intensity }); });
 
     // Bụi lơ lửng
     const dustGeo = track(new THREE.BufferGeometry());
@@ -432,7 +804,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       rpos[i * 6] = x; rpos[i * 6 + 1] = y; rpos[i * 6 + 2] = z; rpos[i * 6 + 3] = x + 0.03; rpos[i * 6 + 4] = y - len; rpos[i * 6 + 5] = z; rvy[i] = 0.16 + Math.random() * 0.12;
     }
     const rainGeo = track(new THREE.BufferGeometry()); rainGeo.setAttribute('position', new THREE.BufferAttribute(rpos, 3));
-    const rainMat = track(new THREE.LineBasicMaterial({ color: 0xcdd8e2, transparent: true, opacity: 0, depthWrite: false }));
+    const rainMat = track(new THREE.LineBasicMaterial({ color: 0x9EB6CC, transparent: true, opacity: 0, depthWrite: false }));
     const rainObj = new THREE.LineSegments(rainGeo, rainMat); rainObj.visible = false; scene.add(rainObj);
 
     const SN = 300; const spos = new Float32Array(SN * 3); const svy = new Float32Array(SN); const sph = new Float32Array(SN);
@@ -449,17 +821,18 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       composer = new EffectComposer(renderer, rt);
       composer.setPixelRatio(renderer.getPixelRatio());
       composer.addPass(new RenderPass(scene, camera));
-      bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), M0.bloom, 0.6, 0.86);
+      bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), M0.bloom, 0.55, 0.92); // ngưỡng 0.92 → chỉ điểm sáng THẬT mới toả, tường/đồ ấm KHÔNG bị chói
       composer.addPass(bloom);
       composer.addPass(new OutputPass());
     }
 
-    const BASE_ASPECT = 1.4, BASE_Z = 6.9;
+    const BASE_ASPECT = 1.5, BASE_Z = 6.6;
     const resize = () => {
       const w = el.clientWidth || 1, h = el.clientHeight || 1;
       renderer.setSize(w, h, false); composer?.setSize(w, h); bloom?.setSize(w, h);
       const aspect = w / h; camera.aspect = aspect;
-      camera.position.z = BASE_Z * Math.min(1.8, Math.max(1, BASE_ASPECT / aspect));
+      // Màn dọc (mobile) hẹp ngang → lùi camera nhiều hơn để lộ trọn tường gallery + nhiều nội thất.
+      camera.position.z = BASE_Z * Math.min(2.35, Math.max(1, BASE_ASPECT / aspect));
       camera.updateProjectionMatrix();
     };
     resize();
@@ -486,6 +859,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       rainW: M0.rainW, snowW: M0.snowW, fogNear: M0.fogNear, fogFar: M0.fogFar,
       amb: ambColor(M0), sun: new THREE.Color(M0.sunColor), bg: bgColorOf(M0),
       sunPos: new THREE.Vector3(...M0.sunPos),
+      dim: 1, // 1 = bật đèn (sáng) · ~0.3 = tắt đèn (tối) — nội suy mượt
     };
     const tmpAmb = new THREE.Color(), tmpSun = new THREE.Color(), tmpBg = new THREE.Color(), tmpPos = new THREE.Vector3();
 
@@ -507,16 +881,21 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       cur.bg.lerp(tmpBg.copy(bgColorOf(T)), k);
       cur.sunPos.lerp(tmpPos.set(T.sunPos[0], T.sunPos[1], T.sunPos[2]), k);
 
-      renderer.toneMappingExposure = cur.exposure;
-      ambient.intensity = cur.ambI; ambient.color.copy(cur.amb);
-      hemi.intensity = baseHemi * cur.hemiMul;
-      sun.intensity = cur.sunI; sun.color.copy(cur.sun); sun.position.copy(cur.sunPos);
-      fill.intensity = 0.3 * cur.hemiMul;
-      scene.environmentIntensity = cur.envI;
-      (scene.background as THREE.Color).copy(cur.bg); fog.color.copy(cur.bg); fog.near = cur.fogNear; fog.far = cur.fogFar;
+      // Công tắc ĐÈN phòng: tắt → dim cả phòng cho tối (đèn bàn vẫn hắt ấm), bật → sáng đủ.
+      cur.dim = lerp(cur.dim, lightsRef.current ? 1 : 0.24, k);
+      const dl = cur.dim;
+      renderer.toneMappingExposure = cur.exposure * dl;
+      ambient.intensity = cur.ambI * dl; ambient.color.copy(cur.amb);
+      hemi.intensity = baseHemi * cur.hemiMul * dl;
+      sun.intensity = cur.sunI * dl; sun.color.copy(cur.sun); sun.position.copy(cur.sunPos);
+      fill.intensity = 0.34 * cur.hemiMul * dl; fillL.intensity = 0.3 * cur.hemiMul * dl;
+      scene.environmentIntensity = cur.envI * (0.35 + 0.65 * dl);
+      for (const dz of dimLights) dz.l.intensity = dz.base * (0.12 + 0.88 * dl); // đèn trần/thả/tường mờ hẳn khi tắt
+      (scene.background as THREE.Color).copy(cur.bg).multiplyScalar(0.42 + 0.58 * dl); fog.color.copy(cur.bg).multiplyScalar(0.42 + 0.58 * dl); fog.near = cur.fogNear; fog.far = cur.fogFar;
       if (bloom) bloom.strength = cur.bloom;
       // Mưa/tuyết chỉ hiện NGOÀI TRỜI (ban công), rõ nét. Trong nhà chỉ thấy thời tiết qua cửa sổ.
-      rainMat.opacity = cur.rainW * 0.75; rainObj.visible = garden && cur.rainW > 0.02;
+      // Hạt mưa/tuyết CHỈ rơi NGOÀI TRỜI (ban công). Trong nhà chỉ thấy thời tiết QUA CỬA SỔ (bầu trời + vệt mưa/bông tuyết vẽ trong kính).
+      rainMat.opacity = cur.rainW * 0.85; rainObj.visible = garden && cur.rainW > 0.02;
       snowMat.opacity = cur.snowW; snowObj.visible = garden && cur.snowW > 0.02;
     };
     applyMood(1); // đặt đúng mood ban đầu ngay lập tức
@@ -528,7 +907,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       raf = requestAnimationFrame(loop);
       const t = clock.getElapsedTime();
       const dt = Math.min(0.05, clock.getDelta());
-      applyMood(1 - Math.pow(0.06, dt)); // fade ~1s, độc lập frame-rate
+      applyMood(1 - Math.pow(1e-8, dt)); // chuyển gần như TỨC THÌ (~0.15s) khi đổi thời tiết/đèn
       // Bầu trời NGOÀI cửa sổ đổi NGAY khi đổi thời tiết (ánh sáng phòng thì fade mượt)
       if (weatherRef.current !== lastWeather) { lastWeather = weatherRef.current; glassMat.map = skyTexes[lastWeather]; glassMat.needsUpdate = true; }
 
@@ -538,6 +917,12 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
       a.needsUpdate = true;
       for (const s of swayers) s.rotation.z = Math.sin(t * 0.7 + (s.userData.ph as number)) * 0.045;
       for (const c of cloth) c.rotation.y = Math.sin(t * 0.5 + (c.userData.ph as number)) * 0.03;
+      // Mưa/tuyết RƠI ĐỘNG trên cửa sổ (nhìn qua kính thấy chân thực) — chỉ dùng lớp phủ, không hạt trong phòng.
+      // offset.y TĂNG dần → mưa/tuyết RƠI XUỐNG (trước đây âm nên chạy ngược lên trên).
+      if (cur.rainW > 0.02) { if (fxKind !== 'rain') { fxMat.map = rainFx; fxKind = 'rain'; } fxMat.opacity = cur.rainW; rainFx.offset.y = (t * 1.9) % 1; }
+      else if (cur.snowW > 0.02) { if (fxKind !== 'snow') { fxMat.map = snowFx; fxKind = 'snow'; } fxMat.opacity = cur.snowW; snowFx.offset.y = (t * 0.32) % 1; snowFx.offset.x = Math.sin(t * 0.4) * 0.05; }
+      else if (fxKind !== 'none') { fxMat.opacity = 0; fxKind = 'none'; }
+      if (clock3D) { const d = new Date(); const sec = d.getSeconds() + d.getMilliseconds() / 1000, min = d.getMinutes() + sec / 60, hr = (d.getHours() % 12) + min / 60; clock3D.s.rotation.z = -sec / 60 * 6.283; clock3D.m.rotation.z = -min / 60 * 6.283; clock3D.h.rotation.z = -hr / 12 * 6.283; }
       if (rainObj.visible) {
         for (let i = 0; i < RN; i++) { const dy = rvy[i]!; rpos[i * 6 + 1] -= dy; rpos[i * 6 + 4] -= dy; if (rpos[i * 6 + 1] < 0) { const top = 9 + Math.random() * 2, len = rpos[i * 6 + 1] - rpos[i * 6 + 4]; rpos[i * 6 + 1] = top; rpos[i * 6 + 4] = top - len; } }
         rainGeo.attributes.position.needsUpdate = true;
@@ -547,7 +932,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather }: { act?: 1 
         for (let i = 0; i < SN; i++) { let y = sp.getY(i) - svy[i]!; if (y < 0) y = 9 + Math.random(); sp.setY(i, y); sp.setX(i, sp.getX(i) + Math.sin(t * 0.6 + sph[i]!) * 0.006); }
         sp.needsUpdate = true;
       }
-      if (lamp) lamp.intensity = lampOn ? cur.lamp + Math.sin(t * 5) * 0.35 + Math.sin(t * 13) * 0.1 : 0;
+      if (lamp) lamp.intensity = (lampOn ? cur.lamp + Math.sin(t * 5) * 0.35 + Math.sin(t * 13) * 0.1 : 0) * (0.18 + 0.82 * cur.dim);
       render();
     };
     if (reduce) render(); else loop();

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -54,13 +54,19 @@ export function Login() {
           <form onSubmit={submit} className="flex flex-col gap-3" noValidate>
             <Input label={vi.auth.email} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={error === 'email' ? vi.auth.emailInvalid : undefined} />
             <Input label={vi.auth.password} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <div className="-mt-1 flex justify-end">
+              <button type="button" onClick={() => nav('/forgot-password')} className="rounded-pill px-2.5 py-1 text-small font-semibold text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary">{vi.auth.forgot}</button>
+            </div>
             {error === 'wrong' && <Banner kind="error">{vi.auth.wrong}</Banner>}
             <Button type="submit" loading={busy} block>{vi.auth.submit}</Button>
           </form>
         </div>
       </Card>
-      <Link to="/signup" className="text-center text-small text-primary underline underline-offset-2">{vi.signup.title}</Link>
-      <p className="text-small text-muted">{vi.auth.forgot}</p>
+
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-small text-muted">{vi.auth.noAccount}</p>
+        <Button variant="secondary" block onClick={() => nav('/signup')}>{vi.signup.title}</Button>
+      </div>
       <p className="text-caption text-muted">{vi.auth.consent}</p>
     </div>
   );

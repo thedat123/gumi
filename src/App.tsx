@@ -6,10 +6,12 @@ import { SkinProvider } from './app/skin';
 import { Admin } from './pages/Admin';
 import { ChapterIntro } from './pages/ChapterIntro';
 import { Dashboard } from './pages/Dashboard';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { GumiRoom } from './pages/GumiRoom';
 import { Landing } from './pages/Landing';
 import { Leaderboard } from './pages/Leaderboard';
 import { Login } from './pages/Login';
+import { ResetPassword } from './pages/ResetPassword';
 import { MissionRouter } from './pages/MissionRouter';
 import { Onboarding } from './pages/Onboarding';
 import { Profile } from './pages/Profile';
@@ -28,6 +30,8 @@ export function App() {
           <Route path="welcome" element={<Landing />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="terms" element={<Terms />} />
           {/* Đã đăng nhập, chưa cần hồ sơ */}
           <Route path="onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />

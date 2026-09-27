@@ -47,7 +47,8 @@ export function GumiRoom() {
   const [feed, setFeed] = useState<{ food: string; key: number } | null>(null);
   const [muted, setMutedState] = useState(isMuted());
   const [weatherIdx, setWeatherIdx] = useState(0);
-  const cycleWeather = () => setWeatherIdx((i) => (i + 1) % WEATHERS.length);
+  const [weatherOpen, setWeatherOpen] = useState(false); // bảng chọn thời tiết (1 bấm là đổi ngay)
+  const [lightsOn, setLightsOn] = useState(true); // công tắc đèn phòng (sáng/tối)
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
   const feedGumi = (food: string) => setFeed((f) => ({ food, key: (f?.key ?? 0) + 1 }));
@@ -83,7 +84,7 @@ export function GumiRoom() {
           <div className="relative min-h-[calc(100dvh-3.25rem)] w-full overflow-hidden">
             <div key={roomIdx} className={`absolute inset-0 ${slide === 'left' ? 'room-in-left' : slide === 'right' ? 'room-in-right' : ''}`}>
               <Suspense fallback={<div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#F7E6DC,#E9C7B8)' }} />}>
-                <RoomScene3D act={roomAct} variant={ROOMS[roomIdx]!.v} weather={WEATHERS[weatherIdx]!.w ?? undefined} />
+                <RoomScene3D key={`${ROOMS[roomIdx]!.v}-${weatherIdx}-${lightsOn ? 1 : 0}`} act={roomAct} variant={ROOMS[roomIdx]!.v} weather={WEATHERS[weatherIdx]!.w ?? undefined} lights={lightsOn} />
               </Suspense>
               <RoomCritters outdoor={ROOMS[roomIdx]!.v === 'garden'} />
             </div>
@@ -102,9 +103,9 @@ export function GumiRoom() {
 
                   <div className="flex flex-1 flex-col items-center gap-1.5">
                     <div className="flex gap-2">
-                      <Stat icon="star" iconClass="text-accent" value={`${s.totalPoints}`} label="Điểm" />
-                      <Stat icon="flame" iconClass="text-primary" value={`${s.streak}`} label="Chuỗi" />
-                      <Stat icon="medal" iconClass="text-info" value={s.rank ? `#${s.rank}` : '—'} label="Hạng" />
+                      <Stat icon="star" iconClass="text-accent" value={`${s.totalPoints}`} />
+                      <Stat icon="flame" iconClass="text-primary" value={`${s.streak}`} />
+                      <Stat icon="medal" iconClass="text-info" value={s.rank ? `#${s.rank}` : '—'} />
                     </div>
                     <div className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur" aria-label={`Còn ${s.passesLeft} Bùa Hồi Sinh`}>
                       {[0, 1, 2].map((i) => <Icon key={i} name="heart" size={15} filled={i < s.passesLeft} className={i < s.passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
@@ -120,7 +121,26 @@ export function GumiRoom() {
                     <Icon name={ROOMS[roomIdx]!.icon} size={17} className="text-primary" />{ROOMS[roomIdx]!.name}
                     <span className="ml-1 flex gap-1">{ROOMS.map((_, i) => <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === roomIdx ? 'bg-primary' : 'bg-border-strong/30'}`} />)}</span>
                   </span>
-                  <button type="button" onClick={cycleWeather} aria-label={`Thời tiết: ${WEATHERS[weatherIdx]!.label}`} title={WEATHERS[weatherIdx]!.label} className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={WEATHERS[weatherIdx]!.icon} size={16} className="text-primary" />{WEATHERS[weatherIdx]!.label}</button>
+                  <div className="relative">
+                    <button type="button" onClick={() => setWeatherOpen((o) => !o)} aria-label={`Thời tiết: ${WEATHERS[weatherIdx]!.label}`} aria-expanded={weatherOpen} title="Chọn thời tiết" className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={WEATHERS[weatherIdx]!.icon} size={16} className="text-primary" />{WEATHERS[weatherIdx]!.label}</button>
+                    {weatherOpen && (
+                      <>
+                        <button type="button" aria-hidden className="fixed inset-0 z-20 cursor-default" onClick={() => setWeatherOpen(false)} />
+                        <div className="absolute left-1/2 top-full z-30 mt-2 w-max -translate-x-1/2 rounded-card border border-border bg-surface/95 p-1.5 shadow-pop backdrop-blur" role="menu">
+                          <div className="grid grid-cols-4 gap-1">
+                            {WEATHERS.map((wt, i) => (
+                              <button key={wt.label} type="button" role="menuitemradio" aria-checked={i === weatherIdx} onClick={() => { setWeatherIdx(i); setWeatherOpen(false); }}
+                                className={`flex w-16 flex-col items-center gap-0.5 rounded-control px-1 py-1.5 font-semibold transition-colors ${i === weatherIdx ? 'bg-primary text-on-primary' : 'text-muted hover:bg-border/50'}`}>
+                                <Icon name={wt.icon} size={17} className={i === weatherIdx ? '' : 'text-primary'} />
+                                <span className="text-[10px] leading-tight">{wt.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => setLightsOn((v) => !v)} aria-label={lightsOn ? 'Tắt đèn (tối)' : 'Bật đèn (sáng)'} title={lightsOn ? 'Tắt đèn' : 'Bật đèn'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={lightsOn ? 'sun' : 'moon'} size={18} className={lightsOn ? 'text-accent' : 'text-info'} /></button>
                   <button type="button" onClick={toggleMute} aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={muted ? 'volume-off' : 'volume'} size={18} /></button>
                 </div>
 
@@ -177,13 +197,13 @@ export function GumiRoom() {
   );
 }
 
-function Stat({ icon, iconClass, value, label }: { icon: IconName; iconClass?: string; value: string; label: string }) {
+function Stat({ icon, iconClass, value, label }: { icon: IconName; iconClass?: string; value: string; label?: string }) {
   return (
     <span className="flex min-w-[4.5rem] flex-col items-center rounded-card border border-border bg-surface/92 px-3 py-1.5 shadow-soft backdrop-blur">
       <span className="flex items-center gap-1 text-title font-bold leading-none">
         <Icon name={icon} size={16} filled className={iconClass} />{value}
       </span>
-      <span className="text-caption font-semibold text-muted">{label}</span>
+      {label && <span className="text-caption font-semibold text-muted">{label}</span>}
     </span>
   );
 }

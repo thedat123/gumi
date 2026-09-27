@@ -1,0 +1,9 @@
+{
+  "appId": "com.leveldown.gumi",
+  "appName": "Level Down",
+  "webDir": "dist",
+  "backgroundColor": "#FADED2",
+  "server": {
+    "androidScheme": "https"
+  }
+}

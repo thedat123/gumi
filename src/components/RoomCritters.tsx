@@ -39,17 +39,21 @@ function Bee() {
   );
 }
 
-/** Chuột chạy dưới sàn (trong nhà). */
+/** Chuột nhắt chạy dưới sàn (trong nhà) — tỉ lệ thật hơn: thân tròn, 2 tai, mõm hồng, chân, đuôi cong, ria. */
 function Mouse() {
   return (
-    <svg width="42" height="26" viewBox="0 0 42 26" aria-hidden="true">
-      <ellipse cx="20" cy="23" rx="13" ry="2.5" fill="rgba(58,36,30,0.15)" />
-      <path d="M30 18 q10 2 12 -6 q-6 5 -10 0z" fill="none" stroke="#B9A6A0" strokeWidth="1.6" strokeLinecap="round" />
-      <ellipse cx="16" cy="15" rx="12" ry="7.5" fill="#AEA39E" />
-      <circle cx="7" cy="10" r="4.5" fill="#AEA39E" /><circle cx="7" cy="10" r="2.4" fill="#E4B7C0" />
-      <circle cx="27" cy="13" r="5.5" fill="#B7ACA7" />
-      <circle cx="30" cy="12" r="1.2" fill="#2E2320" /><circle cx="32.5" cy="14" r="0.8" fill="#3A2A22" />
-      <path d="M33 14 l5 -1 M33 15 l5 1" stroke="#8A7D78" strokeWidth="0.7" />
+    <svg width="48" height="28" viewBox="0 0 48 28" aria-hidden="true">
+      <ellipse cx="22" cy="25" rx="15" ry="2.4" fill="rgba(58,36,30,0.14)" />
+      <path d="M33 17 q12 1 14 -8 q-2 7 -11 5" fill="none" stroke="#C7B5AE" strokeWidth="2" strokeLinecap="round" />
+      <ellipse cx="18" cy="16" rx="13" ry="8" fill="#B4A9A3" />
+      <ellipse cx="18" cy="18.6" rx="9" ry="4.4" fill="#D0C7C2" />
+      <ellipse cx="12" cy="23.6" rx="2" ry="1" fill="#9C8F89" /><ellipse cx="23" cy="23.6" rx="2" ry="1" fill="#9C8F89" />
+      <circle cx="10" cy="9" r="5" fill="#B4A9A3" /><circle cx="10" cy="9" r="2.7" fill="#E6BAC4" />
+      <circle cx="29" cy="14" r="6.6" fill="#BCB1AB" />
+      <ellipse cx="35" cy="14.6" rx="2.6" ry="2" fill="#B4A9A3" />
+      <circle cx="37" cy="14.7" r="1.5" fill="#E8929F" />
+      <circle cx="30" cy="12.4" r="1.5" fill="#2E2320" /><circle cx="30.5" cy="11.9" r="0.45" fill="#fff" />
+      <path d="M36 15 l8 1 M36 16.5 l8 3 M36 13.5 l8 -1.5" stroke="#8A7D78" strokeWidth="0.6" />
     </svg>
   );
 }
@@ -78,26 +82,75 @@ function Leaf() {
   );
 }
 
+/** Robot hút bụi (trong nhà) — dáng đĩa dẹt thật: cản va, mặt máy, cảm biến, chổi cạnh xoay, bánh xe. */
 function Vacuum() {
   return (
-    <svg width="50" height="48" viewBox="0 0 40 40" aria-hidden="true">
-      <ellipse cx="20" cy="35" rx="15" ry="3.5" fill="rgba(58,36,30,0.18)" />
-      <path d="M6 24 a14 14 0 0 1 28 0z" fill="#5A6068" /><path d="M6 24 a14 14 0 0 1 28 0" fill="none" stroke="#3B4046" strokeWidth="2" />
-      <rect x="4" y="23" width="32" height="4" rx="2" fill="#3B4046" />
-      <circle cx="20" cy="16" r="4.5" fill="#8ED0EC" /><circle cx="20" cy="16" r="4.5" fill="none" stroke="#B9E6F5" strokeWidth="1" /><circle cx="14" cy="14" r="1" fill="#CFF0FB" />
+    <svg width="54" height="34" viewBox="0 0 46 30" aria-hidden="true">
+      <ellipse cx="23" cy="27" rx="18" ry="3" fill="rgba(58,36,30,0.18)" />
+      <g className="npc-roll" style={{ transformOrigin: '40px 22px' }}>
+        <path d="M40 22 l5 -1 M40 22 l4 3.5 M40 22 l3 -4.5 M40 22 l5 2.5 M40 22 l1 -5" stroke="#E0C878" strokeWidth="1.4" strokeLinecap="round" />
+      </g>
+      <path d="M5 21 a18 8 0 0 1 36 0 z" fill="#4E545C" />
+      <rect x="4" y="20" width="38" height="6" rx="3" fill="#363B41" />
+      <ellipse cx="23" cy="13" rx="19" ry="6.5" fill="#5C636C" />
+      <ellipse cx="23" cy="11.4" rx="19" ry="5" fill="#666E77" />
+      <circle cx="23" cy="12" r="3.4" fill="#8ED0EC" /><circle cx="23" cy="12" r="3.4" fill="none" stroke="#BCE6F5" strokeWidth="1" /><circle cx="21.6" cy="10.8" r="1" fill="#EAF8FE" />
+      <rect x="12" y="9.5" width="9" height="2.2" rx="1.1" fill="#3A3F45" />
+      <circle cx="11" cy="24" r="1.6" fill="#23262A" /><circle cx="35" cy="24" r="1.6" fill="#23262A" />
     </svg>
   );
 }
 
-function FishBowl() {
+/** Một con cá bơi (vẽ hướng sang PHẢI, tâm ở gốc 0,0) — đuôi quẫy riêng. */
+function Fish({ body, tail, s = 1 }: { body: string; tail: string; s?: number }) {
   return (
-    <svg width="98" height="94" viewBox="0 0 58 56" aria-hidden="true">
-      <ellipse cx="29" cy="52" rx="18" ry="3.5" fill="rgba(58,36,30,0.15)" />
-      <rect x="20" y="46" width="18" height="5" rx="2.5" fill="#C98545" />
-      <path d="M12 22 a17 17 0 1 0 34 0 z" fill="#BFE6F2" opacity="0.5" /><ellipse cx="24" cy="18" rx="6" ry="8" fill="#EAF7FC" opacity="0.6" />
-      <path d="M12 22 a17 17 0 1 0 34 0" fill="none" stroke="#8FD0E6" strokeWidth="2" /><ellipse cx="29" cy="20" rx="17" ry="5" fill="#DFF3FA" opacity="0.7" />
-      <g style={a('npc-swim 3.4s ease-in-out infinite')}><ellipse cx="29" cy="34" rx="5.5" ry="3.5" fill="#F79A4A" /><path d="M34 34 l5 -3 l0 6z" fill="#F5B36F" /><circle cx="26" cy="33" r="0.9" fill="#3A2A22" /></g>
-      <circle cx="36" cy="40" r="1.1" fill="#DFF3FA" opacity="0.8" /><circle cx="33" cy="45" r="0.8" fill="#DFF3FA" opacity="0.7" />
+    <g transform={`scale(${s})`}>
+      <path className="aq-tail" d="M-8 0 l-9 -6 q3 6 0 12 z" fill={tail} />
+      <path d="M-1 -5 q6 -5 10 -1 q-5 2 -10 1z" fill={tail} opacity="0.9" />
+      <ellipse cx="0" cy="0" rx="9.5" ry="5.6" fill={body} />
+      <path d="M0 -5.6 q4 -4 8 -1" fill="none" stroke={tail} strokeWidth="1.4" opacity="0.8" />
+      <path d="M-3 0.5 q6 3 11 0" stroke="rgba(255,255,255,0.45)" strokeWidth="1" fill="none" />
+      <circle cx="5.6" cy="-1.3" r="1.6" fill="#2A2320" /><circle cx="6.1" cy="-1.8" r="0.55" fill="#fff" />
+    </g>
+  );
+}
+
+/** Bể cá LỚN: kính + nước + sỏi + rong + đá + bong bóng, 3 con cá bơi CHÂN THẬT (qua lại, lật hướng, quẫy đuôi, nhấp nhô). */
+function Aquarium() {
+  const swim = (dur: number, d: number, delay: number): CSSProperties => ({ ['--d' as string]: `${d}px`, animation: `aq-swim ${dur}s ease-in-out ${delay}s infinite` });
+  const bob = (dur: number): CSSProperties => ({ animation: `aq-bob ${dur}s ease-in-out infinite` });
+  return (
+    <svg width="238" height="170" viewBox="0 0 140 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="aqW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#C6ECF7" /><stop offset="1" stopColor="#66AED2" /></linearGradient>
+        <clipPath id="aqClip"><rect x="14" y="14" width="112" height="66" rx="8" /></clipPath>
+      </defs>
+      <ellipse cx="70" cy="97" rx="54" ry="5" fill="rgba(58,36,30,0.14)" />
+      {/* chân tủ gỗ */}
+      <rect x="16" y="80" width="108" height="15" rx="3" fill="#B07C48" /><rect x="16" y="80" width="108" height="4" rx="2" fill="#C98545" />
+      <rect x="34" y="86" width="14" height="7" rx="2" fill="#9c6b4a" opacity="0.6" /><rect x="92" y="86" width="14" height="7" rx="2" fill="#9c6b4a" opacity="0.6" />
+      <g clipPath="url(#aqClip)">
+        <rect x="14" y="14" width="112" height="66" fill="url(#aqW)" />
+        <ellipse cx="70" cy="18" rx="56" ry="6" fill="#EAF9FE" opacity="0.7" />
+        {/* sỏi đáy */}
+        <rect x="14" y="70" width="112" height="10" fill="#C9A36B" />
+        {[22, 34, 46, 58, 70, 82, 94, 106, 116].map((x, i) => <ellipse key={x} cx={x} cy={72 + (i % 2)} rx="5" ry="3" fill={i % 2 ? '#B98A5E' : '#D8B583'} />)}
+        {/* rong biển (đung đưa) */}
+        <path className="aq-sway" style={{ transformOrigin: '26px 70px' }} d="M26 72 q-5 -14 2 -22 q-6 12 0 22z" fill="#4E9E63" />
+        <path className="aq-sway" style={{ transformOrigin: '35px 70px', animationDelay: '-1.1s' }} d="M35 72 q6 -16 0 -28 q10 12 2 28z" fill="#5FB472" />
+        <path className="aq-sway" style={{ transformOrigin: '110px 70px', animationDelay: '-0.6s' }} d="M110 72 q7 -12 1 -22 q-8 10 -3 22z" fill="#4E9E63" />
+        {/* đá trang trí */}
+        <path d="M88 72 q6 -11 17 -2 q4 4 -3 6z" fill="#8C8F96" /><ellipse cx="97" cy="70" rx="4" ry="2" fill="#A7ABB2" />
+        {/* bong bóng nổi lên */}
+        {[[30, -0.2], [34, -1.4], [101, -0.8], [98, -2.1]].map(([x, d], i) => <circle key={i} className="aq-bubble" style={{ animationDelay: `${d}s` }} cx={x} cy="68" r={1.2 + (i % 2) * 0.6} fill="#EAF9FE" />)}
+        {/* CÁ — 3 con, tốc độ/độ sâu/pha khác nhau */}
+        <g transform="translate(23 33)"><g className="aq-fish" style={swim(8, 84, 0)}><g style={bob(2.6)}><Fish body="#F58B3C" tail="#F2A960" /></g></g></g>
+        <g transform="translate(30 52)"><g className="aq-fish" style={swim(6.4, 72, -2)}><g style={bob(2)}><Fish body="#E45D6E" tail="#EE8391" s={0.82} /></g></g></g>
+        <g transform="translate(20 44)"><g className="aq-fish" style={swim(9.6, 90, -4)}><g style={bob(3)}><Fish body="#5AA9E0" tail="#89C6EC" s={0.72} /></g></g></g>
+      </g>
+      {/* viền kính + nắp */}
+      <rect x="12" y="12" width="116" height="70" rx="10" fill="none" stroke="#A9D6E4" strokeWidth="2.5" />
+      <rect x="10" y="9" width="120" height="7" rx="3.5" fill="#8FA6AE" /><rect x="10" y="9" width="120" height="3" rx="1.5" fill="#AEC2C9" />
     </svg>
   );
 }
@@ -122,7 +175,7 @@ export function RoomCritters({ outdoor = false }: { outdoor?: boolean }) {
   }
   return (
     <div className="npc-move pointer-events-none absolute inset-0 z-[5] overflow-hidden" aria-hidden="true">
-      <div className="npc" style={{ left: '4%', bottom: '17%' }}><FishBowl /></div>
+      <div className="npc" style={{ left: '2%', bottom: '6%' }}><Aquarium /></div>
       <div className="npc" style={{ top: '90%', ...a('npc-patrol 26s linear -9s infinite reverse') }}><Vacuum /></div>
       <div className="npc" style={{ top: '93%', ...a('npc-patrol 16s ease-in-out -5s infinite') }}><div style={a('npc-hop 0.34s ease-in-out infinite')}><Mouse /></div></div>
       <div className="npc" style={{ top: '13%', ...a('npc-cross 26s linear -6s infinite') }}><div style={a('npc-float 2.4s ease-in-out infinite')}><Butterfly hue="#B7A98E" hue2="#CFC3A8" /></div></div>

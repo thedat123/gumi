@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { Banner } from '../components/Banner';
@@ -41,6 +41,17 @@ export function CheckIn() {
 
   const needsLevel = LEVEL_DAYS.includes(day);
 
+  // Nạp SẴN model on-device CHỈ KHI không có API đám mây (GCV/VLM) → lúc chụp nhận diện chạy nhanh.
+  useEffect(() => {
+    if (!needsStamp) return;
+    let cancel = false;
+    (async () => {
+      const [{ gcvAvailable }, { vlmAvailable }] = await Promise.all([import('../lib/gcv'), import('../lib/vlm')]);
+      if (!cancel && !gcvAvailable && !vlmAvailable) { const { warm } = await import('../lib/vision'); warm(); }
+    })();
+    return () => { cancel = true; };
+  }, [needsStamp]);
+
   const pick = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     setFileName(f?.name ?? null);
@@ -52,8 +63,17 @@ export function CheckIn() {
     if (!needsStamp) { setOcr('ok'); return; } // ngày SHARE không cần tem
     setOcr('reading'); setProg(0); setDetail('');
 
-    // 1) Có key VLM (Gemini) → VLM là NGUỒN SỰ THẬT: đọc được cả % đường, và KHÔNG rơi về CLIP khi lỗi
-    //    (tránh ảnh giả lọt qua bộ nhận diện yếu). Lỗi thì báo để thử lại.
+    // 1) GOOGLE CLOUD VISION (ưu tiên cao nhất): nhanh <1s, rẻ, scale — nhận đồ uống + đọc % đường trên tem.
+    const gcv = await import('../lib/gcv');
+    if (gcv.gcvAvailable) {
+      const r = await gcv.verifyDrink(f);
+      setVlm(r);
+      if (r.ran) { if (r.ok) { setDetail(vi.checkin.ocr.okVlm(r.drink || 'đồ uống')); setOcr('ok'); } else { setDetail(r.reason); setOcr('fail'); } }
+      else { setDetail(vi.checkin.ocr.vlmError); setOcr('fail'); }
+      return;
+    }
+
+    // 2) Gemini VLM (nếu có key): NGUỒN SỰ THẬT — đọc được cả % đường; lỗi thì báo để thử lại (không rơi về CLIP).
     const { vlmAvailable, verifyDrink } = await import('../lib/vlm');
     if (vlmAvailable) {
       const r = await verifyDrink(f);
@@ -67,16 +87,17 @@ export function CheckIn() {
       return;
     }
 
-    // 2) On-device: CLIP nhận diện đồ uống + OCR đọc tem.
-    const [{ detectDrink, fileToImage }, { readStamp }] = await Promise.all([import('../lib/vision'), import('../lib/ocr')]);
+    // 3) On-device: CLIP nhận diện đồ uống TRƯỚC (đã nạp sẵn → nhanh, dưới ~2s).
+    const { detectDrink, fileToImage } = await import('../lib/vision');
     let img: HTMLImageElement | null = null;
     try { img = await fileToImage(f); } catch { /* ảnh lỗi */ }
-    const [vis, stamp] = await Promise.all([
-      img ? detectDrink(img) : Promise.resolve<VisionResult>({ ok: false, labels: [], score: 0, ran: false, unavailable: true }),
-      readStamp(f, setProg),
-    ]);
-    if (vis.ok) { setDetail(vi.checkin.ocr.okDrink(vis.labels.join(', '))); setOcr('ok'); }
-    else if (stamp.ok) { setDetail(vi.checkin.ocr.okStamp); setOcr('ok'); }
+    const vis: VisionResult = img ? await detectDrink(img) : { ok: false, labels: [], score: 0, ran: false, unavailable: true };
+    if (vis.ok) { setDetail(vi.checkin.ocr.okDrink(vis.labels.join(', '))); setOcr('ok'); return; }
+
+    // CLIP chưa chắc → mới đọc TEM bằng OCR (Tesseract chậm hơn, chỉ dùng như phương án 2).
+    const { readStamp } = await import('../lib/ocr');
+    const stamp = await readStamp(f, setProg);
+    if (stamp.ok) { setDetail(vi.checkin.ocr.okStamp); setOcr('ok'); }
     else if (vis.unavailable && stamp.unavailable) setOcr('unavailable');
     else setOcr('fail');
   };
@@ -106,7 +127,10 @@ export function CheckIn() {
         <Gumi state="bo_pho" size={150} progress={day / vi.journey.total} event="cheer" eventKey={1} />
         <Banner kind="success">{vi.checkin.success(m.points)}</Banner>
         <ChapterTease day={day} />
-        <Link to="/" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.checkin.back}</Link>
+        <div className="flex w-full max-w-xs flex-col items-stretch gap-2 sm:max-w-md sm:flex-row">
+          <Link to="/journey" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+          <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-border-strong/50 bg-surface px-5 font-semibold text-muted">{vi.minigames.common.backToRoom}</Link>
+        </div>
       </div>
     );
   }
