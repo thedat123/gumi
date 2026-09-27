@@ -653,7 +653,12 @@ export const vi = {
   pwa: {
     install: 'Cài app',
     iosTitle: 'Cài Level Down lên iPhone',
-    iosBody: 'Trong Safari: bấm nút Chia sẻ ⬆️ ở thanh dưới → chọn "Thêm vào MH chính" → Thêm. App sẽ chạy toàn màn hình như app thật.',
+    iosNote: 'iPhone không cho cài tự động — làm 3 bước sau (phải mở bằng Safari; Chrome/Cốc Cốc không cài được):',
+    iosSteps: [
+      'Bấm nút Chia sẻ ⬆️ ở thanh Safari.',
+      'Kéo xuống, chọn "Thêm vào Màn hình chính".',
+      'Bấm "Thêm" — xong, icon hiện ở màn hình chính!',
+    ],
     close: 'Đã hiểu',
   },
 } as const;
