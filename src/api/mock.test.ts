@@ -1,7 +1,21 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ApiError } from './types';
 import { createMockApi, resetMock } from './mock';
+
+// localStorage giả tối giản để chạy ở môi trường 'node' — KHÔNG cần jsdom (jsdom kéo undici gây lỗi
+// "markAsUncloneable is not a function" trên Node của CI). Nhờ vậy CI chạy ổn trên mọi phiên bản Node.
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map<string, string>();
+  const mem: Storage = {
+    get length() { return store.size; },
+    clear: () => store.clear(),
+    getItem: (k) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k, v) => { store.set(k, String(v)); },
+    removeItem: (k) => { store.delete(k); },
+    key: (i) => [...store.keys()][i] ?? null,
+  };
+  globalThis.localStorage = mem;
+}
 
 beforeEach(() => resetMock());
 
