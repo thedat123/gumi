@@ -37,7 +37,7 @@ export function AppShell() {
       <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
           <NavLink to="/" className="flex items-center gap-2.5">
-            <span aria-hidden="true" className="grad-brand flex h-9 w-9 items-center justify-center rounded-[11px] text-body shadow-pop ring-2 ring-surface">🐱</span>
+            <img src="/icons/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-[11px] shadow-pop ring-2 ring-surface" />
             <span className="text-gradient text-body font-extrabold tracking-tight sm:text-title">{vi.app.name}</span>
           </NavLink>
           <div className="flex items-center gap-2">
