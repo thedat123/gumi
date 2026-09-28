@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Application, Container, Graphics } from 'pixi.js';
+import { getQuality } from '../lib/quality';
 
 type Act = 1 | 2 | 3 | 'room';
 
@@ -21,12 +22,13 @@ export function PixiScene({ act }: { act: Act }) {
     if (!el) return;
     let app: Application | null = null;
     let destroyed = false;
+    const q = getQuality();
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 
     (async () => {
       const a = new Application();
       try {
-        await a.init({ resizeTo: el, backgroundAlpha: 0, antialias: true, powerPreference: 'low-power', autoDensity: true, resolution: Math.min(2, window.devicePixelRatio || 1) });
+        await a.init({ resizeTo: el, backgroundAlpha: 0, antialias: q.antialias, powerPreference: 'low-power', autoDensity: true, resolution: Math.min(q.pixelRatio, window.devicePixelRatio || 1) });
       } catch { return; } // WebGL không khả dụng → bỏ qua, cảnh CSS vẫn còn
       if (destroyed) { a.destroy(true); return; }
       app = a;
@@ -67,7 +69,7 @@ export function PixiScene({ act }: { act: Act }) {
         bitLayer.addChild(g);
         return b;
       };
-      const bits = Array.from({ length: COUNT[act] }, mk);
+      const bits = Array.from({ length: Math.max(6, Math.round(COUNT[act] * q.pixiCount)) }, mk);
 
       const recycle = (b: Bit) => {
         if (act === 3) { b.y = rnd(-H() * 0.2, -5); b.x = rnd(0, W()); }

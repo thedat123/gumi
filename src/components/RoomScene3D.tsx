@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -7,6 +7,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { playSfx } from '../lib/sfx';
+import { getQuality } from '../lib/quality';
 import type { RoomVariant } from './RoomScene';
 
 const lerp = THREE.MathUtils.lerp;
@@ -339,19 +340,31 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
   const lightsRef = useRef(lights);
   useEffect(() => { lightsRef.current = lights; }, [lights]);
 
+  // Màn hẹp (điện thoại dọc) → cửa sổ hai bên bị khung hình cắt mất; dùng bố cục cửa sổ RIÊNG cho mobile.
+  // Theo dõi bằng media-query để xoay ngang/dọc là dựng lại đúng bố cục.
+  const [narrow, setNarrow] = useState(() => window.matchMedia?.('(max-width: 640px)').matches ?? ((window.innerWidth || 1024) <= 640));
+  useEffect(() => {
+    const mq = window.matchMedia?.('(max-width: 640px)');
+    if (!mq) return;
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+
   useEffect(() => {
     const el = host.current;
     if (!el) return;
     const p = P3[act];
     const garden = variant === 'garden';
     let raf = 0; let disposed = false;
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('rm');
+    const q = getQuality();
+    const reduce = q.reduce;
 
     let renderer: THREE.WebGLRenderer;
-    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+    try { renderer = new THREE.WebGLRenderer({ antialias: q.antialias, alpha: true, powerPreference: q.tier === 'low' ? 'low-power' : 'high-performance' }); }
     catch { return; }
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(q.pixelRatio, window.devicePixelRatio || 1));
+    renderer.shadowMap.enabled = q.shadows;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -416,7 +429,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     const hemi = new THREE.HemisphereLight(p.hemi, 0x8a7a68, baseHemi * M0.hemiMul); scene.add(hemi);
     const sun = new THREE.DirectionalLight(M0.sunColor, M0.sunI);
     sun.position.set(M0.sunPos[0], M0.sunPos[1], M0.sunPos[2]);
-    sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); // 1024 đủ đẹp, dựng cảnh nhanh hơn
+    sun.castShadow = q.shadows; sun.shadow.mapSize.set(q.shadowMap, q.shadowMap); // hạ theo hạng máy (máy yếu tắt hẳn bóng)
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 26;
     sun.shadow.camera.left = -8; sun.shadow.camera.right = 8; sun.shadow.camera.top = 8; sun.shadow.camera.bottom = -6;
     sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.018; sun.shadow.radius = 5.5; scene.add(sun); // bóng mềm hơn → ít mảng tối gắt
@@ -458,8 +471,8 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     const fxMat = track(new THREE.MeshBasicMaterial({ map: rainFx, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending })); // nền đen cộng 0, vệt sáng hiện
     let fxKind: 'rain' | 'snow' | 'none' = 'none';
     const cloth: THREE.Object3D[] = [];
-    const window3D = (x: number, z: number, ry = 0) => {
-      const g = new THREE.Group(); g.position.set(x, 3.1, z); g.rotation.y = ry;
+    const window3D = (x: number, z: number, ry = 0, y = 3.1, s = 1) => {
+      const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s);
       const frame = mat(0xF3ECE2, 0.6);
       box(2.7, 2.5, 0.16, frame, 0, 0, 0.02, true, g);
       const glass = new THREE.Mesh(track(new THREE.PlaneGeometry(2.3, 2.1)), glassMat);
@@ -624,7 +637,9 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       const ceilL = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilL.position.set(-3.2, 7.0, -0.4); scene.add(ceilL);
       const ceilR = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilR.position.set(3.2, 7.0, -0.4); scene.add(ceilR);
       fairyLights();                                            // đèn dây vắt ngang đỉnh tường
-      window3D(-5.2, -2.9); window3D(5.2, -2.9);                // HAI cửa sổ đối xứng hai bên tường
+      // HAI cửa sổ đối xứng. Mobile (màn hẹp): kéo vào TRONG khung + nâng lên góc cao để không bị cắt & không đè tranh/đồng hồ.
+      if (narrow) { window3D(-2.5, -2.9, 0, 5.5, 0.82); window3D(2.5, -2.9, 0, 5.5, 0.82); }
+      else { window3D(-5.2, -2.9); window3D(5.2, -2.9); }
 
       // ===== TƯỜNG CHÍNH — TRANH bên TRÁI · ĐỒNG HỒ bên PHẢI → chừa GIỮA cho HUD/Gumi, KHÔNG bị che =====
       artFrame(-2.6, 3.05, 1.3, 1.65, { art: 'mona', gold: true, light: true, plate: 'LA GIOCONDA' }); // MONA LISA lệch TRÁI (bạn thích → giữ)
@@ -662,7 +677,9 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       const marbleTex = track(marbleTexture('#262D33', '#8C97A2')); marbleTex.repeat.set(1.4, 1.4);
       const splash = new THREE.Mesh(track(new THREE.PlaneGeometry(2.7, 2.75)), track(new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.24, metalness: 0.2 })));
       splash.position.set(0, 2.5, -2.87); splash.receiveShadow = true; scene.add(splash);
-      window3D(-2.75, -2.9); window3D(2.75, -2.9);                   // hai cửa sổ TRÊN QUẦY, ôm hai bên tấm đá & hút mùi (không đâm vào tủ/tủ lạnh)
+      // hai cửa sổ TRÊN QUẦY, ôm hai bên tấm đá & hút mùi. Mobile: kéo vào + nâng cao trên tấm đá để lọt khung hình hẹp.
+      if (narrow) { window3D(-2.4, -2.9, 0, 5.0, 0.82); window3D(2.4, -2.9, 0, 5.0, 0.82); }
+      else { window3D(-2.75, -2.9); window3D(2.75, -2.9); }
 
       // DÃY BẾP DƯỚI — căn đều 1.6m, BẾP + HÚT MÙI CHÍNH GIỮA, hai bên cân đối
       place('kitchenStove', 0, 0, -2.5, 1.55, 0, 0x2E2E33);          // bếp CHÍNH GIỮA (dưới hút mùi)
@@ -792,13 +809,13 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
 
     // Bụi lơ lửng
     const dustGeo = track(new THREE.BufferGeometry());
-    const ND = 60; const dpos = new Float32Array(ND * 3); const dvel = new Float32Array(ND);
+    const ND = q.dust; const dpos = new Float32Array(ND * 3); const dvel = new Float32Array(ND);
     for (let i = 0; i < ND; i++) { dpos[i * 3] = (Math.random() - 0.5) * 13; dpos[i * 3 + 1] = Math.random() * 7; dpos[i * 3 + 2] = (Math.random() - 0.5) * 8; dvel[i] = 0.1 + Math.random() * 0.25; }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
     scene.add(new THREE.Points(dustGeo, track(new THREE.PointsMaterial({ color: garden ? 0xffffff : 0xffe7b0, size: 0.05, transparent: true, opacity: 0.3, depthWrite: false }))));
 
     // Mưa & tuyết — luôn tạo, hiện/ẩn mượt bằng opacity theo mood.
-    const RN = 220; const rpos = new Float32Array(RN * 6); const rvy = new Float32Array(RN);
+    const RN = q.rain; const rpos = new Float32Array(RN * 6); const rvy = new Float32Array(RN);
     for (let i = 0; i < RN; i++) {
       const x = (Math.random() - 0.5) * 16, y = Math.random() * 9, z = (Math.random() - 0.5) * 6 + 1, len = 0.34 + Math.random() * 0.22;
       rpos[i * 6] = x; rpos[i * 6 + 1] = y; rpos[i * 6 + 2] = z; rpos[i * 6 + 3] = x + 0.03; rpos[i * 6 + 4] = y - len; rpos[i * 6 + 5] = z; rvy[i] = 0.16 + Math.random() * 0.12;
@@ -807,7 +824,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     const rainMat = track(new THREE.LineBasicMaterial({ color: 0x9EB6CC, transparent: true, opacity: 0, depthWrite: false }));
     const rainObj = new THREE.LineSegments(rainGeo, rainMat); rainObj.visible = false; scene.add(rainObj);
 
-    const SN = 300; const spos = new Float32Array(SN * 3); const svy = new Float32Array(SN); const sph = new Float32Array(SN);
+    const SN = q.snow; const spos = new Float32Array(SN * 3); const svy = new Float32Array(SN); const sph = new Float32Array(SN);
     for (let i = 0; i < SN; i++) { spos[i * 3] = (Math.random() - 0.5) * 16; spos[i * 3 + 1] = Math.random() * 9; spos[i * 3 + 2] = (Math.random() - 0.5) * 7 + 1; svy[i] = 0.012 + Math.random() * 0.02; sph[i] = Math.random() * 6.28; }
     const snowGeo = track(new THREE.BufferGeometry()); snowGeo.setAttribute('position', new THREE.BufferAttribute(spos, 3));
     const snowMat = track(new THREE.PointsMaterial({ map: track(softDot()), color: 0xffffff, size: 0.16, transparent: true, opacity: 0, depthWrite: false }));
@@ -816,7 +833,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     // ===== Hậu kỳ =====
     let composer: EffectComposer | null = null;
     let bloom: UnrealBloomPass | null = null;
-    if (!reduce) {
+    if (!reduce && q.bloom) { // hậu kỳ toả sáng CHỈ bật ở máy khoẻ; máy yếu/mobile render thẳng cho nhẹ
       const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
       composer = new EffectComposer(renderer, rt);
       composer.setPixelRatio(renderer.getPixelRatio());
@@ -902,11 +919,15 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
 
     const render = () => { if (composer) composer.render(); else renderer.render(scene, camera); };
     const clock = new THREE.Clock();
+    const frameMin = q.fpsCap > 0 ? 1 / q.fpsCap : 0; // giới hạn FPS ở máy yếu (đỡ nóng máy, tiết kiệm pin)
+    let acc = 0;
     const loop = () => {
       if (disposed) return;
       raf = requestAnimationFrame(loop);
+      acc += clock.getDelta();
+      if (frameMin && acc < frameMin) return; // chưa tới nhịp khung kế → bỏ qua, GIỮ thời gian dồn cho lần render sau
       const t = clock.getElapsedTime();
-      const dt = Math.min(0.05, clock.getDelta());
+      const dt = Math.min(0.05, acc); acc = 0; // dt = thời gian DỒN từ khung vẽ trước → hoạt ảnh không bị chậm khi giới hạn FPS
       applyMood(1 - Math.pow(1e-8, dt)); // chuyển gần như TỨC THÌ (~0.15s) khi đổi thời tiết/đèn
       // Bầu trời NGOÀI cửa sổ đổi NGAY khi đổi thời tiết (ánh sáng phòng thì fade mượt)
       if (weatherRef.current !== lastWeather) { lastWeather = weatherRef.current; glassMat.map = skyTexes[lastWeather]; glassMat.needsUpdate = true; }
@@ -946,7 +967,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       renderer.dispose();
       if (renderer.domElement.parentNode === el) el.removeChild(renderer.domElement);
     };
-  }, [act, variant]);
+  }, [act, variant, narrow]);
 
   return <div ref={host} aria-hidden="true" className="absolute inset-0" />;
 }
