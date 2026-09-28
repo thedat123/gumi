@@ -6,7 +6,7 @@ import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ChapterTease } from '../components/ChapterTease';
-import { GameShell, GameStat } from '../components/GameShell';
+import { GameShell } from '../components/GameShell';
 import { Gumi } from '../components/Gumi';
 import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
@@ -17,20 +17,25 @@ import type { QuizQuestion, QuizResult } from '../api/types';
 type Phase = 'intro' | 'playing' | 'result';
 const DAY = 2;
 
-/** S07 — Quiz Day 2 (thanh trượt). Điểm chấm ở server (mock/RPC), client chỉ gửi số đoán. */
+/** S07 — Quiz Day 2 (thanh trượt): 1 câu "trà sữa có bao nhiêu thìa đường?". Trúng khoảng 12–15 = đúng.
+ *  Điểm chấm ở server (mock/RPC); client chỉ gửi số đoán và hiển thị đúng/lệch + giải thích. */
 export function Quiz() {
   const qs = useAsync(() => api.getQuizQuestions(), []);
   const [phase, setPhase] = useState<Phase>('intro');
-  const [step, setStep] = useState(0);
-  const [guesses, setGuesses] = useState<Record<number, number>>({});
-  const [guess, setGuess] = useState(6);
+  const [guess, setGuess] = useState(8);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (phase === 'result' && result) {
+    const hit = guess >= vi.quiz.correctMin && guess <= vi.quiz.correctMax;
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 pt-4 text-center">
         <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
+        <Banner kind={hit ? 'success' : 'info'}>{hit ? vi.quiz.correct : vi.quiz.off}</Banner>
+        <Card className="text-left">
+          <p className="text-small font-bold text-primary">{vi.quiz.answerWas}</p>
+          <p className="mt-1 text-small text-muted">{vi.quiz.explain}</p>
+        </Card>
         <Banner kind="success">{vi.quiz.result(result.score, result.max)}</Banner>
         <p className="text-small text-muted">{vi.quiz.resultSub}</p>
         <ChapterTease day={DAY} />
@@ -56,27 +61,18 @@ export function Quiz() {
   return (
     <AsyncView state={qs}>
       {(questions: QuizQuestion[]) => {
-        const q = questions[step]!;
-        const submitAll = async (all: Record<number, number>) => {
+        const q = questions[0]!;
+        const submit = async () => {
           setBusy(true);
-          try { setResult(await api.submitQuiz(all)); playSfx('win'); setPhase('result'); }
+          try { setResult(await api.submitQuiz({ [q.id]: guess })); playSfx('win'); setPhase('result'); }
           finally { setBusy(false); }
         };
-        const next = () => {
-          playSfx('pop');
-          const all = { ...guesses, [q.id]: guess };
-          setGuesses(all);
-          if (step + 1 >= questions.length) submitAll(all);
-          else { setStep(step + 1); setGuess(6); }
-        };
-        const last = step + 1 >= questions.length;
         return (
           <GameShell act={actOfDay(DAY)} title={vi.quiz.title}
-            hud={<GameStat icon="check" value={vi.quiz.questionOf(step + 1, questions.length)} tone="success" />}
-            footer={<Button onClick={next} loading={busy} block>{last ? vi.quiz.finish : vi.quiz.next}</Button>}>
+            footer={<Button onClick={submit} loading={busy} block>{vi.quiz.submit}</Button>}>
             <div className="flex flex-1 flex-col justify-center">
               <Card className="flex flex-col gap-4">
-                <p className="text-body font-semibold">{q.drink}</p>
+                <p className="text-body font-semibold">{vi.quiz.question}</p>
                 <div className="flex flex-col gap-2">
                   <label htmlFor="guess" className="text-small">{vi.quiz.guessLabel} <span className="font-bold text-primary">{vi.quiz.spoons(guess)}</span></label>
                   <input id="guess" type="range" min={q.min} max={q.max} value={guess} onChange={(e) => setGuess(Number(e.target.value))} className="h-11 w-full accent-primary" />

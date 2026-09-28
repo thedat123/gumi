@@ -15,10 +15,13 @@
   --color-success: #1F7A4D;
   --color-danger: #B3261E;
   --color-info: #55768C;
-  --color-gumi: #E3A57C;
-  --color-gumi-dark: #845747;
-  --color-gumi-belly: #FCE9DF;
-  --color-gumi-ink: #3A241E;
+  --color-gumi: #F5A31C;
+  --color-gumi-dark: #D9820F;
+  --color-gumi-belly: #F8DBCC;
+  --color-gumi-ink: #26190F;
+  --color-gumi-line: #26190F;
+  --color-gumi-cheek: #F58C86;
+  --color-gumi-nose: #C9764E;
   --font-sans: 'Plus Jakarta Sans Variable', 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --radius-card: 18px;
   --radius-control: 12px;

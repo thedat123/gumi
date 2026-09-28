@@ -55,7 +55,7 @@ describe('mock API — luồng chơi', () => {
   it('quiz Day 2 chấm điểm và sang ngày kế', async () => {
     const api = await ready();
     await api.submitCheckin(1, 70, 'a.jpg');
-    const res = await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 }); // đoán trúng hết
+    const res = await api.submitQuiz({ 0: 13 }); // đoán trúng khoảng 12–15
     expect(res.score).toBe(res.max);
     const j = await api.getJourney();
     expect(j.day).toBe(3);

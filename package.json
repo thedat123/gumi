@@ -14,6 +14,7 @@
     "tokens": "node scripts/gen-theme.mjs",
     "icons": "node scripts/gen-icons.mjs",
     "admin:migration": "node scripts/gen-admin-migration.mjs",
+    "db:seed": "bash scripts/seed-all.sh",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {

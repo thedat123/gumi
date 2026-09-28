@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../api';
 import { Banner } from '../../components/Banner';
@@ -11,92 +11,207 @@ import { playSfx } from '../../lib/sfx';
 
 const TIME_LIMIT = 180; // brief: 3 phút
 const norm = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '');
+type Dir = 'across' | 'down';
+type Word = (typeof vi.minigames.crossword.words)[number];
 
-/** Ngày 16 — Gumi Bắt Chữ (crossword): đoán từ khoá mỗi dòng theo gợi ý. Hết 3 phút là dừng, không chơi lại. */
+const K = (r: number, c: number) => `${r}-${c}`;
+const cellsOf = (w: Word) => Array.from(w.answer, (ch, i) => ({
+  key: w.dir === 'down' ? K(w.r + i, w.c) : K(w.r, w.c + i), ch,
+}));
+
+/** Ngày 16 — Gumi Bắt Chữ: crossword ô lồng nhau, GÕ TRỰC TIẾP vào ô (tự nhảy ô kế).
+ *  Hết 3 phút là dừng, không chơi lại. */
 export function Crossword() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 16;
   const m = vi.missions[day - 1];
   const cfg = vi.minigames.crossword;
-  const rows = cfg.rows;
+  const words = cfg.words;
 
-  const [values, setValues] = useState<string[]>(() => rows.map(() => ''));
-  const [solved, setSolved] = useState<boolean[]>(() => rows.map(() => false));
+  // Bản đồ ô: key → { chữ đúng, số, chỉ số từ ngang/dọc đi qua }.
+  const cells = useMemo(() => {
+    const map = new Map<string, { ch: string; num?: number; across?: number; down?: number }>();
+    words.forEach((w, wi) => cellsOf(w).forEach((cell, ci) => {
+      const e = map.get(cell.key) ?? { ch: cell.ch };
+      e.ch = cell.ch;
+      if (w.dir === 'across') e.across = wi; else e.down = wi;
+      if (ci === 0) e.num = w.num;
+      map.set(cell.key, e);
+    }));
+    return map;
+  }, [words]);
+
+  const wordKeys = useMemo(() => words.map((w) => cellsOf(w).map((c) => c.key)), [words]);
+
+  const [entries, setEntries] = useState<Record<string, string>>({});
+  const [active, setActive] = useState<{ key: string; dir: Dir } | null>(null);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
-  const allSolved = solved.every(Boolean);
+  const refs = useRef<Record<string, HTMLInputElement | null>>({});
+  const dirRef = useRef<Dir>('across'); // hướng gõ hiện tại (đồng bộ, không lệ thuộc render)
 
-  // Đồng hồ đếm ngược 3 phút. Hết giờ → THUA, khoá màn, tiêu ngày (không cho thử lại).
+  // Từ đã giải = mọi ô của nó khớp đáp án.
+  const solved = useMemo(
+    () => words.map((_, wi) => wordKeys[wi]!.every((k, i) => (entries[k] ?? '') === words[wi]!.answer[i])),
+    [entries, words, wordKeys],
+  );
+  const solvedCount = solved.filter(Boolean).length;
+  const allSolved = solvedCount === words.length;
+
+  // Đồng hồ 3 phút.
   useEffect(() => {
     if (done || failed || allSolved) return;
-    if (timeLeft <= 0) {
-      setFailed(true);
-      playSfx('wrong');
-      api.submitMinigame(day).catch(() => {});
-      return;
-    }
+    if (timeLeft <= 0) { setFailed(true); playSfx('wrong'); api.submitMinigame(day).catch(() => {}); return; }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
   }, [timeLeft, done, failed, allSolved, day]);
 
+  // Kêu vui mỗi khi giải thêm một từ.
+  const prevSolved = useRef(0);
+  useEffect(() => { if (solvedCount > prevSolved.current) playSfx('happy'); prevSolved.current = solvedCount; }, [solvedCount]);
+
+  // Thắng cả bảng.
+  useEffect(() => {
+    if (allSolved && !done && !failed) {
+      setBurst((b) => b + 1); api.submitMinigame(day).catch(() => {}); const t = setTimeout(() => setDone(true), 900); return () => clearTimeout(t);
+    }
+  }, [allSolved, done, failed, day]);
+
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
   if (done) return <MissionDone day={day} points={m.points} note={cfg.success} />;
-
-  const solvedCount = solved.filter(Boolean).length;
   if (failed) return (
     <div className="flex flex-col items-center gap-3 pt-6 text-center">
       <Gumi state="hap_hoi" size={140} />
       <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
-      <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, rows.length)}</p>
+      <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, words.length)}</p>
       <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
 
-  const onType = (i: number, raw: string) => {
-    if (solved[i]) return;
-    const val = norm(raw).slice(0, rows[i]!.answer.length);
-    setValues((arr) => arr.map((x, k) => (k === i ? val : x)));
-    if (val === rows[i]!.answer) {
-      playSfx('happy');
-      const ns = solved.map((s, k) => (k === i ? true : s));
-      setSolved(ns);
-      if (ns.every(Boolean)) { setBurst((b) => b + 1); api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 900); }
+  const pickDir = (key: string, prefer?: Dir): Dir => {
+    const c = cells.get(key)!;
+    if (prefer === 'across' && c.across != null) return 'across';
+    if (prefer === 'down' && c.down != null) return 'down';
+    return c.across != null ? 'across' : 'down';
+  };
+  const focus = (key: string) => { const el = refs.current[key]; if (el) { el.focus(); el.select(); } };
+
+  // Ô kế trong hướng (bỏ qua ô đã khoá); null nếu hết từ.
+  const step = (key: string, dir: Dir, sign: 1 | -1): string | null => {
+    const [r, c] = key.split('-').map(Number) as [number, number];
+    const nk = dir === 'across' ? K(r, c + sign) : K(r + sign, c);
+    const nc = cells.get(nk); if (!nc) return null;
+    const cur = cells.get(key)!;
+    const same = dir === 'across' ? nc.across != null && nc.across === cur.across : nc.down != null && nc.down === cur.down;
+    return same ? nk : null;
+  };
+  const advance = (key: string, dir: Dir, sign: 1 | -1) => { const nk = step(key, dir, sign); if (nk) focus(nk); };
+
+  const setDir = (key: string, d: Dir) => { dirRef.current = d; setActive({ key, dir: d }); };
+  const onFocus = (key: string) => setDir(key, pickDir(key, dirRef.current));
+  const onClick = (key: string) => {
+    const c = cells.get(key)!;
+    const toggle = active && active.key === key && c.across != null && c.down != null;
+    setDir(key, toggle ? (active!.dir === 'across' ? 'down' : 'across') : pickDir(key, dirRef.current));
+  };
+
+  const type = (key: string, raw: string) => {
+    const ch = norm(raw).slice(-1);
+    setEntries((prev) => ({ ...prev, [key]: ch }));
+    if (ch) advance(key, dirRef.current, 1); // nhảy ô ngay (đồng bộ, hướng lấy từ ref) để không rớt phím
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, key: string) => {
+    const dir = dirRef.current;
+    // Bàn phím vật lý (máy tính): xử lý chữ ngay ở keydown — ổn định, không dính maxLength/selection.
+    // (Mobile soft-keyboard không cho e.key là chữ → rơi xuống onChange bên dưới.)
+    if (/^[a-zA-Z]$/.test(e.key)) {
+      e.preventDefault();
+      setEntries((prev) => ({ ...prev, [key]: e.key.toUpperCase() }));
+      advance(key, dir, 1);
+      return;
+    }
+    if (e.key === 'Backspace') {
+      if (!(entries[key] ?? '')) { e.preventDefault(); const pk = step(key, dir, -1); if (pk) { setEntries((p) => ({ ...p, [pk]: '' })); focus(pk); } }
+      return;
+    }
+    if (e.key === ' ') { e.preventDefault(); onClick(key); return; }
+    const moves: Record<string, [Dir, 1 | -1]> = { ArrowRight: ['across', 1], ArrowLeft: ['across', -1], ArrowDown: ['down', 1], ArrowUp: ['down', -1] };
+    const mv = moves[e.key];
+    if (mv) {
+      const [r, c] = key.split('-').map(Number) as [number, number];
+      const nk = mv[0] === 'across' ? K(r, c + mv[1]) : K(r + mv[1], c);
+      if (cells.get(nk)) { e.preventDefault(); setDir(nk, mv[0]); focus(nk); }
     }
   };
 
+  const activeWord = active ? (cells.get(active.key)![active.dir]) : undefined;
+  const activeCells = activeWord != null ? new Set(wordKeys[activeWord]) : new Set<string>();
+
   const mmss = `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`;
+
+  const focusWord = (wi: number) => {
+    const first = wordKeys[wi]![0]!;
+    setDir(first, words[wi]!.dir);
+    setTimeout(() => focus(first), 0);
+  };
+
+  const ClueList = ({ dir, label }: { dir: Dir; label: string }) => (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-caption font-extrabold uppercase tracking-wide text-muted">{label}</p>
+      {words.map((w, wi) => (w.dir !== dir ? null : (
+        <button key={w.num} type="button" onClick={() => focusWord(wi)}
+          className={`rounded-card border px-2.5 py-1.5 text-left text-small leading-snug transition-colors ${solved[wi] ? 'border-success/50 bg-success/10 text-success' : activeWord === wi ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}>
+          <span className="font-extrabold text-primary">{w.num}.</span> {w.clue} <span className="text-muted">({w.answer.length})</span>
+        </button>
+      )))}
+    </div>
+  );
 
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
-      hud={<><GameStat icon="clock" value={mmss} tone={timeLeft <= 15 ? 'accent' : 'info'} /><GameStat icon="check" value={`${solvedCount}/${rows.length}`} tone="success" /></>}>
-      <div className="flex flex-1 flex-col justify-center gap-2.5">
-        {rows.map((r, i) => {
-          const val = values[i]!;
-          const ok = solved[i];
-          return (
-            <div key={i} className={`rounded-card border-2 p-3 shadow-soft transition-colors ${ok ? 'border-success/60 bg-success/10' : 'border-border-strong/40 bg-surface'}`}>
-              <p className="mb-2 text-small font-semibold leading-snug"><span className="font-extrabold text-primary">{i + 1}.</span> {r.clue}</p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {Array.from(r.answer).map((ch, k) => (
-                  <span key={k} className={`flex h-9 w-8 items-center justify-center rounded-md border-2 text-body font-extrabold uppercase ${ok ? 'border-success bg-success/20 text-success' : val[k] ? 'border-primary/50 bg-surface text-text' : 'border-border-strong/50 bg-bg/50 text-muted'}`}>{ok ? ch : (val[k] ?? '')}</span>
-                ))}
+      hud={<><GameStat icon="clock" value={mmss} tone={timeLeft <= 15 ? 'accent' : 'info'} /><GameStat icon="check" value={`${solvedCount}/${words.length}`} tone="success" /></>}>
+      <div className="flex flex-1 flex-col gap-4">
+        <div className="overflow-x-auto rounded-card border border-border bg-white p-2 shadow-soft">
+          <div className="mx-auto w-max">
+            {Array.from({ length: cfg.rows }, (_, ri) => (
+              <div key={ri} className="flex">
+                {Array.from({ length: cfg.cols }, (_, ci) => {
+                  const key = K(ri + 1, ci + 1);
+                  const cell = cells.get(key);
+                  if (!cell) return <span key={ci} className="h-7 w-7 sm:h-8 sm:w-8" />;
+                  const isSolved = (cell.across != null && solved[cell.across]) || (cell.down != null && solved[cell.down]);
+                  const inWord = activeCells.has(key);
+                  const isActive = active?.key === key;
+                  return (
+                    <span key={ci} className="relative h-7 w-7 sm:h-8 sm:w-8">
+                      {cell.num && <span className="pointer-events-none absolute left-[2px] top-0 z-10 text-[8px] font-bold leading-none text-muted">{cell.num}</span>}
+                      <input
+                        ref={(el) => { refs.current[key] = el; }}
+                        value={entries[key] ?? ''}
+                        onFocus={() => onFocus(key)}
+                        onClick={() => onClick(key)}
+                        onChange={(e) => type(key, e.target.value)}
+                        onKeyDown={(e) => onKeyDown(e, key)}
+                        inputMode="text" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+                        aria-label={`Ô ${key}`}
+                        className={`h-full w-full border text-center text-body font-extrabold uppercase caret-primary outline-none ${isSolved ? 'border-success/60 bg-success/20 text-success' : isActive ? 'border-primary bg-primary/15 text-text ring-2 ring-primary/40' : inWord ? 'border-primary/40 bg-primary/5 text-text' : 'border-border-strong/40 bg-surface text-text'}`}
+                      />
+                    </span>
+                  );
+                })}
               </div>
-              {!ok && (
-                <input
-                  value={val}
-                  onChange={(e) => onType(i, e.target.value)}
-                  maxLength={r.answer.length}
-                  aria-label={`Đáp án dòng ${i + 1}`}
-                  autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false}
-                  placeholder={`${r.answer.length} chữ cái`}
-                  className="mt-2 w-full rounded-control border-2 border-border-strong bg-surface px-3 py-2 text-body uppercase tracking-[0.3em] outline-none transition-shadow focus:border-primary focus:ring-4 focus:ring-primary/15"
-                />
-              )}
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        </div>
+        <p className="-mt-2 text-center text-caption text-muted">{cfg.tapDir}</p>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ClueList dir="across" label={cfg.acrossLabel} />
+          <ClueList dir="down" label={cfg.downLabel} />
+        </div>
       </div>
       <Confetti fire={burst} />
     </GameShell>

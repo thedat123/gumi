@@ -69,15 +69,15 @@ export const WARDROBE: Record<Slot, Item[]> = {
   ],
 };
 
-/** Bảng màu lông theo lựa chọn (đổ vào CSS var của mascot). */
-export const BODY_COLORS: Record<string, { gumi: string; dark: string; belly: string }> = {
-  default: { gumi: '#E3A57C', dark: '#C97E4A', belly: '#FBEFE4' },
-  gray: { gumi: '#9AA0A6', dark: '#5f6368', belly: '#ECEFF1' },
-  cream: { gumi: '#EFC9A2', dark: '#9c6b4a', belly: '#FFF3E0' },
-  mint: { gumi: '#9FD8B8', dark: '#5AA98A', belly: '#EAF7F0' },
-  blue: { gumi: '#9EC6E6', dark: '#5E86AE', belly: '#EAF2FB' },
-  pink: { gumi: '#F0B4C4', dark: '#C97A93', belly: '#FDECF1' },
-  gold: { gumi: '#F2C879', dark: '#C79A3E', belly: '#FFF6DD' },
+/** Bảng màu lông theo lựa chọn (đổ vào CSS var của mascot). cheek = má ửng, nose = mũi. */
+export const BODY_COLORS: Record<string, { gumi: string; dark: string; belly: string; cheek: string; nose: string }> = {
+  default: { gumi: '#F5A31C', dark: '#D9820F', belly: '#F8DBCC', cheek: '#F58C86', nose: '#C9764E' },
+  gray: { gumi: '#A7ADB3', dark: '#7C838A', belly: '#ECEFF1', cheek: '#E39FA0', nose: '#6E6A70' },
+  cream: { gumi: '#F0CB94', dark: '#D0A860', belly: '#FFF3E0', cheek: '#F19E86', nose: '#B98A64' },
+  mint: { gumi: '#8FD3AE', dark: '#5FAE86', belly: '#EAF7F0', cheek: '#EF9AA0', nose: '#5FA98A' },
+  blue: { gumi: '#93C2E8', dark: '#5E8FBE', belly: '#EAF2FB', cheek: '#EE9BAE', nose: '#6E86AE' },
+  pink: { gumi: '#F3A6BC', dark: '#D97C97', belly: '#FDECF1', cheek: '#EA7E97', nose: '#C97A93' },
+  gold: { gumi: '#F3C74E', dark: '#D5A426', belly: '#FFF6DD', cheek: '#F0A46E', nose: '#C79A4E' },
 };
 
 export const itemById = (slot: Slot, id: string): Item =>

@@ -42,8 +42,11 @@ const isAdminEmail = (email: string): boolean => ADMIN_EMAILS.includes(email.tri
 // ⚙️ TÀI KHOẢN TEST CỐ ĐỊNH (chỉ ở mock/demo) — đăng nhập là MỞ HẾT: tự có hồ sơ (bỏ onboarding),
 // mọi ngày trên bản đồ bấm được, làm nhiệm vụ ngày nào cũng chạy, xem được mọi màn (kể cả Summary/Admin).
 const TEST_ACCOUNTS: Record<string, { password: string; admin?: boolean; name: string; avatar: string }> = {
-  'test@gumi.vn': { password: 'test1234', name: 'Người Test', avatar: '🐱' },
+  'test1@gumi.vn': { password: 'test1234', name: 'Người Test 1', avatar: '🐱' },
   'test2@gumi.vn': { password: 'test1234', name: 'Người Test 2', avatar: '🐰' },
+  'test3@gumi.vn': { password: 'test1234', name: 'Người Test 3', avatar: '🐻' },
+  'test4@gumi.vn': { password: 'test1234', name: 'Người Test 4', avatar: '🐼' },
+  'test5@gumi.vn': { password: 'test1234', name: 'Người Test 5', avatar: '🐨' },
   'admin@gumi.vn': { password: 'test1234', admin: true, name: 'Admin Test', avatar: '🦊' },
 };
 const testAccount = (email: string) => TEST_ACCOUNTS[email.trim().toLowerCase()];
@@ -68,17 +71,8 @@ interface Persisted {
   passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 3)
 }
 
-const SEED_WALL: WallPost[] = vi.wall.posts.map((p, i) => ({
-  id: `seed-${i}`,
-  name: p.name,
-  text: p.text,
-  createdAt: '2026-01-10T00:00:00+07:00',
-}));
-
-const TOP10_SEED: [string, string, number][] = [
-  ['Mai Anh', '🐱', 240], ['Quang Huy', '🦊', 232], ['Bảo Ngọc', '🐰', 226], ['Thanh Tùng', '🐻', 219], ['Phương Linh', '🐼', 210],
-  ['Đức Minh', '🐯', 204], ['Khánh Vy', '🐨', 197], ['Hoàng Nam', '🦁', 190], ['Ngọc Diệp', '🐸', 184], ['Gia Bảo', '🐷', 178],
-];
+// Không seed dữ liệu giả: tường bắt đầu trống, bảng xếp hạng chỉ hiển thị người chơi thật.
+const SEED_WALL: WallPost[] = [];
 
 const ADMIN_SEED: AdminCheckin[] = [
   { id: 'c1', user: 'Mai Anh', day: 3, status: 'approved', emoji: '🧋' },
@@ -385,14 +379,11 @@ export function createMockApi(): Api {
       requireSession();
       const p = progress();
       const myPoints = totalPoints(p, computeDays(p));
-      const top: LeaderRow[] = TOP10_SEED.map(([name, avatar, points], i) => ({ rank: i + 1, name, avatar, points }));
-      const myRank = rankFor(myPoints);
-      const inTop = myRank <= 10;
-      if (inTop && top[myRank - 1]) top[myRank - 1] = { ...top[myRank - 1]!, isMe: true, points: myPoints, name: state.profile?.name ?? 'Bạn' };
-      const last = top[9]!;
+      // Không có đối thủ giả: chỉ có chính người chơi trên bảng (rank 1).
+      const me: LeaderRow = { rank: 1, name: state.profile?.name ?? 'Bạn', avatar: state.profile?.avatar ?? '🐱', points: myPoints, isMe: true };
       return delay({
-        top,
-        me: { rank: myRank, points: myPoints, gapToTop10: Math.max(0, last.points - myPoints + 1), top10LastName: last.name },
+        top: [me],
+        me: { rank: 1, points: myPoints, gapToTop10: 0, top10LastName: '' },
       });
     },
 
@@ -426,19 +417,19 @@ export function createMockApi(): Api {
 
     async getQuizQuestions(): Promise<QuizQuestion[]> {
       requireSession();
-      return delay(vi.quiz.questions.map((q, i) => ({ id: i, drink: q.drink, min: 0, max: 20 })));
+      return delay([{ id: 0, drink: vi.quiz.question, min: 0, max: 20 }]);
     },
 
     async submitQuiz(guesses): Promise<QuizResult> {
       requireSession();
       await delay(null, 500);
-      const items = vi.quiz.questions.map((q, i) => {
-        const guess = guesses[i] ?? 0;
-        const points = Math.max(0, 2 - Math.abs(guess - q.answer) * 0.4);
-        return { id: i, guess, answer: q.answer, points: Math.round(points * 10) / 10 };
-      });
-      const score = Math.round(items.reduce((s, it) => s + it.points, 0) * 10) / 10;
-      const result: QuizResult = { score, max: vi.quiz.questions.length * 2, items };
+      // 1 câu (trà sữa): trúng khoảng 12–15 = full 2 điểm; lệch thì trừ dần theo khoảng cách tới mép gần nhất.
+      const guess = guesses[0] ?? 0;
+      const lo = vi.quiz.correctMin, hi = vi.quiz.correctMax;
+      const answer = Math.round((lo + hi) / 2);
+      const dist = guess >= lo && guess <= hi ? 0 : Math.min(Math.abs(guess - lo), Math.abs(guess - hi));
+      const points = Math.round(Math.max(0, 2 - dist * 0.4) * 10) / 10;
+      const result: QuizResult = { score: points, max: 2, items: [{ id: 0, guess, answer, points }] };
       state.quiz = result;
       advance(2);
       save();
@@ -482,7 +473,7 @@ export function createMockApi(): Api {
         healthyCount: DRINK_DAYS.filter((d) => state.completed.includes(d)).length,
         healthyTotal: DRINK_DAYS.length,
         quizScore: state.quiz?.score ?? 0,
-        quizMax: vi.quiz.questions.length * 2,
+        quizMax: 2,
         streak: longestStreak(days),
         totalPoints: totalPoints(p, days),
         rank: rankFor(totalPoints(p, days)),
@@ -491,11 +482,9 @@ export function createMockApi(): Api {
     },
   };
 
-  function rankFor(points: number): number {
-    // Xếp so với TOP10 seed; điểm cao hơn thì hạng nhỏ hơn. Ngoài Top 10 thì suy ra hạng gần đúng.
-    const better = TOP10_SEED.filter(([, , p]) => p > points).length;
-    if (better < 10) return better + 1;
-    return 10 + Math.max(1, Math.round((TOP10_SEED[9]![2] - points) / 3));
+  function rankFor(_points: number): number {
+    // Demo một người chơi: luôn là hạng 1 (không còn đối thủ giả).
+    return 1;
   }
 }
 

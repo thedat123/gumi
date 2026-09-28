@@ -4,12 +4,20 @@
 .g-actor, .g-breath { transform-box: fill-box; transform-origin: 50% 100%; }
 /* Bóng đổ NEO xuống mặt đất (nằm ngoài .g-actor nên không nhảy theo thân). Co & mờ khi Gumi bật lên → vật lý thật. */
 .g-shadow { fill: rgb(0 0 0 / 0.12); transform-box: fill-box; transform-origin: 50% 50%; }
+/* Nét viền đen dày (phong cách sticker): vẽ 2 lớp — lớp viền (g-out) to hơn nằm dưới, lớp màu (g-body) đè lên. */
+.g-out { fill: var(--color-gumi-line); stroke: var(--color-gumi-line); stroke-width: 11; stroke-linejoin: round; stroke-linecap: round; }
 .g-body { fill: var(--color-gumi); }
 .g-dark { fill: var(--color-gumi-dark); }
-.g-belly { fill: var(--color-gumi-belly); }
+.g-belly { fill: var(--color-gumi-belly); stroke: var(--color-gumi-line); stroke-width: 5; stroke-linejoin: round; }
 .g-ink { fill: var(--color-gumi-ink); }
 .g-white { fill: #fff; }
-.g-stroke { fill: none; stroke: var(--color-gumi-ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.g-eyeball { fill: #fff; stroke: var(--color-gumi-line); stroke-width: 4; }
+.g-pupil { fill: var(--color-gumi-line); }
+.g-fang { fill: #fff; stroke: var(--color-gumi-line); stroke-width: 2; stroke-linejoin: round; }
+.g-cheek { fill: var(--color-gumi-cheek); opacity: 0.85; }
+.g-nose { fill: var(--color-gumi-nose); }
+.g-whisker { fill: none; stroke: var(--color-gumi-line); stroke-width: 2.4; stroke-linecap: round; }
+.g-stroke { fill: none; stroke: var(--color-gumi-line); stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
 .g-lens { fill: var(--color-gumi-ink); }
 .g-star { fill: var(--color-accent); }
 .g-flash { fill: var(--color-accent); opacity: 0; }

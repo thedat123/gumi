@@ -1,8 +1,10 @@
 import { useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../../api';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Confetti, GameShell, GameStat } from '../../components/GameShell';
+import { Gumi } from '../../components/Gumi';
 import { Icon } from '../../components/Icon';
 import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
@@ -10,6 +12,7 @@ import { vi } from '../../content/vi';
 import { playSfx } from '../../lib/sfx';
 
 const CORRECT: string[] = [...vi.minigames.sort.order];
+const MAX_TRIES = 2; // brief: được 2 lượt xếp; sai quá 2 lần Kiểm tra → thua, tiêu ngày (không chơi lại).
 
 function shuffled(): string[] {
   let r = [...CORRECT];
@@ -35,6 +38,8 @@ export function SortGame() {
   const [shake, setShake] = useState(0);
   const [won, setWon] = useState(false);
   const [done, setDone] = useState(false);
+  const [tries, setTries] = useState(0);
+  const [failed, setFailed] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -42,6 +47,14 @@ export function SortGame() {
   const meta = useRef<{ rowH: number; listTop: number; grab: number }>({ rowH: 0, listTop: 0, grab: 0 });
 
   if (done) return <MissionDone day={day} points={m.points} note={vi.minigames.sort.success} />;
+  if (failed) return (
+    <div className="flex flex-col items-center gap-3 pt-6 text-center">
+      <Gumi state="hap_hoi" size={140} />
+      <Banner kind="error">{vi.minigames.sort.outOfTries}</Banner>
+      <p className="max-w-xs text-small text-muted">{vi.minigames.sort.outOfTriesSub}</p>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+    </div>
+  );
 
   const onDown = (e: RPointerEvent<HTMLDivElement>, i: number) => {
     if (won) return;
@@ -85,26 +98,34 @@ export function SortGame() {
       setWon(true);
       api.submitMinigame(day).catch(() => {});
       setTimeout(() => setDone(true), 1300);
+      return;
+    }
+    // Sai: đếm lượt. Hết MAX_TRIES lượt → thua, tiêu ngày (không chơi lại).
+    const used = tries + 1;
+    setTries(used);
+    playSfx('wrong');
+    if (used >= MAX_TRIES) {
+      setFailed(true);
+      api.submitMinigame(day).catch(() => {});
     } else {
-      playSfx('wrong');
       setWarn(true);
       setShake((n) => n + 1);
     }
   };
 
-  const correctCount = order.filter((x, i) => x === CORRECT[i]).length;
+  const triesLeft = MAX_TRIES - tries;
 
   return (
     <GameShell
       act={actOfDay(day)}
       title={vi.minigames.sort.title}
       intro={vi.minigames.sort.intro}
-      hud={<GameStat icon="check" value={`${correctCount}/${order.length}`} tone="success" />}
+      hud={<GameStat icon="sparkle" value={vi.minigames.sort.tries(triesLeft)} tone={triesLeft <= 1 ? 'accent' : 'info'} />}
       footer={won
         ? <div className="rounded-card bg-success/90 p-3 text-center font-bold text-on-primary shadow-pop">🎉 Chính xác!</div>
         : <Button onClick={check} block>{vi.minigames.common.check}</Button>}
     >
-      {warn && <div className="mb-2"><Banner kind="error">{vi.minigames.sort.wrong}</Banner></div>}
+      {warn && <div className="mb-2"><Banner kind="error">{triesLeft <= 1 ? vi.minigames.sort.lastTry : vi.minigames.sort.wrong}</Banner></div>}
 
       <div className="mb-2 flex items-center justify-between px-1 text-caption font-bold">
         <span className="flex items-center gap-1 text-success"><Icon name="leaf" size={14} filled /> Ít đường</span>
@@ -113,7 +134,7 @@ export function SortGame() {
 
       <div ref={listRef} className={`flex flex-col gap-2.5 ${warn ? 'shake' : ''}`} key={shake}>
         {order.map((item, i) => {
-          const ok = won || item === CORRECT[i];
+          const ok = won; // chỉ lộ đúng/sai SAU khi thắng — tránh gợi ý trước lúc Kiểm tra
           const fill = ((i + 1) / order.length) * 100;
           const dragging = i === dragIndex;
           return (

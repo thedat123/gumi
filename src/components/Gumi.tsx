@@ -2,8 +2,15 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactEle
 import { vi } from '../content/vi';
 import { useAnimationPause } from '../hooks/useAnimationPause';
 import { useOutfit } from '../app/skin';
-import { BODY_COLORS, type Outfit } from '../lib/wardrobe';
+import { type Outfit } from '../lib/wardrobe';
 import { playSfx, type Sfx } from '../lib/sfx';
+import gumiImg from '../assets/gumi.png';
+import gumiGray from '../assets/gumi-gray.png';
+import gumiCream from '../assets/gumi-cream.png';
+import gumiMint from '../assets/gumi-mint.png';
+import gumiBlue from '../assets/gumi-blue.png';
+import gumiPink from '../assets/gumi-pink.png';
+import gumiGold from '../assets/gumi-gold.png';
 import type { GumiEvent, GumiState } from '../api/types';
 
 interface Props {
@@ -218,6 +225,11 @@ function Backdrop({ id }: { id: string }): ReactElement | null {
 
 const CLASS: Record<GumiState, string> = { bo_pho: 'gumi--bo-pho', hap_hoi: 'gumi--hap-hoi', tien_hoa: 'gumi--tien-hoa' };
 
+/** Đổi màu lông (tủ đồ): dùng SPRITE recolor sẵn (chỉ đổi lông, giữ viền/yếm/má) → sắc nét, không filter. */
+const SKIN: Record<string, string> = {
+  default: gumiImg, gray: gumiGray, cream: gumiCream, mint: gumiMint, blue: gumiBlue, pink: gumiPink, gold: gumiGold,
+};
+
 // Kho "hành động" khi chạm vào Gumi (kiểu màn hình thú cưng trên smartwatch).
 type ActionName = 'roll' | 'flip' | 'jump' | 'spin' | 'dance' | 'shake' | 'nod' | 'eat' | 'drink' | 'love' | 'music' | 'sleep' | 'ball' | 'cheer';
 const TAP_ACTIONS: ActionName[] = ['roll', 'flip', 'jump', 'spin', 'dance', 'shake', 'nod', 'eat', 'drink', 'love', 'music', 'sleep', 'ball', 'cheer'];
@@ -235,10 +247,9 @@ const SPARKLES = [
 ];
 
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
-export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, progress = 0, outfit: propOutfit, feed = null, onEventEnd }: Props) {
+export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
   const { outfit: ctxOutfit } = useOutfit();
   const outfit = propOutfit ?? ctxOutfit;
-  const col = BODY_COLORS[outfit.color] ?? BODY_COLORS.default!;
   const ref = useRef<HTMLDivElement>(null);
   const paused = useAnimationPause(ref);
   const hopDelay = useMemo(() => Math.round(Math.random() * 4000) / 1000, []);
@@ -297,15 +308,13 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
 
   const cls = ['gumi', CLASS[shown], event ? `is-${event}` : '', action && !event ? `act-${action.name}` : '', bubble ? 'has-bubble' : ''].filter(Boolean).join(' ');
   const fit = shown === 'tien_hoa';
-  // Bụng thu nhỏ dần theo tiến độ (68 → 44) khi còn ở dạng bơ phờ; tiến hoá thì gọn hẳn.
-  const p = Math.min(1, Math.max(0, progress));
-  const bellyRx = fit ? 44 : Math.round(68 - 24 * p);
+  // Sprite theo màu lông (recolor sẵn) + bóng đổ mềm bám hình + biến sắc nhẹ theo trạng thái → "sống".
+  const skinSrc = SKIN[outfit.color] ?? gumiImg;
+  const stateFx = shown === 'hap_hoi' ? 'saturate(0.55) brightness(0.96) ' : shown === 'tien_hoa' ? 'brightness(1.05) drop-shadow(0 0 5px rgba(245,197,66,0.85)) ' : '';
+  const imgFilter = `${stateFx}drop-shadow(0 6px 5px rgba(40,26,20,0.24))`;
   const style = {
     '--gumi-size': `${size}px`,
     '--hop-delay': `${hopDelay}s`,
-    '--color-gumi': col.gumi,
-    '--color-gumi-dark': col.dark,
-    '--color-gumi-belly': col.belly,
   } as CSSProperties;
 
   return (
@@ -329,60 +338,22 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
         <ellipse className="g-shadow" cx="100" cy="208" rx={fit ? 46 : 64} ry="8" />
         <g className="g-actor" key={`${poke}-${eventKey}`}>
           <g className="g-breath">
-            <path className="g-body" d="M150 170 q40 -8 34 -46 q-4 -12 -14 -4 q4 24 -22 32z" />
-            <ellipse className="g-body" cx="100" cy="150" rx={bellyRx} ry="56" />
-            <ellipse className="g-belly" cx="100" cy="158" rx={bellyRx - 22} ry="38" />
-            <path className="g-body" d="M62 62 L70 22 L96 46z" />
-            <path className="g-body" d="M138 62 L130 22 L104 46z" />
-            <path className="g-dark" d="M70 54 L73 34 L86 46z" />
-            <path className="g-dark" d="M130 54 L127 34 L114 46z" />
-            <circle className="g-body" cx="100" cy="88" r="46" />
-            <ellipse className="g-body" cx="52" cy="150" rx="12" ry="18" transform="rotate(12 52 150)" />
-            <ellipse className="g-body" cx="148" cy="150" rx="12" ry="18" transform="rotate(-12 148 150)" />
-
-            {/* Tô khối 3D: bắt sáng phía trên–trái, tối dồn phía dưới */}
-            <ellipse cx="84" cy="72" rx="30" ry="24" fill="url(#gHi)" />
-            <ellipse cx="88" cy="150" rx="20" ry="30" fill="url(#gHi)" opacity="0.55" />
-            <ellipse cx="100" cy="176" rx={bellyRx - 4} ry="34" fill="url(#gCore)" />
-            <ellipse cx="100" cy="120" rx="44" ry="20" fill="url(#gCore)" opacity="0.5" />
-
-            {shown === 'bo_pho' && (
-              <g>
-                <g className="g-eyes-open">
-                  <circle className="g-white" cx="80" cy="90" r="11" /><circle className="g-white" cx="120" cy="90" r="11" />
-                  <circle className="g-ink" cx="80" cy="95" r="5" /><circle className="g-ink" cx="120" cy="95" r="5" />
-                  <path className="g-body" d="M67 78 h26 v12 h-26z" /><path className="g-body" d="M107 78 h26 v12 h-26z" />
-                  <path className="g-stroke" d="M68 90 h24 M108 90 h24" />
-                </g>
-                <g className="g-eyes-closed"><path className="g-stroke" d="M68 92 q12 8 24 0 M108 92 q12 8 24 0" /></g>
-                <path className="g-stroke" d="M90 114 q10 -4 20 0" />
-              </g>
-            )}
-            {shown === 'hap_hoi' && (
-              <g>
-                <path className="g-stroke" d="M70 82 l20 20 M90 82 l-20 20 M110 82 l20 20 M130 82 l-20 20" />
-                <path className="g-stroke" d="M88 118 q6 -8 12 0 q6 8 12 0" />
-                <path className="g-sweat" d="M146 66 q8 12 0 18 q-8 -6 0 -18z" />
-              </g>
-            )}
+            {/* ẢNH GUMI THẬT (cắt từ mascot.png) · sprite recolor theo màu lông đang chọn. */}
+            <image href={skinSrc} x="40" y="30" width="120" height="170" style={{ filter: imgFilter }} preserveAspectRatio="xMidYMid meet" />
+            {/* Overlay trạng thái (không đè mặt → đọc rõ): hấp hối = giọt mồ hôi; tiến hoá = lấp lánh */}
+            {shown === 'hap_hoi' && <path className="g-sweat" d="M121 74 q8 12 0 18 q-8 -6 0 -18z" />}
             {shown === 'tien_hoa' && (
-              <g>
-                {outfit.glasses === 'none' ? (
-                  <>
-                    <rect className="g-lens" x="64" y="78" width="30" height="20" rx="8" />
-                    <rect className="g-lens" x="106" y="78" width="30" height="20" rx="8" />
-                    <path className="g-stroke" d="M94 86 h12" />
-                  </>
-                ) : (
-                  <><circle className="g-ink" cx="80" cy="90" r="5" /><circle className="g-ink" cx="120" cy="90" r="5" /></>
-                )}
-                <path className="g-stroke" d="M86 114 q14 10 28 0" />
-              </g>
+              <>
+                <path className="g-star" d="M52 60 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 l5 -2z" />
+                <path className="g-star" d="M134 57 l1.8 4.6 l4.6 1.8 l-4.6 1.8 l-1.8 4.6 l-1.8 -4.6 l-4.6 -1.8 l4.6 -1.8z" />
+              </>
             )}
-            {/* Phụ kiện phối tự do (khăn dưới → kính → mũ trên cùng) */}
-            <Neck id={outfit.neck} />
-            <Glasses id={outfit.glasses} />
-            <Hat id={outfit.hat} />
+            {/* Phụ kiện — canh khớp MẮT THẬT của ảnh (đo được: (80,90)/(120,90) → (69,91)/(113,91)) */}
+            <g transform="translate(-18.2 -7.35) scale(1.095)">
+              <Neck id={outfit.neck} />
+              <Glasses id={outfit.glasses} />
+              <Hat id={outfit.hat} />
+            </g>
           </g>
         </g>
         <circle className="g-flash" cx="100" cy="120" r="96" />
