@@ -84,6 +84,7 @@ declare
   uid uuid := auth.uid();
   op  int  := public._playable_day();   -- chặng đang mở (0 = không có)
   cday int := public._campaign_day();
+  unlocked boolean := public._is_tester() or public._is_admin();  -- test/admin: mở hết mọi chặng
   days text[] := array[]::text[];
   d int; ast text; st text;
   points numeric; streak int; passes int; rej text;
@@ -91,16 +92,15 @@ begin
   if uid is null then raise exception 'forbidden'; end if;
 
   for d in 1..21 loop
-    if op > 0 and d = op then
+    select status into ast from public.day_progress where user_id = uid and day = d;
+    if ast in ('checked', 'passed', 'rejected') then
+      st := ast;                          -- giữ nguyên chặng đã hoàn thành / bị gỡ
+    elsif unlocked then
+      st := 'open';                       -- test/admin: mọi chặng chưa làm đều mở
+    elsif op > 0 and d = op then
       st := 'open';                       -- chặng đang chơi được hôm nay (kể cả retry sau khi bị gỡ ảnh)
     else
-      select status into ast from public.day_progress where user_id = uid and day = d;
-      st := case ast
-              when 'passed'   then 'passed'
-              when 'rejected' then 'rejected'
-              when 'checked'  then 'checked'
-              else 'future'                -- chưa tới hoặc chưa mở (khoá tới khi hoàn thành chặng trước)
-            end;
+      st := 'future';                     -- chưa tới hoặc chưa mở (khoá tới khi hoàn thành chặng trước)
     end if;
     days := array_append(days, st);
   end loop;
@@ -116,7 +116,7 @@ begin
   order by dp.day desc limit 1;
 
   return json_build_object(
-    'phase', case when cday > 21 then 'ended' else 'running' end,
+    'phase', case when unlocked then 'running' when cday > 21 then 'ended' else 'running' end,
     'day', least(greatest(cday, 1), 21),
     'days', to_json(days),
     'totalPoints', points,
@@ -135,9 +135,10 @@ end; $$;
 create or replace function public.submit_checkin(p_day int, p_level int, p_path text)
 returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare uid uuid := auth.uid(); op int := public._playable_day(); mk text; pts numeric; needs boolean;
+        unlocked boolean := public._is_tester() or public._is_admin();
 begin
   if uid is null then raise exception 'forbidden'; end if;
-  if op = 0 or p_day <> op then raise exception 'not_today'; end if;
+  if not unlocked and (op = 0 or p_day <> op) then raise exception 'not_today'; end if;
   select kind, points, needs_level into mk, pts, needs from public.missions where day = p_day;
   if mk is null or mk not in ('DRINK', 'SHARE') then raise exception 'not_today'; end if;
   if needs and p_level not in (70, 50, 30, 0) then raise exception 'level_not_allowed'; end if;
@@ -155,9 +156,10 @@ end; $$;
 create or replace function public.submit_minigame(p_day int)
 returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare uid uuid := auth.uid(); op int := public._playable_day(); mk text; pts numeric;
+        unlocked boolean := public._is_tester() or public._is_admin();
 begin
   if uid is null then raise exception 'forbidden'; end if;
-  if op = 0 or p_day <> op then raise exception 'not_today'; end if;
+  if not unlocked and (op = 0 or p_day <> op) then raise exception 'not_today'; end if;
   select kind, points into mk, pts from public.missions where day = p_day;
   if mk is null or p_day = 2 or mk not in ('GAME', 'KNOW', 'FINAL') then raise exception 'server'; end if;
   insert into public.day_progress (user_id, day, status, points)
@@ -170,10 +172,11 @@ end; $$;
 create or replace function public.submit_quiz(p_guesses jsonb) returns json
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare uid uuid := auth.uid(); op int := public._playable_day();
+        unlocked boolean := public._is_tester() or public._is_admin();
         q record; g numeric; pt numeric; total numeric := 0; items jsonb := '[]'::jsonb; mx numeric;
 begin
   if uid is null then raise exception 'forbidden'; end if;
-  if op <> 2 then raise exception 'not_today'; end if;   -- quiz chỉ là chặng 2
+  if not unlocked and op <> 2 then raise exception 'not_today'; end if;   -- quiz chỉ là chặng 2
   for q in select id, drink, answer from public.quiz_questions order by id loop
     g  := coalesce((p_guesses ->> q.id::text)::numeric, 0);
     pt := round(greatest(0, 2 - abs(g - q.answer) * 0.4) * 10) / 10;

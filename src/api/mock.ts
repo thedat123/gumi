@@ -174,10 +174,12 @@ export function createMockApi(): Api {
   const emitAuth = () => listeners.forEach((cb) => cb(state.session));
   // Phiên hiện tại có phải tài khoản test không → dùng để MỞ HẾT gating.
   const isTestSession = () => !!state.session && !!testAccount(state.session.email);
+  // Test HOẶC admin → mở hết mọi chặng, bỏ qua khoá theo chặng + cap mỗi-ngày-một-chặng.
+  const isUnlocked = () => isTestSession() || state.profile?.role === 'admin';
 
   const progress = () => ({
-    // Tài khoản test: coi như đã tới ngày cuối → mọi nút trên bản đồ bấm được (ngày chưa làm hiện "missed" vẫn là Link).
-    campaignDay: isTestSession() ? TOTAL_DAYS : state.campaignDay,
+    // Test/admin: coi như đã tới chặng cuối → mọi nút trên bản đồ bấm được.
+    campaignDay: isUnlocked() ? TOTAL_DAYS : state.campaignDay,
     completed: new Set(state.completed),
     passed: new Set(state.passed),
     rejected: new Set(state.rejected),
@@ -186,8 +188,8 @@ export function createMockApi(): Api {
 
   const todayStr = mockToday;
   // Hôm nay đã hoàn thành một chặng chưa → khoá chặng kế tới ngày mai (mỗi ngày 1 chặng).
-  // Tài khoản test bỏ qua giới hạn này để QA chơi thẳng qua các chặng.
-  const doneToday = () => !isTestSession() && state.lastDoneDate === todayStr();
+  // Test/admin bỏ qua giới hạn này để chơi thẳng qua các chặng.
+  const doneToday = () => !isUnlocked() && state.lastDoneDate === todayStr();
 
   const advance = (day: number) => {
     if (!state.completed.includes(day)) state.completed.push(day);
@@ -362,25 +364,30 @@ export function createMockApi(): Api {
     },
 
     async getCampaignState(): Promise<CampaignState> {
-      const testing = isTestSession();
+      const unlocked = isUnlocked();
       // Cá nhân hoá: mốc bắt đầu = hôm nay (ngày người chơi "tạo tài khoản" trong phiên mock).
       const startDate = new Date().toISOString().slice(0, 10);
-      const day = testing ? TOTAL_DAYS : doneToday() ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS);
-      return delay({ phase: testing ? 'running' : phaseOf(), day, startDate });
+      const day = unlocked ? TOTAL_DAYS : doneToday() ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS);
+      return delay({ phase: unlocked ? 'running' : phaseOf(), day, startDate });
     },
 
     async getJourney(): Promise<Journey> {
       requireSession();
       const p = progress();
+      const unlocked = isUnlocked();
       const locked = doneToday();
-      // Hôm nay đã xong một chặng → chặng đang mở bị khoá tới mai (không còn 'open' nào).
-      const days = locked ? computeDays(p).map((s) => (s === 'open' ? 'future' : s)) : computeDays(p);
-      const phase = isTestSession() ? 'running' : phaseOf();
+      // Test/admin: mọi chặng chưa hoàn thành đều 'open'. Người thường: khoá chặng kế nếu đã xong hôm nay.
+      const days = unlocked
+        ? computeDays(p).map((s) => (s === 'checked' || s === 'passed' || s === 'rejected' ? s : 'open'))
+        : locked
+          ? computeDays(p).map((s) => (s === 'open' ? 'future' : s))
+          : computeDays(p);
+      const phase = unlocked ? 'running' : phaseOf();
       const points = totalPoints(p, days);
       const rejectedDay = state.rejected[0];
       return delay({
         phase,
-        day: isTestSession() ? TOTAL_DAYS : locked ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS),
+        day: unlocked ? TOTAL_DAYS : locked ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS),
         days,
         totalPoints: points,
         streak: longestStreak(days),
@@ -408,7 +415,7 @@ export function createMockApi(): Api {
     async submitCheckin(day, level, fileName): Promise<CheckinResult> {
       requireSession();
       await delay(null, 700);
-      const testing = isTestSession();
+      const testing = isUnlocked();
       if (!fileName) throw new ApiError('photo_invalid');
       if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
       if (!testing && day !== state.campaignDay) throw new ApiError('not_today');
@@ -485,7 +492,7 @@ export function createMockApi(): Api {
       requireSession();
       const p = progress();
       const days = computeDays(p);
-      const eligible = isTestSession() || days[TOTAL_DAYS - 1] === 'checked';
+      const eligible = isUnlocked() || days[TOTAL_DAYS - 1] === 'checked';
       const grams = sugarCut(state.levels);
       const lowest = (Object.values(state.levels).sort((a, b) => a - b)[0] ?? START_LEVEL) as SugarLevel;
       return delay({
