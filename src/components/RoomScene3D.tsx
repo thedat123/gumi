@@ -9,6 +9,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { playSfx } from '../lib/sfx';
 import { getQuality } from '../lib/quality';
 import type { RoomVariant } from './RoomScene';
+import catGirlPearl from '../assets/cat-girl-pearl.jpg';
 
 const lerp = THREE.MathUtils.lerp;
 
@@ -312,7 +313,7 @@ function plateTexture(text: string): THREE.Texture {
 
 /* Ảnh tranh THẬT lấy trực tiếp trên mạng (Wikimedia Commons, có CORS). Special:FilePath tự trỏ tới file hiện hành. */
 const PAINTING_URL: Record<Painting, string> = {
-  mona: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
+  mona: catGirlPearl,
   wave: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/640px-Tsunami_by_hokusai_19th_century.jpg',
   starry: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/640px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
 };
@@ -642,7 +643,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       else { window3D(-5.2, -2.9); window3D(5.2, -2.9); }
 
       // ===== TƯỜNG CHÍNH — TRANH bên TRÁI · ĐỒNG HỒ bên PHẢI → chừa GIỮA cho HUD/Gumi, KHÔNG bị che =====
-      artFrame(-2.6, 3.05, 1.3, 1.65, { art: 'mona', gold: true, light: true, plate: 'LA GIOCONDA' }); // MONA LISA lệch TRÁI (bạn thích → giữ)
+      artFrame(-2.6, 3.05, 1.3, 1.65, { art: 'mona', gold: true, light: true }); // MONA LISA lệch TRÁI (bạn thích → giữ)
       wallClock(2.6, 3.15, 0.58);                              // ĐỒNG HỒ lệch PHẢI — lấy GIỜ HỆ THỐNG thật, chạy realtime
       sconce(-2.6, 4.25); sconce(2.6, 4.25);                   // đèn tường ôm tranh & đồng hồ (đối xứng)
       decoShelf(-5.6, 4.7, 1.1); decoShelf(5.6, 4.7, 1.1);    // kệ nổi đối xứng hai góc cao
