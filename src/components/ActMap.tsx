@@ -124,7 +124,8 @@ export function ActMap({ days, today, act }: { days: DayState[]; today: number; 
           </span>
         );
         const style = { left: `${pts[i]!.x}%`, top: `${pts[i]!.y}%` };
-        if (locked) return <div key={day} className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-disabled="true" aria-label={vi.map.nodeAria(day, m.title, vi.map.locked)}>{circle}{label}</div>;
+        // Chỉ CHẶNG ĐANG MỞ mới vào chơi được — chặng đã xong / bị khoá / đã xong hôm nay đều không bấm được.
+        if (!active) return <div key={day} className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-disabled="true" aria-label={vi.map.nodeAria(day, m.title, vi.map.locked)}>{circle}{label}</div>;
         return <Link key={day} to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, m.title)}>{circle}{label}</Link>;
       })}
 

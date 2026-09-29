@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ApiError } from './types';
-import { createMockApi, resetMock } from './mock';
+import { advanceMockDay, createMockApi, resetMock } from './mock';
 
 // localStorage giả tối giản để chạy ở môi trường 'node' — KHÔNG cần jsdom (jsdom kéo undici gây lỗi
 // "markAsUncloneable is not a function" trên Node của CI). Nhờ vậy CI chạy ổn trên mọi phiên bản Node.
@@ -36,29 +36,48 @@ describe('mock API — luồng chơi', () => {
     expect(j.gumi).toBe('bo_pho');
   });
 
-  it('check-in Day 1 cộng điểm và sang Day 2', async () => {
+  it('check-in chặng 1 cộng điểm; qua ngày mới mới mở chặng 2', async () => {
     const api = await ready();
     const r = await api.submitCheckin(1, 70, 'ly.jpg');
     expect(r.points).toBe(15);
-    const j = await api.getJourney();
-    expect(j.day).toBe(2);
+    // Cùng ngày: chặng 1 đã xong, chặng 2 CHƯA mở (khoá tới mai) — con trỏ ở chặng vừa xong.
+    let j = await api.getJourney();
     expect(j.days[0]).toBe('checked');
+    expect(j.days[1]).toBe('future');
     expect(j.totalPoints).toBe(15);
+    // Sang ngày mới → chặng 2 mở.
+    advanceMockDay();
+    j = await api.getJourney();
+    expect(j.day).toBe(2);
+    expect(j.days[1]).toBe('open');
   });
 
-  it('check-in sai ngày báo not_today; thiếu ảnh báo photo_invalid', async () => {
+  it('mỗi ngày chỉ một chặng: xong rồi nộp tiếp trong ngày báo not_today', async () => {
+    const api = await ready();
+    await api.submitCheckin(1, 70, 'a.jpg');
+    // Chặng kế (2) chưa mở trong hôm nay → nộp bị chặn.
+    await expect(api.submitQuiz({ 0: 13 })).rejects.toMatchObject({ code: 'not_today' } as ApiError);
+    advanceMockDay();
+    const res = await api.submitQuiz({ 0: 13 }); // sang ngày mới mới làm được chặng 2
+    expect(res.score).toBe(res.max);
+  });
+
+  it('check-in sai chặng báo not_today; thiếu ảnh báo photo_invalid', async () => {
     const api = await ready();
     await expect(api.submitCheckin(3, 70, 'x.jpg')).rejects.toMatchObject({ code: 'not_today' } as ApiError);
     await expect(api.submitCheckin(1, 70, '')).rejects.toMatchObject({ code: 'photo_invalid' } as ApiError);
   });
 
-  it('quiz Day 2 chấm điểm và sang ngày kế', async () => {
+  it('quiz chặng 2 chấm điểm; qua ngày mới mở chặng 3', async () => {
     const api = await ready();
     await api.submitCheckin(1, 70, 'a.jpg');
+    advanceMockDay();
     const res = await api.submitQuiz({ 0: 13 }); // đoán trúng khoảng 12–15
     expect(res.score).toBe(res.max);
+    advanceMockDay();
     const j = await api.getJourney();
     expect(j.day).toBe(3);
+    expect(j.days[2]).toBe('open');
   });
 
   it('yêu cầu đăng nhập cho các API riêng tư', async () => {
@@ -67,10 +86,11 @@ describe('mock API — luồng chơi', () => {
     await expect(api.getJourney()).rejects.toMatchObject({ code: 'forbidden' } as ApiError);
   });
 
-  it('chơi hết 21 ngày → Gumi tiến hoá, summary đủ điều kiện', async () => {
+  it('chơi hết 21 chặng (mỗi ngày một chặng) → Gumi tiến hoá, summary đủ điều kiện', async () => {
     const api = await ready();
     const minigameDays = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19];
     for (let d = 1; d <= 21; d++) {
+      if (d > 1) advanceMockDay(); // mỗi chặng là một ngày mới
       if (d === 2) await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 });
       else if (minigameDays.includes(d)) await api.submitMinigame(d);
       else if (d === 21) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 21 ngày.');
@@ -85,18 +105,21 @@ describe('mock API — luồng chơi', () => {
     expect(sum.healthyCount).toBe(5); // 5 ngày DRINK
   });
 
-  it('Sugar Pass cứu ngày hôm nay: giữ chuỗi; có 3 Bùa, dùng hết mới khoá', async () => {
+  it('Sugar Pass bỏ qua chặng đang mở: giữ chuỗi; có 3 Bùa, dùng hết mới khoá', async () => {
     const api = await ready();
-    await api.submitCheckin(1, 70, 'a.jpg'); // xong ngày 1, sang ngày 2
-    await api.useSugarPass(); // bỏ qua ngày 2 (còn 2 Bùa)
+    await api.submitCheckin(1, 70, 'a.jpg'); // xong chặng 1
+    advanceMockDay();
+    await api.useSugarPass(); // bỏ qua chặng 2 (còn 2 Bùa)
     let j = await api.getJourney();
     expect(j.days[1]).toBe('passed');
-    expect(j.day).toBe(3);
     expect(j.passAvailable).toBe(true); // vẫn còn Bùa
-    await api.useSugarPass(); // ngày 3 (còn 1)
-    await api.useSugarPass(); // ngày 4 (còn 0)
+    advanceMockDay();
+    await api.useSugarPass(); // chặng 3 (còn 1)
+    advanceMockDay();
+    await api.useSugarPass(); // chặng 4 (còn 0)
     j = await api.getJourney();
     expect(j.passAvailable).toBe(false);
+    advanceMockDay();
     await expect(api.useSugarPass()).rejects.toMatchObject({ code: 'no_pass' } as ApiError);
   });
 });

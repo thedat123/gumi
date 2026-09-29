@@ -331,6 +331,7 @@ export const vi = {
     ctaSecondary: 'Mình đã có tài khoản',
     before: (date: string) => `Hành trình khởi động ngày ${date}. Đăng ký trước để không lỡ Ngày 1!`,
     running: (day: number) => `Hành trình đang ở Ngày ${day}/21. Vào trễ vẫn chơi được các ngày còn lại.`,
+    personal: 'Ngày bạn tham gia chính là Ngày 1 — bắt đầu bất cứ lúc nào, đi hết 21 ngày theo nhịp của riêng bạn!',
     ended: 'Mùa này đã khép lại. Cảm ơn bạn đã đồng hành cùng Gumi — hẹn gặp ở mùa sau!',
   },
   signup: {

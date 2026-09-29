@@ -85,7 +85,8 @@ function Node({ day, state, isToday }: { day: number; state: DayState; isToday: 
     </span>
   );
 
-  if (locked) return <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)} aria-disabled="true">{circle}{label}</div>;
+  // Chỉ CHẶNG ĐANG MỞ mới vào chơi được — chặng đã xong / bị khoá / đã xong hôm nay đều không bấm được.
+  if (!active) return <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)} aria-disabled="true">{circle}{label}</div>;
   return <Link to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)}>{circle}{label}</Link>;
 }
 

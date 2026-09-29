@@ -50,9 +50,9 @@ export function Landing() {
 
             {/* Cột phải: trạng thái + số liệu + điểm hấp dẫn */}
             <div className="mt-4 flex flex-col gap-3.5 lg:mt-0">
-              {c.phase === 'before' && <Banner kind="info">{vi.landing.before('01/10')}</Banner>}
-              {c.phase === 'running' && <Banner kind="success">{vi.landing.running(c.day)}</Banner>}
-              {ended && <Banner kind="info">{vi.landing.ended}</Banner>}
+              {ended
+                ? <Banner kind="info">{vi.landing.ended}</Banner>
+                : <Banner kind="success">{vi.landing.personal}</Banner>}
 
               <div className="grid grid-cols-3 gap-3">
                 {STATS.map((s) => (

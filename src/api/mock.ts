@@ -69,6 +69,7 @@ interface Persisted {
   quiz: QuizResult | null;
   wall: WallPost[];
   passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 3)
+  lastDoneDate: string | null; // ngày (YYYY-MM-DD) hoàn thành chặng gần nhất → chốt "mỗi ngày 1 chặng"
 }
 
 // Không seed dữ liệu giả: tường bắt đầu trống, bảng xếp hạng chỉ hiển thị người chơi thật.
@@ -118,7 +119,7 @@ function genPlayers(count: number): AdminPlayer[] {
 const PLAYERS_SEED = genPlayers(78);
 
 function fresh(): Persisted {
-  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES };
+  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES, lastDoneDate: null };
 }
 
 function load(): Persisted {
@@ -142,6 +143,12 @@ const uid = (() => {
   let n = 0;
   return () => `u${(n += 1)}-${Date.now().toString(36)}`;
 })();
+
+// Test seam: giả lập "sang ngày mới" trong unit test để kiểm thử luật mỗi-ngày-một-chặng.
+// Ứng dụng thật không bao giờ gọi advanceMockDay → mockToday() = ngày thực.
+let mockDayOffset = 0;
+const mockToday = () => new Date(Date.now() + mockDayOffset * 86_400_000).toISOString().slice(0, 10);
+export function advanceMockDay() { mockDayOffset += 1; }
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -177,9 +184,15 @@ export function createMockApi(): Api {
     quizScore: state.quiz?.score,
   });
 
+  const todayStr = mockToday;
+  // Hôm nay đã hoàn thành một chặng chưa → khoá chặng kế tới ngày mai (mỗi ngày 1 chặng).
+  // Tài khoản test bỏ qua giới hạn này để QA chơi thẳng qua các chặng.
+  const doneToday = () => !isTestSession() && state.lastDoneDate === todayStr();
+
   const advance = (day: number) => {
     if (!state.completed.includes(day)) state.completed.push(day);
     if (day === state.campaignDay && state.campaignDay <= TOTAL_DAYS) state.campaignDay = day + 1;
+    state.lastDoneDate = todayStr();
   };
 
   // Chiến dịch còn "đang chạy" chừng nào chưa quá ngày 10 mà chưa hoàn thành. Xong đủ 10 ngày vẫn coi là running để hiện màn tốt nghiệp.
@@ -350,19 +363,24 @@ export function createMockApi(): Api {
 
     async getCampaignState(): Promise<CampaignState> {
       const testing = isTestSession();
-      return delay({ phase: testing ? 'running' : phaseOf(), day: testing ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS), startDate: '2026-01-01' });
+      // Cá nhân hoá: mốc bắt đầu = hôm nay (ngày người chơi "tạo tài khoản" trong phiên mock).
+      const startDate = new Date().toISOString().slice(0, 10);
+      const day = testing ? TOTAL_DAYS : doneToday() ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS);
+      return delay({ phase: testing ? 'running' : phaseOf(), day, startDate });
     },
 
     async getJourney(): Promise<Journey> {
       requireSession();
       const p = progress();
-      const days = computeDays(p);
+      const locked = doneToday();
+      // Hôm nay đã xong một chặng → chặng đang mở bị khoá tới mai (không còn 'open' nào).
+      const days = locked ? computeDays(p).map((s) => (s === 'open' ? 'future' : s)) : computeDays(p);
       const phase = isTestSession() ? 'running' : phaseOf();
       const points = totalPoints(p, days);
       const rejectedDay = state.rejected[0];
       return delay({
         phase,
-        day: isTestSession() ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS),
+        day: isTestSession() ? TOTAL_DAYS : locked ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS),
         days,
         totalPoints: points,
         streak: longestStreak(days),
@@ -392,6 +410,7 @@ export function createMockApi(): Api {
       await delay(null, 700);
       const testing = isTestSession();
       if (!fileName) throw new ApiError('photo_invalid');
+      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
       if (!testing && day !== state.campaignDay) throw new ApiError('not_today');
       if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
       if (!testing && state.completed.includes(day)) throw new ApiError('already_done');
@@ -406,12 +425,14 @@ export function createMockApi(): Api {
       requireSession();
       await delay(null, 500);
       if (state.passesLeft <= 0) throw new ApiError('no_pass');
-      // Cứu ngày hôm nay (bỏ lỡ): đánh dấu passed, 0 điểm, giữ chuỗi, rồi sang ngày kế. Có 3 Bùa.
+      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
+      // Bỏ qua chặng đang mở bằng Bùa: đánh dấu passed, 0 điểm, giữ chuỗi, sang chặng kế. Có 3 Bùa.
       const day = state.campaignDay;
       if (!state.passed.includes(day)) state.passed.push(day);
       state.passesLeft -= 1;
       if (state.profile) state.profile.sugarPassAvailable = state.passesLeft > 0;
       if (state.campaignDay <= TOTAL_DAYS) state.campaignDay = day + 1;
+      state.lastDoneDate = todayStr();
       save();
     },
 
@@ -424,6 +445,7 @@ export function createMockApi(): Api {
       requireSession();
       await delay(null, 500);
       // 1 câu (trà sữa): trúng khoảng 12–15 = full 2 điểm; lệch thì trừ dần theo khoảng cách tới mép gần nhất.
+      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
       const guess = guesses[0] ?? 0;
       const lo = vi.quiz.correctMin, hi = vi.quiz.correctMax;
       const answer = Math.round((lo + hi) / 2);
@@ -440,6 +462,7 @@ export function createMockApi(): Api {
       requireSession();
       await delay(null, 400);
       if (!MINIGAME_DAYS.includes(day)) throw new ApiError('server');
+      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
       advance(day);
       save();
       return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
@@ -491,4 +514,5 @@ export function createMockApi(): Api {
 /** Xoá state mock (dùng cho nút "chơi lại demo" hoặc test). */
 export function resetMock() {
   if (typeof localStorage !== 'undefined') localStorage.removeItem(KEY);
+  mockDayOffset = 0;
 }

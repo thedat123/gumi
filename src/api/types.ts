@@ -27,9 +27,9 @@ export interface Profile {
 
 export interface CampaignState {
   phase: CampaignPhase;
-  /** 0 khi chưa bắt đầu; 1..10 khi đang chạy; >10 khi đã kết thúc. */
+  /** Cá nhân hoá: 0 với khách chưa đăng nhập; 1..21 tính từ NGÀY TẠO TÀI KHOẢN của người dùng. */
   day: number;
-  startDate: string; // ISO date (Asia/Ho_Chi_Minh)
+  startDate: string; // ISO date (Asia/Ho_Chi_Minh) — ngày tạo tài khoản = Ngày 1
 }
 
 /** Tổng hợp cho Dashboard: get_my_journey + get_campaign_state + get_my_rank. */

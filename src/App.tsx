@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
-import { RequireAdmin, RequireAuth, RequireProfile } from './app/guards';
+import { RequireAdmin, RequireAuth, RequireProfile, RequireToday } from './app/guards';
 import { SessionProvider } from './app/session';
 import { SkinProvider } from './app/skin';
 import { Admin } from './pages/Admin';
@@ -38,8 +38,8 @@ export function App() {
           {/* Cần hồ sơ */}
           <Route index element={<RequireProfile><GumiRoom /></RequireProfile>} />
           <Route path="journey" element={<RequireProfile><Dashboard /></RequireProfile>} />
-          <Route path="chapter/:day" element={<RequireProfile><ChapterIntro /></RequireProfile>} />
-          <Route path="mission/:day" element={<RequireProfile><MissionRouter /></RequireProfile>} />
+          <Route path="chapter/:day" element={<RequireProfile><RequireToday><ChapterIntro /></RequireToday></RequireProfile>} />
+          <Route path="mission/:day" element={<RequireProfile><RequireToday><MissionRouter /></RequireToday></RequireProfile>} />
           <Route path="leaderboard" element={<RequireProfile><Leaderboard /></RequireProfile>} />
           <Route path="summary" element={<RequireProfile><Summary /></RequireProfile>} />
           <Route path="me" element={<RequireProfile><Profile /></RequireProfile>} />
