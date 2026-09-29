@@ -10,6 +10,7 @@ import { playSfx } from '../lib/sfx';
 import { getQuality } from '../lib/quality';
 import type { RoomVariant } from './RoomScene';
 import catGirlPearl from '../assets/cat-girl-pearl.jpg';
+import gumaWin from '../assets/gumayusi-win.jpeg'
 
 const lerp = THREE.MathUtils.lerp;
 
@@ -140,33 +141,69 @@ function skyTexture(w: Weather): THREE.Texture {
 
 /** Màn hình TV "đang bật" — cảnh mèo Gumi ngồi ngắm hoàng hôn (kênh GUMI TV). Vẽ tay, độ nét cao. */
 function tvScreenTexture(): THREE.Texture {
-  const W = 768, H = 432; const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d')!;
-  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#FFD39A'); sky.addColorStop(0.5, '#FBA4B4'); sky.addColorStop(1, '#B98BC4');
-  g.fillStyle = sky; g.fillRect(0, 0, W, H);
-  // mặt trời dịu (đĩa nhỏ + quầng mềm, không cháy)
-  const cx = W * 0.72, cy = H * 0.36;
-  const halo = g.createRadialGradient(cx, cy, 8, cx, cy, 150); halo.addColorStop(0, 'rgba(255,244,214,0.55)'); halo.addColorStop(1, 'rgba(255,244,214,0)');
-  g.fillStyle = halo; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#FFF1CE'; g.beginPath(); g.arc(cx, cy, 30, 0, 7); g.fill();
-  // dải đồi xếp lớp (hoàng hôn tím) — nét, không banding
-  const hill = (y: number, col: string, amp: number) => { g.fillStyle = col; g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(W * 0.3, y - amp, W * 0.7, y + amp, W, y - amp * 0.4); g.lineTo(W, H); g.lineTo(0, H); g.closePath(); g.fill(); };
-  hill(H * 0.66, '#C286AE', 26); hill(H * 0.78, '#9C5F8E', 22); hill(H * 0.9, '#7A4670', 18);
-  // mèo ngồi (bóng) nhìn về phía mặt trời — canh giữa
-  const mx = W * 0.42, my = H * 0.86; g.fillStyle = '#3A2838';
-  g.beginPath(); g.ellipse(mx, my, 58, 30, 0, 0, 7); g.fill();                                  // thân
-  g.beginPath(); g.arc(mx, my - 52, 33, 0, 7); g.fill();                                         // đầu
-  g.beginPath(); g.moveTo(mx - 22, my - 78); g.lineTo(mx - 30, my - 108); g.lineTo(mx - 8, my - 82); g.closePath(); g.fill();  // tai trái
-  g.beginPath(); g.moveTo(mx + 22, my - 78); g.lineTo(mx + 30, my - 108); g.lineTo(mx + 8, my - 82); g.closePath(); g.fill();  // tai phải
-  g.strokeStyle = '#3A2838'; g.lineWidth = 11; g.lineCap = 'round'; g.beginPath(); g.moveTo(mx + 52, my + 6); g.quadraticCurveTo(mx + 104, my - 20, mx + 92, my - 66); g.stroke(); // đuôi
-  // nhãn kênh Ở ĐÁY (tránh bị HUD phía trên che), có nền mờ cho dễ đọc
-  g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(0, H - 52, W, 52);
-  g.fillStyle = 'rgba(255,255,255,0.96)'; g.font = 'bold 30px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
-  g.fillText('GUMI TV', 22, H - 26);
-  g.fillStyle = '#FF6B81'; g.beginPath(); g.arc(W - 96, H - 26, 7, 0, 7); g.fill();
-  g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = 'bold 22px system-ui, sans-serif'; g.fillText('LIVE', W - 82, H - 25);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 16; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
-  return t;
+  const W = 768;
+  const H = 432;
+
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+
+  const g = c.getContext('2d')!;
+
+  // Texture trả về ngay
+  const texture = new THREE.CanvasTexture(c);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  texture.anisotropy = 16;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+
+  // Load JPG local
+  const img = new Image();
+
+  img.onload = () => {
+    // object-fit: cover
+    const scale = Math.max(
+      W / img.naturalWidth,
+      H / img.naturalHeight,
+    );
+
+    const width = img.naturalWidth * scale;
+    const height = img.naturalHeight * scale;
+
+    const x = (W - width) / 2;
+    const y = (H - height) / 2;
+
+    g.drawImage(img, x, y, width, height);
+
+    // HUD của TV
+    g.fillStyle = 'rgba(0,0,0,0.28)';
+    g.fillRect(0, H - 52, W, 52);
+
+    g.fillStyle = 'rgba(255,255,255,0.96)';
+    g.font = 'bold 30px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+
+    g.fillText('GUMI TV', 22, H - 26);
+
+    g.fillStyle = '#FF6B81';
+    g.beginPath();
+    g.arc(W - 96, H - 26, 7, 0, Math.PI * 2);
+    g.fill();
+
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.font = 'bold 22px system-ui, sans-serif';
+    g.fillText('LIVE', W - 82, H - 25);
+
+    // Quan trọng
+    texture.needsUpdate = true;
+  };
+
+  img.src = gumaWin;
+
+  return texture;
 }
 
 function fabricBump(): THREE.Texture {
@@ -652,7 +689,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       // ===== NỘI THẤT — bố cục ĐỐI XỨNG quanh trục giữa =====
       // Tủ TV áp tường chính giữa + cây bàn nhỏ đối xứng + 2 cây cảnh lớn hai bên
       place('cabinetTelevision', 0, 0, -2.75, 2.7, 0, 0x40342A);   // tủ TV gỗ óc chó ĐẬM — nổi bật trên tường sáng
-      flatTV(0, 2.45, -2.9, 2.0);                                   // TV treo tường trên tủ, nhỏ & hạ thấp để không bị HUD che (kênh GUMI TV)
+      flatTV(0, 2.8, -2.7, 2.0);                                   // TV treo tường trên tủ, nhỏ & hạ thấp để không bị HUD che (kênh GUMI TV)
       place('plantSmall1', -1.05, 1.28, -2.62, 0.55, 0); place('plantSmall1', 1.05, 1.28, -2.62, 0.55, 0);
       place('pottedPlant', -4.0, 0, -2.5, 1.55, 0); place('pottedPlant', 4.0, 0, -2.5, 1.55, 0);
       // Thảm định khu CHÍNH GIỮA
