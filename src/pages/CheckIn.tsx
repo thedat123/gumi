@@ -12,24 +12,30 @@ import { actOfDay } from '../lib/scoring';
 import { playSfx } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { errorCode, messageFor } from '../lib/errors';
+import { copyText, shareStory } from '../lib/shareCard';
 import type { VisionResult } from '../lib/vision';
 import type { VlmResult } from '../lib/vlm';
 import type { SugarLevel } from '../lib/sugar';
 
-const LEVELS: SugarLevel[] = [70, 50, 30, 0];
-const LEVEL_DAYS = [1, 5, 15, 20]; // ngày DRINK có chọn mức đường
+// Mục tiêu mức đường theo ngày DRINK (khớp needs_level trong SQL). Mức THỰC TẾ lấy từ AI đọc tem ly;
+// nếu AI không đọc được % thì coi như người chơi đạt đúng mục tiêu của ngày. Không còn để người chơi tự chọn.
+const TARGET_LEVEL: Partial<Record<number, SugarLevel>> = { 1: 70, 5: 50, 15: 30, 20: 0 };
+const SNAP: SugarLevel[] = [0, 30, 50, 70];
+const snapLevel = (p: number | null | undefined): SugarLevel | null =>
+  p == null ? null : SNAP.reduce((a, b) => (Math.abs(b - p) < Math.abs(a - p) ? b : a));
 
 type Ocr = 'idle' | 'reading' | 'ok' | 'fail' | 'unavailable';
 
-/** S06 — Nhiệm vụ có ảnh: ngày DRINK cần tem ly nước (AI kiểm) + chọn mức đường; ngày SHARE chỉ ảnh. */
+/** S06 — Nhiệm vụ có ảnh: ngày DRINK cần tem ly nước (AI kiểm + tự đọc mức đường); ngày SHARE chỉ ảnh + nút chia sẻ. */
 export function CheckIn() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 1;
   const m = vi.missions[day - 1];
   const needsStamp = m?.kind === 'DRINK'; // ngày uống → bắt buộc thấy tem ly nước
   const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [level, setLevel] = useState<SugarLevel>(70);
+  const [copied, setCopied] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'success'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
@@ -39,7 +45,14 @@ export function CheckIn() {
   const [manualConfirm, setManualConfirm] = useState(false);
   const [vlm, setVlm] = useState<VlmResult | null>(null);
 
-  const needsLevel = LEVEL_DAYS.includes(day);
+  const needsLevel = TARGET_LEVEL[day] !== undefined;
+  const isShare = m?.kind === 'SHARE';
+
+  const doShare = async () => {
+    const r = await shareStory({ caption: vi.checkin.share.caption, url: window.location.origin, file });
+    if (r === 'copied') setCopied(true);
+  };
+  const doCopy = async () => { if (await copyText(vi.checkin.share.caption)) setCopied(true); };
 
   // Nạp SẴN model on-device CHỈ KHI không có API đám mây (GCV/VLM) → lúc chụp nhận diện chạy nhanh.
   useEffect(() => {
@@ -55,6 +68,7 @@ export function CheckIn() {
   const pick = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     setFileName(f?.name ?? null);
+    setFile(f);
     setError(null);
     setManualConfirm(false);
     setVlm(null);
@@ -109,6 +123,8 @@ export function CheckIn() {
     setPhase('uploading');
     setError(null);
     try {
+      // Mức đường = AI đọc được (snap về 0/30/50/70); AI không đọc ra thì lấy mục tiêu của ngày.
+      const level = needsLevel ? (snapLevel(vlm?.sugarPercent) ?? TARGET_LEVEL[day]!) : 0;
       await api.submitCheckin(day, level, fileName ?? '');
       playSfx('win');
       setPhase('success');
@@ -136,7 +152,6 @@ export function CheckIn() {
   }
 
   const sugarSeen = vlm?.sugarPercent ?? null;
-  const mismatch = needsLevel && sugarSeen !== null && sugarSeen > level + 5;
 
   return (
     <GameShell act={actOfDay(day)} title={`Ngày ${m.day}: ${m.title}`} intro={m.description}
@@ -144,6 +159,20 @@ export function CheckIn() {
       {error && <div className="mb-2"><Banner kind="error" action={retryable ? <Button variant="secondary" onClick={submit}>{vi.checkin.retry}</Button> : undefined}>{error}</Banner></div>}
 
       <Card className="flex flex-col gap-3">
+        {/* Ngày SHARE: chia sẻ Story kèm caption (Web Share / copy), rồi upload ảnh chụp làm bằng chứng */}
+        {isShare && (
+          <div className="flex flex-col gap-2 rounded-control border border-info/30 bg-info/5 p-3">
+            <p className="flex items-center gap-1.5 text-small font-bold text-info"><Icon name="sparkle" size={16} filled /> {vi.checkin.share.heading}</p>
+            <p className="text-caption leading-relaxed text-muted">{vi.checkin.share.hint}</p>
+            <p className="whitespace-pre-line rounded-control border border-border bg-surface px-3 py-2 text-caption leading-relaxed text-text">{vi.checkin.share.caption}</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={doShare} block>{vi.checkin.share.shareBtn}</Button>
+              <Button variant="secondary" onClick={doCopy} block>{vi.checkin.share.copyBtn}</Button>
+            </div>
+            {copied && <p className="text-caption font-semibold text-success">{vi.checkin.share.copied}</p>}
+          </div>
+        )}
+
         {/* Xem trước ảnh chụp */}
         {preview && (
           <div className="relative overflow-hidden rounded-control border border-border bg-black/5">
@@ -168,14 +197,12 @@ export function CheckIn() {
             {ocr === 'reading' && <Banner kind="info">{vi.checkin.ocr.checking(prog)}</Banner>}
             {ocr === 'ok' && <Banner kind="success">{detail || vi.checkin.ocr.okStamp}</Banner>}
 
-            {/* Đối chiếu % đường (khi VLM đọc được tem) */}
-            {ocr === 'ok' && needsLevel && vlm?.ran && (
-              <div className={`flex items-center justify-between gap-2 rounded-control border px-3 py-2 text-small font-semibold ${mismatch ? 'border-danger/40 bg-danger/8 text-danger' : 'border-info/30 bg-info/8 text-info'}`}>
-                <span className="flex items-center gap-1.5"><Icon name="drop" size={15} filled /> {sugarSeen !== null ? vi.checkin.ocr.sugarSeen(sugarSeen) : vi.checkin.ocr.sugarNone}</span>
-                <span className="rounded-pill bg-surface/80 px-2 py-0.5 text-caption">{vi.checkin.ocr.declared(level)}</span>
+            {/* Mức đường AI đọc được từ tem ly (chỉ hiển thị, không cần chọn tay) */}
+            {ocr === 'ok' && needsLevel && vlm?.ran && sugarSeen !== null && (
+              <div className="flex items-center gap-1.5 rounded-control border border-info/30 bg-info/8 px-3 py-2 text-small font-semibold text-info">
+                <Icon name="drop" size={15} filled /> {vi.checkin.ocr.sugarSeen(sugarSeen)}
               </div>
             )}
-            {mismatch && <p className="text-caption font-semibold text-danger">⚠ {vi.checkin.ocr.sugarMismatch}</p>}
 
             {ocr === 'unavailable' && (
               <>
@@ -194,18 +221,6 @@ export function CheckIn() {
           </div>
         )}
         {needsStamp && <p className="text-caption leading-relaxed text-muted">{vi.checkin.ocr.hint}</p>}
-
-        {needsLevel && (
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-small font-semibold">{vi.checkin.level}</legend>
-            <div className="grid grid-cols-4 gap-2">
-              {LEVELS.map((l) => (
-                <button key={l} type="button" onClick={() => setLevel(l)} aria-pressed={level === l}
-                  className={`min-h-11 rounded-control border-2 font-semibold transition-colors ${level === l ? 'border-primary bg-primary text-on-primary' : 'border-border-strong/50 bg-surface hover:border-primary/50'}`}>{l}%</button>
-              ))}
-            </div>
-          </fieldset>
-        )}
       </Card>
     </GameShell>
   );

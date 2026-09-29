@@ -1,5 +1,5 @@
 import { Icon } from './Icon';
-import { STREAK_BONUS, longestStreak } from '../lib/scoring';
+import { STREAK_BONUS } from '../lib/scoring';
 import { vi } from '../content/vi';
 import type { DayState } from '../api/types';
 
@@ -11,12 +11,11 @@ const isDone = (s: DayState) => s === 'checked' || s === 'passed';
  * Ô đã hoàn thành sáng màu lửa (chuỗi liền mạch nhìn thấy được), đỉnh chuỗi có ngọn 🔥,
  * ngày mốc thưởng có ngôi sao, hôm nay có viền nhấp nháy.
  */
-export function StreakBoard({ days, today }: { days: DayState[]; today: number }) {
+export function StreakBoard({ days, today, streak }: { days: DayState[]; today: number; streak: number }) {
   // Đỉnh chuỗi = ô hoàn thành cuối cùng → gắn ngọn lửa.
   let tip = -1;
   days.forEach((s, i) => { if (isDone(s)) tip = i; });
   const doneCount = days.filter(isDone).length;
-  const streak = longestStreak(days);
   const next = STREAK_BONUS.find((b) => b.n > streak);
 
   return (

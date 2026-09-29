@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { DialogueLine } from '../components/Dialogue';
 import { Gumi } from '../components/Gumi';
@@ -16,6 +17,9 @@ export function ChapterIntro() {
   const chapter = vi.story.chapters[day - 1];
   const m = vi.missions[day - 1];
   const { speak, stop, speaking, supported } = useNarration();
+
+  // "Bắt đầu chơi": vào màn hôm nay là điểm danh streak (idempotent — chỉ tính 1 lần/ngày).
+  useEffect(() => { void api.markPlayed().catch(() => {}); }, []);
 
   // Tự đọc cốt truyện khi vừa vào chương (điều hướng tới đây tính là một cú bấm → trình duyệt cho phát tiếng). Dừng khi rời trang.
   useEffect(() => {

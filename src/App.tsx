@@ -25,6 +25,8 @@ export function App() {
     <SessionProvider>
       <SkinProvider>
       <Routes>
+        {/* Admin: shell riêng (dashboard), KHÔNG dùng AppShell game của người chơi. */}
+        <Route path="admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
         <Route element={<AppShell />}>
           {/* Công khai */}
           <Route path="welcome" element={<Landing />} />
@@ -43,8 +45,6 @@ export function App() {
           <Route path="leaderboard" element={<RequireProfile><Leaderboard /></RequireProfile>} />
           <Route path="summary" element={<RequireProfile><Summary /></RequireProfile>} />
           <Route path="me" element={<RequireProfile><Profile /></RequireProfile>} />
-          {/* Admin */}
-          <Route path="admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
           {/* 404 */}
           <Route path="*" element={<SystemState fixed="not_found" />} />
         </Route>

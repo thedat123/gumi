@@ -121,6 +121,7 @@ export function createSupabaseApi(): Api {
     updateProfile: (patch) => rpc<Profile>('update_profile', { p_patch: patch }),
     getCampaignState: () => rpc<CampaignState>('get_campaign_state'),
     getJourney: () => rpc<Journey>('get_my_journey'),
+    markPlayed: () => rpc<number>('mark_played'),
     getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),
     async submitCheckin(day, level: SugarLevel, fileName): Promise<CheckinResult> {
       // Ảnh đã nén ở client trước khi gọi (browser-image-compression) — ở đây chỉ minh hoạ đường dẫn.
@@ -131,9 +132,7 @@ export function createSupabaseApi(): Api {
       if (upErr) throw new ApiError('network', upErr.message);
       return rpc<CheckinResult>('submit_checkin', { p_day: day, p_level: level, p_path: path });
     },
-    async useSugarPass() {
-      await rpc('use_sugar_pass');
-    },
+    useStreakFreeze: () => rpc<number>('use_streak_freeze'),
     getQuizQuestions: () => rpc<QuizQuestion[]>('get_quiz_questions'),
     submitQuiz: (guesses) => rpc<QuizResult>('submit_quiz', { p_guesses: guesses }),
     submitMinigame: (day) => rpc<CheckinResult>('submit_minigame', { p_day: day }),

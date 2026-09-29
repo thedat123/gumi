@@ -61,14 +61,13 @@ export function missionTotal(p: ProgressInput): number {
   return total;
 }
 
-/** Thưởng chuỗi theo chuỗi DÀI NHẤT, mỗi mốc một lần (D4). */
-export function streakBonus(days: DayState[]): number {
-  const s = longestStreak(days);
-  return STREAK_BONUS.filter((b) => s >= b.n).reduce((sum, b) => sum + b.pts, 0);
+/** Thưởng chuỗi theo streak (số ngày liên tiếp mở chơi), mỗi mốc 5/10/15/21 một lần. */
+export function streakBonus(streak: number): number {
+  return STREAK_BONUS.filter((b) => streak >= b.n).reduce((sum, b) => sum + b.pts, 0);
 }
 
-export function totalPoints(p: ProgressInput, days: DayState[]): number {
-  return missionTotal(p) + streakBonus(days);
+export function totalPoints(p: ProgressInput, streak: number): number {
+  return missionTotal(p) + streakBonus(streak);
 }
 
 /** Gumi: hấp hối > tiến hoá (đã xong Day 21) > bơ phờ. */

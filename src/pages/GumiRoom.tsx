@@ -8,7 +8,6 @@ import { Icon, type IconName } from '../components/Icon';
 import { FoodTray } from '../components/FoodTray';
 import { RoomCritters } from '../components/RoomCritters';
 import { SkinPicker } from '../components/SkinPicker';
-import { SugarPassDialog } from '../components/SugarPassDialog';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { actOfDay, approvedCount, gumiStage } from '../lib/scoring';
@@ -39,9 +38,7 @@ const ROOMS: { v: 'living' | 'kitchen' | 'garden'; name: string; icon: IconName 
 /** S05 — MÀN CHÍNH kiểu thú cưng ảo: Gumi sống trong phòng, nhiệm vụ là các nút quanh nhân vật. */
 export function GumiRoom() {
   const state = useAsync(() => api.getJourney(), []);
-  const [dialog, setDialog] = useState(false);
   const [wardrobe, setWardrobe] = useState(false);
-  const [passError, setPassError] = useState(false);
   const [roomIdx, setRoomIdx] = useState(0);
   const [slide, setSlide] = useState<'left' | 'right' | ''>('');
   const [feed, setFeed] = useState<{ food: string; key: number } | null>(null);
@@ -75,9 +72,9 @@ export function GumiRoom() {
         const m = vi.missions[todayIdx];
         const running = s.phase === 'running' && s.day >= 1 && s.day <= vi.journey.total;
 
-        const usePass = async () => {
-          try { await api.useSugarPass(); setDialog(false); fire('revive'); state.reload(); }
-          catch { setPassError(true); }
+        const useFreeze = async () => {
+          try { await api.useStreakFreeze(); fire('revive'); state.reload(); }
+          catch { state.reload(); }
         };
 
         return (
@@ -161,6 +158,13 @@ export function GumiRoom() {
                 {/* Khay cho ăn + nút nhiệm vụ hôm nay + dock */}
                 <div className="flex flex-col gap-2">
                   <FoodTray onFeed={feedGumi} />
+                  {s.streakFreezeAvailable && (
+                    <div className="flex items-center gap-2.5 rounded-card border-2 border-danger bg-surface/95 p-2 pr-2.5 shadow-pop backdrop-blur">
+                      <span aria-hidden="true" className="text-title">🔥</span>
+                      <span className="min-w-0 flex-1 text-caption font-semibold leading-snug text-danger">Chuỗi {s.streakAtRisk} ngày sắp mất! Dùng Bùa Hồi Sinh nối lại nhé.</span>
+                      <button onClick={useFreeze} className="shrink-0 rounded-control bg-danger px-3 py-1.5 text-small font-bold text-white shadow-soft transition-transform active:scale-95">Cứu chuỗi</button>
+                    </div>
+                  )}
                   {running && !todayDone && m && (
                     <Link to={`/chapter/${s.day}`} className="node-today flex items-center gap-3 rounded-card border border-primary/70 bg-surface/95 p-2 pr-3 shadow-pop backdrop-blur transition-transform active:scale-[0.99]">
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-primary text-on-primary"><Icon name="gamepad" size={24} /></span>
@@ -186,9 +190,6 @@ export function GumiRoom() {
                 </div>
             </div>
 
-            {dialog && (
-              <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />
-            )}
             {wardrobe && <SkinPicker daysDone={done} onClose={() => setWardrobe(false)} />}
           </div>
         );

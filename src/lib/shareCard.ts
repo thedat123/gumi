@@ -148,3 +148,29 @@ export function downloadBlob(blob: Blob, filename: string): void {
 export function shareFacebook(url: string): void {
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer,width=640,height=560');
 }
+
+export async function copyText(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
+
+/**
+ * Chia sẻ Story kèm caption cho ngày SHARE.
+ * - Mobile: Web Share API mở khay hệ điều hành → chọn Facebook/Instagram/Messenger; kèm ảnh nếu có.
+ * - PC / không hỗ trợ: copy caption vào clipboard rồi mở hộp chia sẻ Facebook (kèm quote).
+ * Lưu ý nền tảng: Instagram Story KHÔNG nhận sẵn caption qua web → app tự copy để người dùng dán.
+ */
+export async function shareStory(opts: { caption: string; url: string; file?: File | null }): Promise<'shared' | 'copied'> {
+  const nav = navigator as Navigator & { canShare?: (d?: unknown) => boolean };
+  const data: ShareData & { files?: File[] } = { text: opts.caption, url: opts.url };
+  if (opts.file && nav.canShare?.({ files: [opts.file] })) data.files = [opts.file];
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share(data); return 'shared'; }
+    catch (e) { if ((e as DOMException)?.name === 'AbortError') return 'shared'; /* huỷ → thôi, không rơi xuống FB */ }
+  }
+  await copyText(opts.caption);
+  window.open(
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(opts.url)}&quote=${encodeURIComponent(opts.caption)}`,
+    '_blank', 'noopener,noreferrer,width=640,height=560',
+  );
+  return 'copied';
+}

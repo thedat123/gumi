@@ -45,6 +45,8 @@ export interface Journey {
   passHoursLeft: number | null;
   gumi: GumiState;
   rejectedReason?: string;
+  streakFreezeAvailable: boolean; // lỡ đúng 1 ngày + còn Bùa → có thể cứu chuỗi
+  streakAtRisk: number;           // độ dài chuỗi đang treo (để hiện "cứu chuỗi N ngày")
 }
 
 export interface LeaderRow {
@@ -114,6 +116,8 @@ export interface AdminCheckin {
   status: CheckinStatus;
   emoji: string; // ảnh thật: URL có chữ ký; ở mock là emoji minh hoạ
   flag?: string;
+  kind?: MissionKind;        // loại nhiệm vụ của ngày (DRINK/SHARE/…)
+  level?: number | null;     // mức đường AI đọc được (chỉ ngày DRINK có needs_level)
 }
 
 /** Một dòng người chơi trong bảng quản lý của admin. */
@@ -201,9 +205,12 @@ export interface Api {
   updateProfile(patch: Partial<CreateProfileInput>): Promise<Profile>;
   getCampaignState(): Promise<CampaignState>;
   getJourney(): Promise<Journey>;
+  /** Đánh dấu "bắt đầu chơi" hôm nay → cập nhật & trả về streak ngày liên tiếp. */
+  markPlayed(): Promise<number>;
   getLeaderboard(): Promise<Leaderboard>;
   submitCheckin(day: number, level: SugarLevel, fileName: string): Promise<CheckinResult>;
-  useSugarPass(): Promise<void>;
+  /** Tiêu 1 Bùa để CỨU chuỗi khi lỡ đúng 1 ngày (không bỏ qua chặng); trả về chuỗi được giữ. */
+  useStreakFreeze(): Promise<number>;
   getQuizQuestions(): Promise<QuizQuestion[]>;
   submitQuiz(guesses: Record<number, number>): Promise<QuizResult>;
   submitMinigame(day: number): Promise<CheckinResult>;

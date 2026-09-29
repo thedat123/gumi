@@ -3,7 +3,7 @@
 // Mô phỏng thời gian kiểu "sandbox": hoàn thành nhiệm vụ hôm nay thì tự sang ngày kế, để bấm hết 10 ngày mà xem.
 import { vi } from '../content/vi';
 import { gramsPerDrink, gramsToSpoons, type SugarLevel } from '../lib/sugar';
-import { computeDays, gumiStateOf, longestStreak, totalPoints, TOTAL_DAYS } from '../lib/scoring';
+import { computeDays, gumiStateOf, totalPoints, TOTAL_DAYS } from '../lib/scoring';
 import {
   ApiError,
   type AdminApi,
@@ -70,6 +70,8 @@ interface Persisted {
   wall: WallPost[];
   passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 3)
   lastDoneDate: string | null; // ngày (YYYY-MM-DD) hoàn thành chặng gần nhất → chốt "mỗi ngày 1 chặng"
+  lastPlayDate: string | null; // ngày mở chơi gần nhất → tính streak "bắt đầu chơi"
+  playStreak: number;          // số ngày liên tiếp bấm bắt đầu chơi
 }
 
 // Không seed dữ liệu giả: tường bắt đầu trống, bảng xếp hạng chỉ hiển thị người chơi thật.
@@ -119,7 +121,7 @@ function genPlayers(count: number): AdminPlayer[] {
 const PLAYERS_SEED = genPlayers(78);
 
 function fresh(): Persisted {
-  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES, lastDoneDate: null };
+  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES, lastDoneDate: null, lastPlayDate: null, playStreak: 0 };
 }
 
 function load(): Persisted {
@@ -187,9 +189,22 @@ export function createMockApi(): Api {
   });
 
   const todayStr = mockToday;
+  const yesterdayStr = () => new Date(Date.now() + (mockDayOffset - 1) * 86_400_000).toISOString().slice(0, 10);
   // Hôm nay đã hoàn thành một chặng chưa → khoá chặng kế tới ngày mai (mỗi ngày 1 chặng).
   // Test/admin bỏ qua giới hạn này để chơi thẳng qua các chặng.
   const doneToday = () => !isUnlocked() && state.lastDoneDate === todayStr();
+
+  const twoDaysAgoStr = () => new Date(Date.now() + (mockDayOffset - 2) * 86_400_000).toISOString().slice(0, 10);
+  // Streak "bắt đầu chơi": còn sống khi chơi hôm nay/hôm qua; LỠ 1 NGÀY = "hấp hối" nhưng CHƯA đứt
+  // (vẫn hiện số); lỡ ≥2 ngày → đứt (về 0).
+  const playStreakLive = () => {
+    const last = state.lastPlayDate;
+    if (!last) return 0;
+    return last === todayStr() || last === yesterdayStr() || last === twoDaysAgoStr() ? state.playStreak : 0;
+  };
+  // Đang hấp hối (lỡ đúng 1 ngày)? Cứu được nếu còn Bùa + đang có chuỗi.
+  const isDying = () => !isUnlocked() && state.playStreak > 0 && state.lastPlayDate === twoDaysAgoStr();
+  const canFreeze = () => isDying() && state.passesLeft > 0;
 
   const advance = (day: number) => {
     if (!state.completed.includes(day)) state.completed.push(day);
@@ -321,12 +336,15 @@ export function createMockApi(): Api {
     async listCheckins(day) {
       requireSession();
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
-      return delay(ADMIN_SEED.map((c) => ({ ...c, day })));
+      const kind = vi.missions[day - 1]?.kind;
+      // Mức đường AI: chỉ minh hoạ cho ngày DRINK (giá trị giả theo mục tiêu ngày).
+      const level = kind === 'DRINK' ? ({ 1: 70, 5: 50, 15: 30, 20: 0 }[day] ?? 50) : null;
+      return delay(ADMIN_SEED.map((c) => ({ ...c, day, kind, level })));
     },
     async listFlags() {
       requireSession();
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
-      return delay(ADMIN_SEED.filter((c) => c.flag));
+      return delay(ADMIN_SEED.filter((c) => c.flag).map((c) => ({ ...c, kind: vi.missions[c.day - 1]?.kind })));
     },
     async setCheckinStatus(_id, _status: CheckinStatus, _reason) {
       requireSession();
@@ -383,27 +401,54 @@ export function createMockApi(): Api {
           ? computeDays(p).map((s) => (s === 'open' ? 'future' : s))
           : computeDays(p);
       const phase = unlocked ? 'running' : phaseOf();
-      const points = totalPoints(p, days);
+      const streak = playStreakLive();
+      const points = totalPoints(p, streak);
       const rejectedDay = state.rejected[0];
       return delay({
         phase,
         day: unlocked ? TOTAL_DAYS : locked ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS),
         days,
         totalPoints: points,
-        streak: longestStreak(days),
+        streak,
         rank: rankFor(points),
         passAvailable: state.passesLeft > 0,
         passesLeft: state.passesLeft,
-        passHoursLeft: days.includes('dying') ? 18 : null,
-        gumi: gumiStateOf(days),
+        passHoursLeft: isDying() ? 24 - new Date().getHours() : null,
+        gumi: isDying() ? 'hap_hoi' : gumiStateOf(days),
         rejectedReason: rejectedDay ? 'ảnh không hợp lệ' : undefined,
+        streakFreezeAvailable: canFreeze(),
+        streakAtRisk: canFreeze() ? state.playStreak : 0,
       });
+    },
+
+    async markPlayed(): Promise<number> {
+      requireSession();
+      const t = todayStr();
+      if (state.lastPlayDate !== t) {
+        // Mở chơi hôm qua → +1; nghỉ >1 ngày → về 1. Cùng ngày bấm lại thì giữ nguyên.
+        state.playStreak = state.lastPlayDate === yesterdayStr() ? state.playStreak + 1 : 1;
+        state.lastPlayDate = t;
+        save();
+      }
+      return delay(playStreakLive(), 60);
+    },
+
+    async useStreakFreeze(): Promise<number> {
+      requireSession();
+      await delay(null, 400);
+      if (state.passesLeft <= 0) throw new ApiError('no_pass');
+      if (!canFreeze()) throw new ApiError('not_today'); // chỉ cứu khi lỡ đúng 1 ngày
+      state.passesLeft -= 1;
+      if (state.profile) state.profile.sugarPassAvailable = state.passesLeft > 0;
+      state.lastPlayDate = yesterdayStr(); // nối chuỗi: coi như đã chơi hôm qua → chuỗi sống lại
+      save();
+      return playStreakLive();
     },
 
     async getLeaderboard(): Promise<Leaderboard> {
       requireSession();
       const p = progress();
-      const myPoints = totalPoints(p, computeDays(p));
+      const myPoints = totalPoints(p, playStreakLive());
       // Không có đối thủ giả: chỉ có chính người chơi trên bảng (rank 1).
       const me: LeaderRow = { rank: 1, name: state.profile?.name ?? 'Bạn', avatar: state.profile?.avatar ?? '🐱', points: myPoints, isMe: true };
       return delay({
@@ -426,21 +471,6 @@ export function createMockApi(): Api {
       advance(day);
       save();
       return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
-    },
-
-    async useSugarPass() {
-      requireSession();
-      await delay(null, 500);
-      if (state.passesLeft <= 0) throw new ApiError('no_pass');
-      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
-      // Bỏ qua chặng đang mở bằng Bùa: đánh dấu passed, 0 điểm, giữ chuỗi, sang chặng kế. Có 3 Bùa.
-      const day = state.campaignDay;
-      if (!state.passed.includes(day)) state.passed.push(day);
-      state.passesLeft -= 1;
-      if (state.profile) state.profile.sugarPassAvailable = state.passesLeft > 0;
-      if (state.campaignDay <= TOTAL_DAYS) state.campaignDay = day + 1;
-      state.lastDoneDate = todayStr();
-      save();
     },
 
     async getQuizQuestions(): Promise<QuizQuestion[]> {
@@ -504,9 +534,9 @@ export function createMockApi(): Api {
         healthyTotal: DRINK_DAYS.length,
         quizScore: state.quiz?.score ?? 0,
         quizMax: 2,
-        streak: longestStreak(days),
-        totalPoints: totalPoints(p, days),
-        rank: rankFor(totalPoints(p, days)),
+        streak: playStreakLive(),
+        totalPoints: totalPoints(p, playStreakLive()),
+        rank: rankFor(totalPoints(p, playStreakLive())),
         rankFinal: state.campaignDay > TOTAL_DAYS,
       });
     },

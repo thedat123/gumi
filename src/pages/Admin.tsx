@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
+import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
@@ -7,101 +8,83 @@ import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
-import type { AdminCheckin, AdminPlayer, AdminStats, CheckinStatus } from '../api/types';
+import type { AdminCheckin, AdminPlayer, AdminStats, CheckinStatus, MissionKind } from '../api/types';
 
 const STATUS: Record<CheckinStatus, { text: string; cls: string }> = {
-  approved: { text: vi.admin.approved, cls: 'text-success' },
-  rejected: { text: vi.admin.rejected, cls: 'text-danger' },
-  pending: { text: vi.admin.pending, cls: 'text-muted' },
+  approved: { text: vi.admin.approved, cls: 'bg-success/12 text-success' },
+  rejected: { text: vi.admin.rejected, cls: 'bg-danger/10 text-danger' },
+  pending: { text: vi.admin.pending, cls: 'bg-border/50 text-muted' },
 };
-const DAY = 3;
 
-/** S13 — Admin: thống kê người chơi + duyệt ảnh (theo ngày / ảnh bị báo cáo), hộp gỡ ảnh có lý do. */
+const KIND_CLS: Record<MissionKind, string> = {
+  DRINK: 'bg-primary/10 text-primary', KNOW: 'bg-info/12 text-info', SHARE: 'bg-accent/15 text-accent',
+  GAME: 'bg-success/12 text-success', FINAL: 'bg-danger/10 text-danger',
+};
+
+const TABS: AdminTab[] = [
+  { id: 'stats', label: vi.admin.tabStats, icon: 'medal' },
+  { id: 'by_day', label: vi.admin.tabByDay, icon: 'camera' },
+  { id: 'flags', label: vi.admin.tabFlags, icon: 'flag' },
+];
+const DAYS = Array.from({ length: vi.journey.total }, (_, i) => i + 1);
+
+/** S13 — Admin dashboard: thống kê người chơi + duyệt ảnh theo ngày (hiện mức đường AI đọc) + ảnh bị gắn cờ. */
 export function Admin() {
-  const [tab, setTab] = useState<'stats' | 'by_day' | 'flags'>('stats');
+  const [tab, setTab] = useState('stats');
+  const [day, setDay] = useState(1);
   const stats = useAsync(() => api.admin.getStats(), []);
-  const byDay = useAsync(() => api.admin.listCheckins(DAY), []);
+  const byDay = useAsync(() => api.admin.listCheckins(day), [day]);
   const flags = useAsync(() => api.admin.listFlags(), []);
   const [target, setTarget] = useState<AdminCheckin | null>(null);
   const [reason, setReason] = useState<string>(vi.admin.reasons[0]!);
   const [busy, setBusy] = useState(false);
 
+  const approve = async (c: AdminCheckin) => {
+    try { await api.admin.setCheckinStatus(c.id, 'approved'); byDay.reload(); flags.reload(); } catch { /* bỏ qua */ }
+  };
   const confirmReject = async () => {
     if (!target) return;
     setBusy(true);
     try {
       await api.admin.setCheckinStatus(target.id, 'rejected', reason);
-      byDay.reload();
-      flags.reload();
+      byDay.reload(); flags.reload();
       setTarget(null);
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   };
 
-  const tabs = [
-    { id: 'stats' as const, label: vi.admin.tabStats },
-    { id: 'by_day' as const, label: vi.admin.tabByDay },
-    { id: 'flags' as const, label: vi.admin.tabFlags },
-  ];
-
   return (
-    <div className="flex flex-col gap-4 pt-2">
-      <h1 className="text-headline font-bold">{vi.admin.title}</h1>
-      <div className="flex gap-2" role="tablist">
-        {tabs.map((t) => (
-          <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
-            className={`min-h-11 flex-1 rounded-control px-2 text-center text-small font-semibold ${tab === t.id ? 'bg-primary text-on-primary' : 'border-2 border-border-strong bg-surface'}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <AdminShell tabs={TABS} active={tab} onSelect={setTab}>
+      {tab === 'stats' && <AsyncView state={stats}>{(s) => <StatsPanel s={s} />}</AsyncView>}
 
-      {tab === 'stats' ? (
-        <AsyncView state={stats}>
-          {(s) => <StatsPanel s={s} />}
-        </AsyncView>
-      ) : tab === 'by_day' ? (
-        <AsyncView state={byDay} empty={<Banner kind="info">{vi.admin.empty}</Banner>}>
-          {(list) => (
-            <>
-              <h2 className="text-title font-bold">{vi.admin.day(DAY)}</h2>
-              {list.length === 0 ? <Banner kind="info">{vi.admin.empty}</Banner> : (
-                <div className="grid grid-cols-3 gap-2">
-                  {list.map((c) => (
-                    <button key={c.id} type="button" onClick={() => c.status !== 'rejected' && setTarget(c)}
-                      className="flex flex-col items-center gap-1 rounded-card border border-border bg-surface p-2 text-left">
-                      <span aria-hidden="true" className="flex aspect-square w-full items-center justify-center rounded-control bg-gumi-belly text-title">{c.emoji}</span>
-                      <span className="text-caption font-semibold">{c.user.split(' ').slice(-1)}</span>
-                      <span className={`text-caption font-semibold ${STATUS[c.status].cls}`}>{STATUS[c.status].text}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </AsyncView>
-      ) : (
-        <AsyncView state={flags} empty={<Banner kind="info">{vi.admin.empty}</Banner>}>
-          {(list) => (
-            <>
-              <h2 className="text-title font-bold">{vi.admin.flagQueue}</h2>
-              {list.length === 0 ? <Banner kind="info">{vi.admin.empty}</Banner> : list.map((c) => (
-                <Card key={c.id} className="flex items-center gap-3">
-                  <span aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-card bg-gumi-belly text-headline">{c.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{c.user} · {vi.admin.day(c.day)}</p>
-                    {c.flag && <p className="text-caption text-danger">{vi.admin.flagReason(c.flag)}</p>}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Button className="px-3! py-1! text-small!" onClick={() => approve(c)}>{vi.admin.approve}</Button>
-                    <Button variant="danger" className="px-3! py-1! text-small!" onClick={() => setTarget(c)}>{vi.admin.reject}</Button>
-                  </div>
-                </Card>
-              ))}
-            </>
-          )}
-        </AsyncView>
+      {tab === 'by_day' && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-title font-bold">{vi.admin.tabByDay}</h1>
+            <label className="flex items-center gap-2 text-small font-semibold text-muted">
+              {vi.admin.day(day).split(':')[0]}
+              <select value={day} onChange={(e) => setDay(Number(e.target.value))}
+                className="rounded-md border border-border bg-surface px-3 py-1.5 font-semibold text-text">
+                {DAYS.map((d) => <option key={d} value={d}>Ngày {d} · {vi.missions[d - 1]?.title}</option>)}
+              </select>
+            </label>
+          </div>
+          <AsyncView state={byDay} empty={<Banner kind="info">{vi.admin.empty}</Banner>}>
+            {(list) => list.length === 0
+              ? <Banner kind="info">{vi.admin.empty}</Banner>
+              : <CheckinTable list={list} onApprove={approve} onReject={setTarget} />}
+          </AsyncView>
+        </div>
+      )}
+
+      {tab === 'flags' && (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-title font-bold">{vi.admin.flagQueue}</h1>
+          <AsyncView state={flags} empty={<Banner kind="info">{vi.admin.empty}</Banner>}>
+            {(list) => list.length === 0
+              ? <Banner kind="info">{vi.admin.empty}</Banner>
+              : <CheckinTable list={list} onApprove={approve} onReject={setTarget} showFlag />}
+          </AsyncView>
+        </div>
       )}
 
       {target && (
@@ -123,30 +106,56 @@ export function Admin() {
           </div>
         </div>
       )}
-    </div>
+    </AdminShell>
   );
+}
 
-  async function approve(c: AdminCheckin) {
-    // Duyệt nhanh, không cần lý do.
-    try { await api.admin.setCheckinStatus(c.id, 'approved'); byDay.reload(); flags.reload(); } catch { /* bỏ qua */ }
-  }
+/** Bảng ảnh check-in: ảnh + người chơi + loại nhiệm vụ + mức đường AI + trạng thái + thao tác duyệt/gỡ. */
+function CheckinTable({ list, onApprove, onReject, showFlag }: {
+  list: AdminCheckin[]; onApprove: (c: AdminCheckin) => void; onReject: (c: AdminCheckin) => void; showFlag?: boolean;
+}) {
+  return (
+    <Card className="divide-y divide-border/60 p-0">
+      {list.map((c) => (
+        <div key={c.id} className="flex items-center gap-3 px-3 py-2.5">
+          <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-gumi-belly text-title">{c.emoji}</span>
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 truncate font-semibold">
+              {c.user}
+              {c.kind && <span className={`rounded px-1.5 py-0.5 text-caption font-bold ${KIND_CLS[c.kind]}`}>{c.kind}</span>}
+            </p>
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-caption text-muted">
+              <span>{vi.admin.day(c.day)}</span>
+              {c.level != null && <span className="flex items-center gap-1 font-semibold text-info"><Icon name="drop" size={12} filled />{c.level}% đường</span>}
+              {showFlag && c.flag && <span className="font-semibold text-danger">{vi.admin.flagReason(c.flag)}</span>}
+            </p>
+          </div>
+          <span className={`hidden shrink-0 rounded-pill px-2 py-0.5 text-caption font-bold sm:inline ${STATUS[c.status].cls}`}>{STATUS[c.status].text}</span>
+          {c.status !== 'rejected' && (
+            <div className="flex shrink-0 gap-1">
+              <Button className="px-2.5! py-1! text-small!" onClick={() => onApprove(c)}>{vi.admin.approve}</Button>
+              <Button variant="danger" className="px-2.5! py-1! text-small!" onClick={() => onReject(c)}>{vi.admin.reject}</Button>
+            </div>
+          )}
+        </div>
+      ))}
+    </Card>
+  );
 }
 
 const st = vi.admin.stats;
 
-/** Ô số liệu tổng quan. */
 function StatCard({ icon, cls, value, label, hint }: { icon: IconName; cls: string; value: string | number; label: string; hint?: string }) {
   return (
     <Card className="flex flex-col gap-1 p-3">
       <span className={`flex h-8 w-8 items-center justify-center rounded-control bg-bg/70 ${cls}`}><Icon name={icon} size={18} filled /></span>
-      <span className="text-headline font-extrabold tabular-nums leading-none">{value}</span>
+      <span className="text-headline font-extrabold leading-none tabular-nums">{value}</span>
       <span className="text-caption font-semibold text-muted">{label}</span>
       {hint && <span className="text-caption text-muted/80">{hint}</span>}
     </Card>
   );
 }
 
-/** Nhãn trạng thái người chơi theo tiến độ. */
 function playerBadge(p: AdminPlayer): { text: string; cls: string } {
   if (p.finished) return { text: st.badgeFinished, cls: 'bg-success/15 text-success' };
   if (p.eligible) return { text: st.badgeEligible, cls: 'bg-info/15 text-info' };
@@ -154,12 +163,11 @@ function playerBadge(p: AdminPlayer): { text: string; cls: string } {
   return { text: st.badgeIdle, cls: 'bg-border/50 text-muted' };
 }
 
-/** Bảng thống kê tổng quan + danh sách người chơi cho admin. */
 function StatsPanel({ s }: { s: AdminStats }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="mb-2 text-title font-bold">{st.title}</h2>
+        <h1 className="mb-2 text-title font-bold">{st.title}</h1>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <StatCard icon="paw" cls="text-primary" value={s.totalPlayers} label={st.totalPlayers} />
           <StatCard icon="play" cls="text-accent" value={s.activePlayers} label={st.activePlayers} />
@@ -188,8 +196,8 @@ function StatsPanel({ s }: { s: AdminStats }) {
                   <span className="block truncate font-semibold">{p.name}</span>
                   {p.usedPass && <span className="block text-caption text-muted">{st.usedPass}</span>}
                 </span>
-                <span className="w-14 text-right tabular-nums font-semibold">{p.daysDone}/{vi.journey.total}</span>
-                <span className="w-16 text-right tabular-nums font-extrabold text-primary">{p.points}</span>
+                <span className="w-14 text-right font-semibold tabular-nums">{p.daysDone}/{vi.journey.total}</span>
+                <span className="w-16 text-right font-extrabold tabular-nums text-primary">{p.points}</span>
                 <span className="w-24 text-right"><span className={`inline-block rounded-pill px-2 py-0.5 text-caption font-bold ${b.cls}`}>{b.text}</span></span>
               </div>
             );

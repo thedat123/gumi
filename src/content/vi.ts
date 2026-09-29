@@ -230,6 +230,15 @@ export const vi = {
     uploading: 'Đang tải ảnh lên…', success: (pts: number) => `Xong! Bạn nhận +${pts} điểm.`,
     errors: { network: 'Mất kết nối. Ảnh của bạn vẫn được giữ, hãy thử lại.', notToday: 'Nhiệm vụ này không phải của hôm nay.', already: 'Bạn đã check-in ngày này rồi.', tooLarge: 'Ảnh quá lớn hoặc không phải ảnh. Hãy chọn ảnh khác.', level: 'Mức đường này không hợp lệ cho nhiệm vụ hôm nay.' },
     retry: 'Thử lại', back: 'Về hành trình',
+    share: {
+      heading: 'Chia sẻ lên Story',
+      hint: 'Đăng ảnh lên Story kèm caption dưới đây (nhớ giữ hashtag & tag), rồi chụp màn hình Story tải lên làm bằng chứng.',
+      caption: 'Mình đang thử thách 21 ngày bớt ngọt cùng Gumi 🐱🥤 Đường bớt một nấc, chất thêm một bậc!\n#LevelDownChallenge #GumiBotNgot #21NgayBotNgot @leveldown.challenge',
+      shareBtn: '📤 Mở app chia sẻ',
+      copyBtn: 'Sao chép caption',
+      copied: '✓ Đã sao chép caption — dán vào Story nhé!',
+      note: 'Instagram không nhận sẵn caption qua web nên app đã tự sao chép để bạn dán.',
+    },
     ocr: {
       checking: (p: number) => `Đang kiểm tra ảnh (nhận diện ly nước + đọc tem)…${p > 0 ? ' ' + p + '%' : ''}`,
       okDrink: (what: string) => `Đã nhận diện ${what} trong ảnh ✔`,

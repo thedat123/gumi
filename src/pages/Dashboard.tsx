@@ -28,13 +28,13 @@ export function Dashboard() {
     <AsyncView state={state}>
       {(s) => {
         const finished = s.days[vi.journey.total - 1] === 'checked';
-        const dying = s.days.includes('dying');
+        const dying = s.streakFreezeAvailable;
         const rejected = s.days.includes('rejected');
         const done = approvedCount(s.days);
         const progress = Math.min(1, done / vi.journey.total);
 
         const usePass = async () => {
-          try { await api.useSugarPass(); setDialog(false); fire('revive'); state.reload(); }
+          try { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); }
           catch { setPassError(true); }
         };
 
@@ -63,7 +63,7 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <div className="mt-2.5"><StreakBoard days={s.days} today={s.day} /></div>
+                <div className="mt-2.5"><StreakBoard days={s.days} today={s.day} streak={s.streak} /></div>
 
                 {anyBanner && (
                   <div className="mt-2 flex flex-col gap-2">

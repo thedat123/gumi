@@ -42,15 +42,14 @@ describe('điểm', () => {
     expect(missionTotal(p)).toBe(15 + 8 + 15);
   });
   it('streakBonus theo mốc 5/10/15/21 cộng dồn', () => {
-    expect(streakBonus(all(5))).toBe(10);
-    expect(streakBonus(all(10))).toBe(10 + 20);
-    expect(streakBonus(all(15))).toBe(10 + 20 + 30);
-    expect(streakBonus(all(21))).toBe(10 + 20 + 30 + 50);
+    expect(streakBonus(5)).toBe(10);
+    expect(streakBonus(10)).toBe(10 + 20);
+    expect(streakBonus(15)).toBe(10 + 20 + 30);
+    expect(streakBonus(21)).toBe(10 + 20 + 30 + 50);
   });
   it('chuỗi dưới mốc 5 thì chưa có thưởng', () => {
     const p = P({ campaignDay: 11, completed: new Set([1, 2, 3]), quizScore: 10 });
-    const days = computeDays(p);
-    expect(totalPoints(p, days)).toBe(15 + 10 + 15); // 3 ngày, chưa đạt mốc streak
+    expect(totalPoints(p, 3)).toBe(15 + 10 + 15); // streak 3, chưa đạt mốc thưởng
   });
 });
 

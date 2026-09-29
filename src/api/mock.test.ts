@@ -91,6 +91,7 @@ describe('mock API — luồng chơi', () => {
     const minigameDays = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19];
     for (let d = 1; d <= 21; d++) {
       if (d > 1) advanceMockDay(); // mỗi chặng là một ngày mới
+      await api.markPlayed(); // bắt đầu chơi hôm nay → nuôi streak
       if (d === 2) await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 });
       else if (minigameDays.includes(d)) await api.submitMinigame(d);
       else if (d === 21) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 21 ngày.');
@@ -105,21 +106,32 @@ describe('mock API — luồng chơi', () => {
     expect(sum.healthyCount).toBe(5); // 5 ngày DRINK
   });
 
-  it('Sugar Pass bỏ qua chặng đang mở: giữ chuỗi; có 3 Bùa, dùng hết mới khoá', async () => {
+  it('Bùa CHỈ cứu chuỗi (không bỏ qua chặng): lỡ 1 ngày → hấp hối → nối lại streak', async () => {
     const api = await ready();
-    await api.submitCheckin(1, 70, 'a.jpg'); // xong chặng 1
-    advanceMockDay();
-    await api.useSugarPass(); // bỏ qua chặng 2 (còn 2 Bùa)
+    await api.markPlayed();               // ngày 0: streak 1
+    advanceMockDay(); advanceMockDay();    // nhảy tới ngày 2 (lỡ ngày 1)
     let j = await api.getJourney();
-    expect(j.days[1]).toBe('passed');
-    expect(j.passAvailable).toBe(true); // vẫn còn Bùa
-    advanceMockDay();
-    await api.useSugarPass(); // chặng 3 (còn 1)
-    advanceMockDay();
-    await api.useSugarPass(); // chặng 4 (còn 0)
+    expect(j.streak).toBe(1);              // HẤP HỐI: chưa đứt, vẫn hiện
+    expect(j.gumi).toBe('hap_hoi');        // Gumi mặt X_X
+    expect(j.streakFreezeAvailable).toBe(true);
+    expect(j.streakAtRisk).toBe(1);
+    expect(await api.useStreakFreeze()).toBe(1);
     j = await api.getJourney();
-    expect(j.passAvailable).toBe(false);
-    advanceMockDay();
-    await expect(api.useSugarPass()).rejects.toMatchObject({ code: 'no_pass' } as ApiError);
+    expect(j.days.filter((s) => s === 'passed')).toHaveLength(0); // KHÔNG có chặng bị "bỏ qua"
+    await api.markPlayed();                // chơi hôm nay → tiếp tục chuỗi
+    j = await api.getJourney();
+    expect(j.streak).toBe(2);
+    expect(j.passesLeft).toBe(2);          // đã tiêu 1 Bùa
+    expect(j.streakFreezeAvailable).toBe(false);
+  });
+
+  it('lỡ ≥2 ngày → streak về 0, không cứu được', async () => {
+    const api = await ready();
+    await api.markPlayed();
+    advanceMockDay(); advanceMockDay(); advanceMockDay(); // lỡ 2 ngày
+    const j = await api.getJourney();
+    expect(j.streak).toBe(0);
+    expect(j.streakFreezeAvailable).toBe(false);
+    await expect(api.useStreakFreeze()).rejects.toMatchObject({ code: 'not_today' } as ApiError);
   });
 });
