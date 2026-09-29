@@ -1,6 +1,6 @@
-name: CI
+name: CI/CD
 
-# Kiểm thử cho mọi PR/đẩy lên main. Deploy làm TAY bằng `npm run deploy` (wrangler, không cần token).
+# PR/đẩy lên main: chạy kiểm thử. Khi PUSH lên main và kiểm thử xanh → tự deploy lên Cloudflare Pages.
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: cicd-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,3 +29,25 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy · Cloudflare Pages
+    needs: check
+    # Chỉ deploy khi PUSH lên main (bỏ qua pull_request).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Cài dependencies
+        run: npm ci
+      # Đúng lệnh `npm run deploy` chạy ở máy: build → đóng dấu sw.js → wrangler pages deploy.
+      # wrangler tự đọc token/account từ 2 biến môi trường dưới đây (không cần wrangler login).
+      - name: Deploy
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
