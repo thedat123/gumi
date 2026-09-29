@@ -29,6 +29,10 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+        # Bake biến Supabase vào bundle (Vite đọc VITE_* lúc build) → dùng adapter thật, không rơi về mock.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
   deploy:
     name: Deploy · Cloudflare Pages
@@ -51,3 +55,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Bake biến Supabase vào bundle production (Vite đọc VITE_* lúc build) → OAuth Google thật chạy.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
