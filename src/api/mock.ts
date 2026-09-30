@@ -430,6 +430,7 @@ export function createMockApi(): Api {
         rejectedReason: rejectedDay ? 'ảnh không hợp lệ' : undefined,
         streakFreezeAvailable: canFreeze(),
         streakAtRisk: canFreeze() ? state.playStreak : 0,
+        replayAll: unlocked,
       });
     },
 

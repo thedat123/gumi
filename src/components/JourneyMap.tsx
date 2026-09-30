@@ -63,12 +63,13 @@ function pathThrough(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-function Node({ day, state, isToday }: { day: number; state: DayState; isToday: boolean }) {
+function Node({ day, state, isToday, replayAll }: { day: number; state: DayState; isToday: boolean; replayAll?: boolean }) {
   const mile = isMilestone(day);
   const m = vi.missions[day - 1]!;
   const look = NODE[state];
   const locked = state === 'future';
-  const active = state === 'open' || state === 'dying';
+  // Tester/QA: bấm vào lại được MỌI chặng đã mở (kể cả chặng đã xong); người thường chỉ vào chặng đang mở.
+  const active = state === 'open' || state === 'dying' || (!!replayAll && !locked);
   const size = mile ? 'h-[76px] w-[76px] text-title' : 'h-[58px] w-[58px] text-body';
   const style = { left: `${(xOf(day) / W) * 100}%`, top: `${yOf(day)}px` };
 
@@ -91,7 +92,7 @@ function Node({ day, state, isToday }: { day: number; state: DayState; isToday: 
 }
 
 /** Bản đồ hành trình 21 ngày — MỘT con đường leo dốc liền mạch qua 3 vùng đất; Gumi luôn đứng ở chặng hiện tại. */
-export function JourneyMap({ days, today }: { days: DayState[]; today: number }) {
+export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
   const meRef = useRef<HTMLDivElement>(null);
   useEffect(() => { meRef.current?.scrollIntoView({ block: 'center' }); }, []);
 
@@ -145,7 +146,7 @@ export function JourneyMap({ days, today }: { days: DayState[]; today: number })
       </div>
 
       {/* Các chặng */}
-      {days.map((state, i) => <Node key={i + 1} day={i + 1} state={state} isToday={i + 1 === today} />)}
+      {days.map((state, i) => <Node key={i + 1} day={i + 1} state={state} isToday={i + 1 === today} replayAll={replayAll} />)}
 
       {/* Gumi đang đứng trên đường tại chặng hiện tại */}
       <div ref={meRef} className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 82}px` }}>

@@ -79,7 +79,7 @@ export function Dashboard() {
 
               {/* ===== Bản đồ liền mạch 21 ngày — nền tràn full-width, lối đi ở lane giữa ===== */}
               <div ref={mapScrollRef} onScroll={onMapScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
-                <JourneyMap days={s.days} today={s.day} />
+                <JourneyMap days={s.days} today={s.day} replayAll={s.replayAll} />
               </div>
             </div>
 

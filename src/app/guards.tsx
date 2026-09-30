@@ -34,7 +34,9 @@ export function RequireToday({ children }: { children: ReactNode }) {
   if (loading) return <Loading />;
   if (error || !data) return <Navigate to="/journey" replace />;
   const st = data.days[Number(day) - 1];
-  if (st !== 'open' && st !== 'dying') return <Navigate to="/journey" replace />;
+  // Tester/QA (replayAll): vào lại được MỌI chặng đã mở, kể cả chặng đã hoàn thành — chỉ chặng 'future' còn khoá.
+  const allowed = st === 'open' || st === 'dying' || (data.replayAll && st !== undefined && st !== 'future');
+  if (!allowed) return <Navigate to="/journey" replace />;
   return <>{children}</>;
 }
 

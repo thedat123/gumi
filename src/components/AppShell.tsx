@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
 import { InstallButton } from './InstallButton';
 import { InAppReminder } from './InAppReminder';
+import { Loading } from './Loading';
 import { useSession } from '../app/session';
 
 /**
@@ -62,7 +64,8 @@ export function AppShell() {
 
       <main className={`flex-1 ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
         <div key={pathname} className={`mx-auto w-full ${immersive || isJourney ? '' : 'page-in'} ${isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-md'}`}>
-          <Outlet />
+          {/* Giữ header + nav khi trang con (chunk lazy) đang tải, chỉ vùng nội dung hiện spinner. */}
+          <Suspense fallback={<Loading />}><Outlet /></Suspense>
         </div>
       </main>
 

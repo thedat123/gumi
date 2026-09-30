@@ -64,8 +64,13 @@ export function CheckIn() {
   };
 
   // Nạp SẴN model on-device CHỈ KHI không có API đám mây (GCV/VLM) → lúc chụp nhận diện chạy nhanh.
+  // BỎ pre-warm khi mạng chậm / bật "tiết kiệm dữ liệu": model ~21MB vẫn tải THEO YÊU CẦU khi user chọn ảnh,
+  // tránh ngốn data & làm khựng máy yếu ngay khi mở màn check-in.
   useEffect(() => {
     if (!needsStamp) return;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const stingy = !!conn && (conn.saveData === true || /(^|-)2g$/.test(conn.effectiveType ?? ''));
+    if (stingy) return;
     let cancel = false;
     (async () => {
       const [{ gcvAvailable }, { vlmAvailable }] = await Promise.all([import('../lib/gcv'), import('../lib/vlm')]);

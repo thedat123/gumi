@@ -9,8 +9,8 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { playSfx } from '../lib/sfx';
 import { getQuality } from '../lib/quality';
 import type { RoomVariant } from './RoomScene';
-import catGirlPearl from '../assets/cat-girl-pearl.jpg';
-import gumaWin from '../assets/gumayusi-win.jpeg'
+import catGirlPearl from '../assets/cat-girl-pearl.webp';
+import gumaWin from '../assets/gumayusi-win.webp'
 
 const lerp = THREE.MathUtils.lerp;
 

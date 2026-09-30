@@ -15,9 +15,13 @@ import { vi } from '../content/vi';
 import { actOfDay, approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync } from '../app/useAsync';
 import type { GumiEvent } from '../api/types';
+import { getQuality } from '../lib/quality';
 import type { Weather } from '../components/RoomScene3D';
 
 const RoomScene3D = lazy(() => import('../components/RoomScene3D').then((m) => ({ default: m.RoomScene3D })));
+// Máy yếu / giảm chuyển động: dùng phòng 2D (CSS) — KHÔNG tải 626KB Three.js, không init WebGL → vào mượt.
+const RoomScene2D = lazy(() => import('../components/RoomScene').then((m) => ({ default: m.RoomScene })));
+const LITE_ROOM = getQuality().tier === 'low' || getQuality().reduce;
 
 // Chu kỳ thời tiết cho nút đổi (null = tự động theo giờ thật). Định nghĩa tại đây để không phá lazy-load scene.
 const WEATHERS: { w: Weather | null; label: string; icon: IconName }[] = [
@@ -87,7 +91,13 @@ export function GumiRoom() {
           <div className="relative min-h-[calc(100dvh-3.25rem)] w-full overflow-hidden">
             <div key={roomIdx} className={`absolute inset-0 ${slide === 'left' ? 'room-in-left' : slide === 'right' ? 'room-in-right' : ''}`}>
               <Suspense fallback={<div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#F7E6DC,#E9C7B8)' }} />}>
-                <RoomScene3D key={`${ROOMS[roomIdx]!.v}-${weatherIdx}-${lightsOn ? 1 : 0}`} act={roomAct} variant={ROOMS[roomIdx]!.v} weather={WEATHERS[weatherIdx]!.w ?? undefined} lights={lightsOn} />
+                {LITE_ROOM ? (
+                  <div className="absolute inset-0" style={{ filter: `brightness(${roomBrightness}) saturate(${lightsOn ? 1 : 0.82})` }}>
+                    <RoomScene2D act={roomAct} variant={ROOMS[roomIdx]!.v} />
+                  </div>
+                ) : (
+                  <RoomScene3D key={`${ROOMS[roomIdx]!.v}-${weatherIdx}-${lightsOn ? 1 : 0}`} act={roomAct} variant={ROOMS[roomIdx]!.v} weather={WEATHERS[weatherIdx]!.w ?? undefined} lights={lightsOn} />
+                )}
               </Suspense>
               <RoomCritters outdoor={ROOMS[roomIdx]!.v === 'garden'} />
             </div>

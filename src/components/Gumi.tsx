@@ -4,12 +4,12 @@ import { useAnimationPause } from '../hooks/useAnimationPause';
 import { useOutfit } from '../app/skin';
 import { type Outfit } from '../lib/wardrobe';
 import { playSfx, type Sfx } from '../lib/sfx';
-import gumiCream from '../assets/gumi-cream.png';
-import gumiBlue from '../assets/gumi-blue.png';
-import gumiGold from '../assets/gumi-gold.png';
-import gumiRose from '../assets/gumi-rose.png';
-import gumiBurgundy from '../assets/gumi-burgundy.png';
-import gumiBrown from '../assets/gumi-brown.png';
+import gumiCream from '../assets/gumi-cream.webp';
+import gumiBlue from '../assets/gumi-blue.webp';
+import gumiGold from '../assets/gumi-gold.webp';
+import gumiRose from '../assets/gumi-rose.webp';
+import gumiBurgundy from '../assets/gumi-burgundy.webp';
+import gumiBrown from '../assets/gumi-brown.webp';
 import type { GumiEvent, GumiState } from '../api/types';
 
 interface Props {

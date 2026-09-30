@@ -54,6 +54,7 @@ export interface Journey {
   rejectedReason?: string;
   streakFreezeAvailable: boolean; // lỡ đúng 1 ngày + còn Bùa → có thể cứu chuỗi
   streakAtRisk: number;           // độ dài chuỗi đang treo (để hiện "cứu chuỗi N ngày")
+  replayAll?: boolean;            // tester/QA: được vào lại MỌI chặng, kể cả chặng đã hoàn thành
 }
 
 export interface LeaderRow {

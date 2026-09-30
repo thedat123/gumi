@@ -9,9 +9,9 @@ import { FeatureModal } from '../components/FeatureModal';
 import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
 import { playSfx } from '../lib/sfx';
-import rebusTraThai from '../assets/games/rebus-tra-thai.png';
-import rebusCamVat from '../assets/games/rebus-cam-vat.png';
-import rebusSuaGao from '../assets/games/rebus-sua-gao.png';
+import rebusTraThai from '../assets/games/rebus-tra-thai.webp';
+import rebusCamVat from '../assets/games/rebus-cam-vat.webp';
+import rebusSuaGao from '../assets/games/rebus-sua-gao.webp';
 
 // Ảnh đề đuổi-hình theo thứ tự card trong nội dung (Trà Thái · Cam Vắt · Sữa Gạo).
 const IMAGES = [rebusTraThai, rebusCamVat, rebusSuaGao];

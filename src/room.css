@@ -133,3 +133,7 @@
 html.rm .npc { animation: none !important; }
 html.rm .npc-move { display: none; }
 html.rm .gumi-prop { display: none; }
+/* Máy yếu: bỏ NPC đi lại/đạo cụ động trong phòng cho đỡ giật (giữ cảnh 3D ở preset thấp). */
+html.gfx-low .npc { animation: none !important; }
+html.gfx-low .npc-move { display: none; }
+html.gfx-low .gumi-prop { display: none; }

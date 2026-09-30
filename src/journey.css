@@ -273,3 +273,13 @@ html.rm .node-today, html.rm .beat, html.rm .line-in,
 html.rm .scene-mist, html.rm .scene-bit, html.rm .scene-near, html.rm .scene-cloud { animation: none !important; }
 html.rm .scene-bit { display: none; }
 html.rm .scene-decor, html.rm .act-swap, html.rm .gumi-hop, html.rm .jn-ring { animation: none !important; }
+
+/* Máy đồ hoạ YẾU (gfx-low): tắt các hệ hạt/parallax chạy LIÊN TỤC — thủ phạm tụt FPS trên
+   bản đồ (15 đốm sáng + tia blend-mode + luồng đường + nhịp beacon + nền cuộn nhiều lớp).
+   KHÔNG đụng chuyển cảnh một-lần và mascot "thở" (rẻ, giữ sinh động). */
+html.gfx-low .jrays { display: none; }
+html.gfx-low .jmote { display: none; }
+html.gfx-low .jroad-flow, html.gfx-low .jbeacon-glow, html.gfx-low .jbeacon-ring { animation: none !important; }
+html.gfx-low .scene-far, html.gfx-low .scene-mid { transform: none !important; }
+html.gfx-low .scene-mist, html.gfx-low .scene-near, html.gfx-low .scene-cloud { animation: none !important; }
+html.gfx-low .scene-bit { display: none; }
