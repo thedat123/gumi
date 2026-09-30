@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
-import { Button } from '../components/Button';
 import { Gumi } from '../components/Gumi';
 import { Icon, type IconName } from '../components/Icon';
+import { Button } from '../components/Button';
 import { FoodTray } from '../components/FoodTray';
+import { SugarPassDialog } from '../components/SugarPassDialog';
 import { RoomCritters } from '../components/RoomCritters';
 import { SkinPicker } from '../components/SkinPicker';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
@@ -38,7 +39,10 @@ const ROOMS: { v: 'living' | 'kitchen' | 'garden'; name: string; icon: IconName 
 /** S05 — MÀN CHÍNH kiểu thú cưng ảo: Gumi sống trong phòng, nhiệm vụ là các nút quanh nhân vật. */
 export function GumiRoom() {
   const state = useAsync(() => api.getJourney(), []);
+  const nav = useNavigate();
   const [wardrobe, setWardrobe] = useState(false);
+  const [dialog, setDialog] = useState(false);
+  const [warnMission, setWarnMission] = useState(false); // hỏi trước khi vào màn lúc hấp hối (tránh mất chuỗi oan)
   const [roomIdx, setRoomIdx] = useState(0);
   const [slide, setSlide] = useState<'left' | 'right' | ''>('');
   const [feed, setFeed] = useState<{ food: string; key: number } | null>(null);
@@ -66,7 +70,6 @@ export function GumiRoom() {
         const progress = Math.min(1, done / vi.journey.total);
         const stage = gumiStage(s.days);
         const roomAct = actOfDay(Math.min(Math.max(s.day, 1), vi.journey.total));
-        const dying = s.days.includes('dying');
         const todayIdx = s.day - 1;
         const todayDone = s.days[todayIdx] === 'checked';
         const m = vi.missions[todayIdx];
@@ -104,9 +107,10 @@ export function GumiRoom() {
                       <Stat icon="flame" iconClass="text-primary" value={`${s.streak}`} />
                       <Stat icon="medal" iconClass="text-info" value={s.rank ? `#${s.rank}` : '—'} />
                     </div>
-                    <div className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur" aria-label={`Còn ${s.passesLeft} Bùa Hồi Sinh`}>
+                    <button type="button" onClick={() => setDialog(true)} aria-label={`Bùa Hồi Sinh: còn ${s.passesLeft}. Bấm để xem`}
+                      className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur transition-transform hover:brightness-95 active:scale-95">
                       {[0, 1, 2].map((i) => <Icon key={i} name="heart" size={15} filled={i < s.passesLeft} className={i < s.passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
-                    </div>
+                    </button>
                   </div>
 
                   <Link to="/me" className="flex h-16 w-16 items-center justify-center rounded-card border border-border bg-surface text-muted shadow-soft transition-transform active:scale-95" aria-label="Hồ sơ"><Icon name="paw" size={26} className="text-primary" /></Link>
@@ -141,14 +145,6 @@ export function GumiRoom() {
                   <button type="button" onClick={toggleMute} aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={muted ? 'volume-off' : 'volume'} size={18} /></button>
                 </div>
 
-                {/* Thông báo trạng thái (mỏng) */}
-                {dying && (
-                  <div className="rounded-control border-2 border-danger bg-surface/95 p-2 text-center text-small shadow-soft">
-                    <p className="font-semibold text-danger">{vi.banners.dying(s.passHoursLeft ?? 0)}</p>
-                    {s.passAvailable && <Button onClick={() => setDialog(true)} className="mt-1" >{vi.pass.button}</Button>}
-                  </div>
-                )}
-
                 {/* Gumi to giữa phòng (mục tiêu thả đồ ăn) */}
                 <div data-feed-target className="flex flex-1 flex-col items-center justify-end pb-1">
                   <span className="mb-1 rounded-pill bg-surface/92 px-4 py-1 text-small font-bold text-primary shadow-soft backdrop-blur" data-testid="gumi-caption">{vi.gumi.stage[stage]}</span>
@@ -158,15 +154,15 @@ export function GumiRoom() {
                 {/* Khay cho ăn + nút nhiệm vụ hôm nay + dock */}
                 <div className="flex flex-col gap-2">
                   <FoodTray onFeed={feedGumi} />
-                  {s.streakFreezeAvailable && (
-                    <div className="flex items-center gap-2.5 rounded-card border-2 border-danger bg-surface/95 p-2 pr-2.5 shadow-pop backdrop-blur">
-                      <span aria-hidden="true" className="text-title">🔥</span>
-                      <span className="min-w-0 flex-1 text-caption font-semibold leading-snug text-danger">Chuỗi {s.streakAtRisk} ngày sắp mất! Dùng Bùa Hồi Sinh nối lại nhé.</span>
-                      <button onClick={useFreeze} className="shrink-0 rounded-control bg-danger px-3 py-1.5 text-small font-bold text-white shadow-soft transition-transform active:scale-95">Cứu chuỗi</button>
+                  {/* Trạng thái HẤP HỐI: hiện tình trạng + số giờ còn lại; còn Bùa thì cho cứu chuỗi */}
+                  {s.gumi === 'hap_hoi' && (
+                    <div className="rounded-control border-2 border-danger bg-surface/95 p-2 text-center text-small shadow-soft">
+                      <p className="font-semibold text-danger">{vi.banners.dying(s.passHoursLeft ?? 0)}</p>
+                      {s.streakFreezeAvailable && <Button onClick={useFreeze} className="mt-1">{vi.pass.button}</Button>}
                     </div>
                   )}
                   {running && !todayDone && m && (
-                    <Link to={`/chapter/${s.day}`} className="node-today flex items-center gap-3 rounded-card border border-primary/70 bg-surface/95 p-2 pr-3 shadow-pop backdrop-blur transition-transform active:scale-[0.99]">
+                    <Link to={`/chapter/${s.day}`} onClick={(e) => { if (s.gumi === 'hap_hoi') { e.preventDefault(); setWarnMission(true); } }} className="node-today flex items-center gap-3 rounded-card border border-primary/70 bg-surface/95 p-2 pr-3 shadow-pop backdrop-blur transition-transform active:scale-[0.99]">
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-primary text-on-primary"><Icon name="gamepad" size={24} /></span>
                       <span className="min-w-0 flex-1 text-left">
                         <span className="block text-caption font-bold uppercase tracking-wide text-primary">Nhiệm vụ hôm nay · +{m.points}đ</span>
@@ -190,6 +186,30 @@ export function GumiRoom() {
                 </div>
             </div>
 
+            {dialog && (
+              <SugarPassDialog
+                passesLeft={s.passesLeft}
+                canUse={s.streakFreezeAvailable}
+                hoursLeft={s.passHoursLeft}
+                onConfirm={() => { setDialog(false); void useFreeze(); }}
+                onCancel={() => setDialog(false)}
+              />
+            )}
+            {warnMission && (
+              <div className="fixed inset-0 z-50 flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={() => setWarnMission(false)}>
+                <div role="dialog" aria-modal="true" className="safe-bottom w-full max-w-sm rounded-card bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+                  <h2 className="text-title font-bold">{vi.pass.warnTitle}</h2>
+                  <p className="mt-2 text-small text-muted">{s.streakFreezeAvailable ? vi.pass.warnBody(s.streakAtRisk) : vi.pass.warnBodyNoPass}</p>
+                  <div className="mt-4 flex flex-col gap-2">
+                    {s.streakFreezeAvailable && (
+                      <Button block onClick={async () => { setWarnMission(false); await useFreeze(); nav(`/chapter/${s.day}`); }}>{vi.pass.rescuePlay}</Button>
+                    )}
+                    <Button variant="danger" block onClick={() => { setWarnMission(false); nav(`/chapter/${s.day}`); }}>{vi.pass.playAnyway}</Button>
+                    <Button variant="secondary" block onClick={() => setWarnMission(false)}>{vi.pass.cancel}</Button>
+                  </div>
+                </div>
+              </div>
+            )}
             {wardrobe && <SkinPicker daysDone={done} onClose={() => setWardrobe(false)} />}
           </div>
         );

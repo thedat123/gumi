@@ -87,7 +87,12 @@ export const vi = {
     close: 'Đóng',
   },
 
-  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Dùng Bùa Hồi Sinh?', body: 'Ngày bị lỡ sẽ nhận 0 điểm nhiệm vụ nhưng chuỗi ngày của bạn được giữ. Bạn có 3 Bùa cho cả hành trình.', confirm: 'Dùng Bùa', cancel: 'Để sau', success: 'Gumi bật dậy! Chuỗi của bạn được giữ.' },
+  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 3 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).', count: (n: number) => `Còn ${n}/3 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
+    warnTitle: 'Gumi đang hấp hối! 😿',
+    warnBody: (n: number) => `Bạn đang lỡ 1 ngày — vào chơi ngay sẽ MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh để giữ chuỗi nhé!`,
+    warnBodyNoPass: 'Bạn đang lỡ 1 ngày và đã hết Bùa. Vào chơi sẽ bắt đầu lại chuỗi từ đầu.',
+    playAnyway: 'Vẫn chơi (mất chuỗi)',
+    rescuePlay: 'Cứu chuỗi rồi chơi' },
 
   // ——— CỐT TRUYỆN (viết như một cuộc phiêu lưu) ———
   story: {

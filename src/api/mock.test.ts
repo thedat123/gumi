@@ -125,6 +125,14 @@ describe('mock API — luồng chơi', () => {
     expect(j.streakFreezeAvailable).toBe(false);
   });
 
+  it('lỡ 1 ngày mà KHÔNG cứu bằng Bùa → chơi lại là mất chuỗi (về 1)', async () => {
+    const api = await ready();
+    await api.markPlayed();                 // ngày 0: streak 1
+    advanceMockDay(); await api.markPlayed(); // ngày 1: streak 2
+    advanceMockDay(); advanceMockDay();      // tới ngày 3 (lỡ ngày 2), không dùng Bùa
+    expect(await api.markPlayed()).toBe(1);  // không chơi liên tục → mất chuỗi, về 1
+  });
+
   it('lỡ ≥2 ngày → streak về 0, không cứu được', async () => {
     const api = await ready();
     await api.markPlayed();

@@ -425,7 +425,7 @@ export function createMockApi(): Api {
       requireSession();
       const t = todayStr();
       if (state.lastPlayDate !== t) {
-        // Mở chơi hôm qua → +1; nghỉ >1 ngày → về 1. Cùng ngày bấm lại thì giữ nguyên.
+        // CHUẨN: chỉ +1 khi chơi liên tục (hôm qua). Nghỉ ≥1 ngày mà không cứu bằng Bùa → mất chuỗi (về 1).
         state.playStreak = state.lastPlayDate === yesterdayStr() ? state.playStreak + 1 : 1;
         state.lastPlayDate = t;
         save();
