@@ -36,29 +36,22 @@ describe('mock API — luồng chơi', () => {
     expect(j.gumi).toBe('bo_pho');
   });
 
-  it('check-in chặng 1 cộng điểm; qua ngày mới mới mở chặng 2', async () => {
+  it('check-in chặng 1 cộng điểm và mở ngay chặng 2', async () => {
     const api = await ready();
     const r = await api.submitCheckin(1, 70, 'ly.jpg');
     expect(r.points).toBe(15);
-    // Cùng ngày: chặng 1 đã xong, chặng 2 CHƯA mở (khoá tới mai) — con trỏ ở chặng vừa xong.
-    let j = await api.getJourney();
+    const j = await api.getJourney();
     expect(j.days[0]).toBe('checked');
-    expect(j.days[1]).toBe('future');
-    expect(j.totalPoints).toBe(15);
-    // Sang ngày mới → chặng 2 mở.
-    advanceMockDay();
-    j = await api.getJourney();
-    expect(j.day).toBe(2);
     expect(j.days[1]).toBe('open');
+    expect(j.totalPoints).toBe(15);
+    expect(j.day).toBe(2);
   });
 
-  it('mỗi ngày chỉ một chặng: xong rồi nộp tiếp trong ngày báo not_today', async () => {
+  it('chỉ mở tuần tự: xong chặng trước mới nộp được chặng kế', async () => {
     const api = await ready();
-    await api.submitCheckin(1, 70, 'a.jpg');
-    // Chặng kế (2) chưa mở trong hôm nay → nộp bị chặn.
     await expect(api.submitQuiz({ 0: 13 })).rejects.toMatchObject({ code: 'not_today' } as ApiError);
-    advanceMockDay();
-    const res = await api.submitQuiz({ 0: 13 }); // sang ngày mới mới làm được chặng 2
+    await api.submitCheckin(1, 70, 'a.jpg');
+    const res = await api.submitQuiz({ 0: 13 });
     expect(res.score).toBe(res.max);
   });
 
@@ -68,13 +61,17 @@ describe('mock API — luồng chơi', () => {
     await expect(api.submitCheckin(1, 70, '')).rejects.toMatchObject({ code: 'photo_invalid' } as ApiError);
   });
 
-  it('quiz chặng 2 chấm điểm; qua ngày mới mở chặng 3', async () => {
+  it('không nhận check-in vượt mức đường của ngày 1', async () => {
+    const api = await ready();
+    await expect(api.submitCheckin(1, 100, 'ly.jpg')).rejects.toMatchObject({ code: 'level_not_allowed' } as ApiError);
+    expect((await api.getJourney()).days[0]).toBe('open');
+  });
+
+  it('quiz chặng 2 chấm điểm và mở ngay chặng 3', async () => {
     const api = await ready();
     await api.submitCheckin(1, 70, 'a.jpg');
-    advanceMockDay();
     const res = await api.submitQuiz({ 0: 13 }); // đoán trúng khoảng 12–15
     expect(res.score).toBe(res.max);
-    advanceMockDay();
     const j = await api.getJourney();
     expect(j.day).toBe(3);
     expect(j.days[2]).toBe('open');
@@ -95,7 +92,7 @@ describe('mock API — luồng chơi', () => {
       if (d === 2) await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 });
       else if (minigameDays.includes(d)) await api.submitMinigame(d);
       else if (d === 21) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 21 ngày.');
-      else await api.submitCheckin(d, 30, `d${d}.jpg`);
+      else await api.submitCheckin(d, d === 20 ? 0 : 30, `d${d}.jpg`);
     }
     const j = await api.getJourney();
     expect(j.gumi).toBe('tien_hoa');

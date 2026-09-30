@@ -2,6 +2,7 @@
 // HỢP ĐỒNG: mỗi RPC/bảng dưới đây phải trả JSON khớp kiểu trong ./types.ts. Nguồn sự thật điểm số nằm ở SQL.
 // Các RPC (security definer, set search_path=public, kiểm auth.uid()) sẽ do task backend T-002..T-019 dựng.
 import { supabase } from './client';
+import { vnDateKey } from '../lib/reminders';
 import type { SugarLevel } from '../lib/sugar';
 import {
   ApiError,
@@ -120,24 +121,51 @@ export function createSupabaseApi(): Api {
       rpc<Profile>('create_profile', { p_name: input.name, p_avatar: input.avatar, p_level: input.level, p_drinks: input.drinksPerWeek }),
     updateProfile: (patch) => rpc<Profile>('update_profile', { p_patch: patch }),
     getCampaignState: () => rpc<CampaignState>('get_campaign_state'),
+    async getReminderStatus() {
+      const session = await auth.getSession();
+      if (!session) throw new ApiError('forbidden');
+      const [campaign, played, completed] = await Promise.all([
+        rpc<CampaignState>('get_campaign_state'),
+        db().from('profiles').select('last_play_date').eq('id', session.userId).single(),
+        db().from('day_progress').select('created_at').eq('user_id', session.userId)
+          .eq('status', 'checked').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (played.error) throw mapError(played.error.message);
+      if (completed.error) throw mapError(completed.error.message);
+      return {
+        phase: campaign.phase,
+        day: campaign.day,
+        lastPlayDate: played.data.last_play_date as string | null,
+        lastCompletedDate: completed.data?.created_at ? vnDateKey(new Date(completed.data.created_at)) : null,
+      };
+    },
     getJourney: () => rpc<Journey>('get_my_journey'),
     markPlayed: () => rpc<number>('mark_played'),
     getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),
-    async submitCheckin(day, level: SugarLevel, fileName): Promise<CheckinResult> {
-      // Ảnh đã nén ở client trước khi gọi (browser-image-compression) — ở đây chỉ minh hoạ đường dẫn.
+    async submitCheckin(day, level: SugarLevel, file): Promise<CheckinResult> {
       const s = (await auth.getSession());
       if (!s) throw new ApiError('forbidden');
       const path = `${s.userId}/${day}.jpg`;
-      const { error: upErr } = await db().storage.from('checkins').upload(path, new Blob([fileName]), { upsert: true });
+      const photo = typeof file === 'string' ? new Blob([file], { type: 'image/jpeg' }) : file;
+      const { error: upErr } = await db().storage.from('checkins').upload(path, photo, { upsert: true, contentType: photo.type || 'image/jpeg' });
       if (upErr) throw new ApiError('network', upErr.message);
       return rpc<CheckinResult>('submit_checkin', { p_day: day, p_level: level, p_path: path });
     },
     useStreakFreeze: () => rpc<number>('use_streak_freeze'),
     getQuizQuestions: () => rpc<QuizQuestion[]>('get_quiz_questions'),
     submitQuiz: (guesses) => rpc<QuizResult>('submit_quiz', { p_guesses: guesses }),
-    submitMinigame: (day) => rpc<CheckinResult>('submit_minigame', { p_day: day }),
-    async submitWallPost(text) {
-      await rpc('submit_wall_post', { p_text: text });
+    submitMinigame: (day, earnedPoints) => earnedPoints === undefined
+      ? rpc<CheckinResult>('submit_minigame', { p_day: day })
+      : rpc<CheckinResult>('submit_minigame_score', { p_day: day, p_points: earnedPoints }),
+    async submitWallPost(text, storyProof) {
+      const session = await auth.getSession();
+      if (!session) throw new ApiError('forbidden');
+      const storyPath = storyProof ? `${session.userId}/21-story.jpg` : null;
+      if (storyProof && storyPath) {
+        const { error } = await db().storage.from('checkins').upload(storyPath, storyProof, { upsert: true, contentType: storyProof.type || 'image/jpeg' });
+        if (error) throw mapError(error.message);
+      }
+      await rpc('submit_graduation', { p_text: text, p_story_path: storyPath });
     },
     getWallPosts: () => rpc<WallPost[]>('get_wall_posts'),
     getSummary: () => rpc<Summary>('get_my_summary'),

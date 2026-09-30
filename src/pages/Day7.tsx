@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { GameShell, GameStat } from '../components/GameShell';
 import { MissionDone } from '../components/MissionDone';
+import { FeatureModal } from '../components/FeatureModal';
 import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
 import { playSfx } from '../lib/sfx';
@@ -26,6 +27,7 @@ export function Day7() {
   const [phase, setPhase] = useState<'guess' | 'reveal'>('guess');
   const [wrong, setWrong] = useState(0);
   const [done, setDone] = useState(false);
+  const [showFact, setShowFact] = useState(false);
 
   if (done) return <MissionDone day={day} points={m.points} note={vi.day3.success} />;
 
@@ -33,10 +35,11 @@ export function Day7() {
   const last = step + 1 >= cards.length;
 
   const pick = (name: string) => {
-    if (name === card.name) { playSfx('happy'); setPhase('reveal'); }
+    if (name === card.name) { playSfx('happy'); setPhase('reveal'); setShowFact(true); }
     else { playSfx('wrong'); setWrong((n) => n + 1); }
   };
   const next = () => {
+    setShowFact(false);
     if (last) { playSfx('win'); api.submitMinigame(day).catch(() => {}); setDone(true); }
     else { setStep(step + 1); setPhase('guess'); setWrong(0); }
   };
@@ -80,6 +83,10 @@ export function Day7() {
           </Card>
         )}
       </div>
+      {showFact && <FeatureModal title={card.name} eyebrow={`Fact về đồ uống · Câu ${step + 1}/${cards.length}`} tone={good ? 'success' : 'info'} onClose={() => setShowFact(false)}
+        action={<Button onClick={next} block variant="secondary">{last ? vi.day3.finish : vi.day3.next}</Button>}>
+        <ul className="space-y-3">{card.points.map((point) => <li key={point.h}><strong className="block text-white">{point.h}</strong><span>{point.p}</span></li>)}</ul>
+      </FeatureModal>}
     </GameShell>
   );
 }

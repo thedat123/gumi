@@ -63,10 +63,10 @@ export function Crossword() {
   // Đồng hồ 3 phút.
   useEffect(() => {
     if (done || failed || allSolved) return;
-    if (timeLeft <= 0) { setFailed(true); playSfx('wrong'); api.submitMinigame(day).catch(() => {}); return; }
+    if (timeLeft <= 0) { setFailed(true); playSfx('wrong'); api.submitMinigame(day, solvedCount * 5).catch(() => {}); return; }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
-  }, [timeLeft, done, failed, allSolved, day]);
+  }, [timeLeft, done, failed, allSolved, day, solvedCount]);
 
   // Kêu vui mỗi khi giải thêm một từ.
   const prevSolved = useRef(0);
@@ -75,9 +75,9 @@ export function Crossword() {
   // Thắng cả bảng.
   useEffect(() => {
     if (allSolved && !done && !failed) {
-      setBurst((b) => b + 1); api.submitMinigame(day).catch(() => {}); const t = setTimeout(() => setDone(true), 900); return () => clearTimeout(t);
+      setBurst((b) => b + 1); api.submitMinigame(day, words.length * 5).catch(() => {}); const t = setTimeout(() => setDone(true), 900); return () => clearTimeout(t);
     }
-  }, [allSolved, done, failed, day]);
+  }, [allSolved, done, failed, day, words.length]);
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
   if (done) return <MissionDone day={day} points={m.points} note={cfg.success} />;
@@ -86,6 +86,7 @@ export function Crossword() {
       <Gumi state="hap_hoi" size={140} />
       <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
       <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, words.length)}</p>
+      <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{solvedCount * 5} điểm · {solvedCount} từ đúng</p>
       <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );

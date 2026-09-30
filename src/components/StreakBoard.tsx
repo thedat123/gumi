@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { StreakFlame } from './StreakFlame';
 import { STREAK_BONUS } from '../lib/scoring';
 import { vi } from '../content/vi';
 import type { DayState } from '../api/types';
@@ -22,7 +23,7 @@ export function StreakBoard({ days, today, streak }: { days: DayState[]; today: 
     <div>
       <div className="mb-1.5 flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-caption font-bold text-muted">
-          <Icon name="flame" size={13} filled className="text-primary" />
+          <StreakFlame size={18} />
           {vi.journey.streakLabel}
         </span>
         <span className="flex items-center gap-1 text-caption font-semibold text-muted/80">
@@ -59,7 +60,7 @@ export function StreakBoard({ days, today, streak }: { days: DayState[]; today: 
               )}
               {i === tip && (
                 <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
-                  <Icon name="flame" size={15} filled className="text-white drop-shadow" />
+                  <StreakFlame size={20} />
                 </span>
               )}
             </div>

@@ -43,7 +43,7 @@ export function MemoryMatch() {
     if (timeLeft <= 0) {
       setFailed(true);
       playSfx('wrong');
-      api.submitMinigame(day).catch(() => {});
+      api.submitMinigame(day, matched.length * 10).catch(() => {});
       return;
     }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
@@ -57,6 +57,7 @@ export function MemoryMatch() {
       <Gumi state="hap_hoi" size={140} />
       <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
       <p className="max-w-xs text-small text-muted">{vi.minigames.common.timeUpMemory(matched.length, cfg.pairs.length)}</p>
+      <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{matched.length * 10} điểm · {matched.length} cặp đúng</p>
       <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
@@ -77,7 +78,7 @@ export function MemoryMatch() {
         setMatched(nm);
         setFlipped([]);
         setBusy(false);
-        if (nm.length === cfg.pairs.length) { setBurst((n) => n + 1); api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 1200); }
+        if (nm.length === cfg.pairs.length) { setBurst((n) => n + 1); api.submitMinigame(day, m.points).catch(() => {}); setTimeout(() => setDone(true), 1200); }
       }, 480);
     } else {
       setTimeout(() => { setFlipped([]); setBusy(false); }, 820);
@@ -88,7 +89,7 @@ export function MemoryMatch() {
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
       hud={<><GameStat icon="clock" value={`${timeLeft}s`} tone={timeLeft <= 5 ? 'accent' : 'info'} /><GameStat icon="sparkle" value={`${moves}`} tone="accent" /></>}
       footer={<p className="text-center text-caption font-semibold text-muted">Đã ghép {matched.length}/{cfg.pairs.length} cặp</p>}>
-      <div className="grid flex-1 grid-cols-2 content-center gap-3">
+      <div className="grid flex-1 grid-cols-3 content-center gap-2.5 sm:grid-cols-5 sm:gap-3">
         {cards.map((c, i) => {
           const isMatched = matched.includes(c.pairId);
           const up = isMatched || flipped.includes(i);

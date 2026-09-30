@@ -9,7 +9,11 @@ const OutfitContext = createContext<OutfitCtx>({ outfit: DEFAULT_OUTFIT, setPiec
 function load(): Outfit {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULT_OUTFIT, ...(JSON.parse(raw) as Partial<Outfit>) };
+    if (raw) {
+      const saved = { ...DEFAULT_OUTFIT, ...(JSON.parse(raw) as Partial<Outfit>) };
+      const oldColors: Record<string, string> = { gray: 'brown', mint: 'cream', pink: 'rose', gold: 'default' };
+      return { ...saved, color: oldColors[saved.color] ?? saved.color };
+    }
     // Di trú nhẹ từ hệ skin cũ (nếu có) — chỉ để không mất cảm giác "đang mặc gì đó".
     const old = localStorage.getItem('ld_gumi_skin');
     if (old && old !== 'default') return { ...DEFAULT_OUTFIT };

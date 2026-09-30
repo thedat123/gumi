@@ -32,7 +32,6 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
 /** Ngày 6 — Đấu Trường Calo: KÉO-THẢ 5 ly xếp theo độ ngọt (ít → nhiều đường). */
 export function SortGame() {
   const day = 6;
-  const m = vi.missions[day - 1]!;
   const [order, setOrder] = useState<string[]>(shuffled);
   const [warn, setWarn] = useState(false);
   const [shake, setShake] = useState(0);
@@ -40,13 +39,16 @@ export function SortGame() {
   const [done, setDone] = useState(false);
   const [tries, setTries] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [earned, setEarned] = useState(20);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragY, setDragY] = useState(0);
   const meta = useRef<{ rowH: number; listTop: number; grab: number }>({ rowH: 0, listTop: 0, grab: 0 });
 
-  if (done) return <MissionDone day={day} points={m.points} note={vi.minigames.sort.success} />;
+  if (done) return <MissionDone day={day} points={earned} note={vi.minigames.sort.success} />;
   if (failed) return (
     <div className="flex flex-col items-center gap-3 pt-6 text-center">
       <Gumi state="hap_hoi" size={140} />
@@ -92,12 +94,17 @@ export function SortGame() {
     setDragY(0);
   };
 
-  const check = () => {
+  const check = async () => {
+    if (saving) return;
     if (order.every((x, i) => x === CORRECT[i])) {
+      const points = tries === 0 ? 20 : 10;
+      setEarned(points);
       playSfx('sparkle');
       setWon(true);
-      api.submitMinigame(day).catch(() => {});
-      setTimeout(() => setDone(true), 1300);
+      setSaving(true); setSaveError(false);
+      try { await api.submitMinigame(day, points); setTimeout(() => setDone(true), 1300); }
+      catch { setWon(false); setSaveError(true); }
+      finally { setSaving(false); }
       return;
     }
     // Sai: đếm lượt. Hết MAX_TRIES lượt → thua, tiêu ngày (không chơi lại).
@@ -106,7 +113,7 @@ export function SortGame() {
     playSfx('wrong');
     if (used >= MAX_TRIES) {
       setFailed(true);
-      api.submitMinigame(day).catch(() => {});
+      api.submitMinigame(day, 0).catch(() => {});
     } else {
       setWarn(true);
       setShake((n) => n + 1);
@@ -123,9 +130,10 @@ export function SortGame() {
       hud={<GameStat icon="sparkle" value={vi.minigames.sort.tries(triesLeft)} tone={triesLeft <= 1 ? 'accent' : 'info'} />}
       footer={won
         ? <div className="rounded-card bg-success/90 p-3 text-center font-bold text-on-primary shadow-pop">🎉 Chính xác!</div>
-        : <Button onClick={check} block>{vi.minigames.common.check}</Button>}
+        : <Button onClick={check} loading={saving} block>{vi.minigames.common.check}</Button>}
     >
       {warn && <div className="mb-2"><Banner kind="error">{triesLeft <= 1 ? vi.minigames.sort.lastTry : vi.minigames.sort.wrong}</Banner></div>}
+      {saveError && <div className="mb-2"><Banner kind="error">Chưa lưu được điểm. Bấm Kiểm tra để thử lại.</Banner></div>}
 
       <div className="mb-2 flex items-center justify-between px-1 text-caption font-bold">
         <span className="flex items-center gap-1 text-success"><Icon name="leaf" size={14} filled /> Ít đường</span>

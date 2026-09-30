@@ -21,6 +21,8 @@ export interface VlmResult {
   isDrink: boolean;
   drink: string;
   sugarPercent: number | null; // % đường đọc được trên tem (nếu có)
+  isHomemade?: boolean; // bình nước tự chuẩn bị nhìn thấy rõ
+  isUnsweetened?: boolean; // chỉ true khi rõ nước lọc hoặc nhãn 0%/không đường
   confidence: number;   // 0..1
   reason: string;
 }
@@ -43,9 +45,11 @@ function toBase64(blob: Blob): Promise<{ mime: string; data: string }> {
 const PROMPT = `Bạn là giám khảo check-in cho thử thách giảm đường. Xem ảnh và đánh giá NGHIÊM TÚC để chống gian lận.
 Hỏi:
 1) Đây có phải ảnh MỘT LY/CỐC/CHAI ĐỒ UỐNG thật, hoặc TEM/NHÃN/HOÁ ĐƠN của một ly nước không? (ảnh phong cảnh, người, đồ ăn, ảnh chụp màn hình... => không hợp lệ)
-2) Nếu có: tên đồ uống là gì? Trên tem/nhãn có ghi mức đường bao nhiêu phần trăm không?
+2) Nếu có: tên đồ uống là gì? Trên tem/nhãn có ghi mức đường bao nhiêu phần trăm không? Không suy đoán % từ vẻ ngoài.
+3) Đây có rõ là bình nước tự chuẩn bị (nước lọc, nước thả lát trái cây hoặc trà túi lọc không đường) không?
+4) Chỉ đánh dấu không đường khi thấy rõ nước lọc nguyên bản hoặc nhãn ghi 0%/không đường. Đừng suy ra trà, cà phê hay nước trái cây không đường chỉ từ màu sắc.
 Chỉ trả về DUY NHẤT một JSON, không kèm chữ nào khác:
-{"isDrink": true/false, "drink": "tên đồ uống hoặc ''", "sugarPercent": số 0-100 hoặc null nếu không thấy, "confidence": số 0..1, "reason": "giải thích ngắn bằng tiếng Việt"}`;
+{"isDrink": true/false, "drink": "tên đồ uống hoặc ''", "sugarPercent": số 0-100 hoặc null nếu không thấy, "isHomemade": true/false, "isUnsweetened": true/false, "confidence": số 0..1, "reason": "giải thích ngắn bằng tiếng Việt"}`;
 
 /** Xác minh ảnh check-in bằng Gemini VLM. Trả EMPTY (available:false) nếu chưa cấu hình key. */
 export async function verifyDrink(file: Blob): Promise<VlmResult> {
@@ -84,7 +88,9 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
         ok: isDrink && confidence >= 0.6,
         isDrink,
         drink: typeof p.drink === 'string' ? p.drink : '',
-        sugarPercent: typeof p.sugarPercent === 'number' ? p.sugarPercent : null,
+        sugarPercent: typeof p.sugarPercent === 'number' && Number.isFinite(p.sugarPercent) && p.sugarPercent >= 0 && p.sugarPercent <= 100 ? p.sugarPercent : null,
+        isHomemade: p.isHomemade === true,
+        isUnsweetened: p.isUnsweetened === true,
         confidence,
         reason: typeof p.reason === 'string' ? p.reason : '',
       };

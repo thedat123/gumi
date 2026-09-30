@@ -1,5 +1,12 @@
 /* NPC sống động trong phòng + chuyển cảnh phòng + phản ứng thêm của Gumi khi chạm. */
 
+.room-gumi-grounded {
+  position: relative;
+  transform: translateY(clamp(12px, 3vh, 28px));
+  transform-origin: center bottom;
+  transition: filter 350ms ease;
+}
+
 .npc { position: absolute; will-change: transform, left; }
 
 /* Bay/chạy ngang qua phòng */

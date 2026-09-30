@@ -14,12 +14,12 @@ export function AdminShell({ tabs, active, onSelect, children }: {
 }) {
   const { session, signOut } = useSession();
   return (
-    <div className="min-h-dvh bg-bg text-text lg:grid lg:grid-cols-[15rem_1fr]">
+    <div className="admin-portal min-h-dvh bg-bg text-text lg:grid lg:grid-cols-[17rem_1fr]">
       {/* Sidebar (desktop) */}
-      <aside className="hidden bg-text text-white lg:flex lg:flex-col">
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary font-black text-on-primary">G</span>
-          <span className="text-body font-bold tracking-wide">GUMI ADMIN</span>
+      <aside className="admin-sidebar hidden text-white lg:flex lg:flex-col">
+        <div className="flex items-center gap-3 px-6 py-6">
+          <span className="admin-mark flex h-9 w-9 items-center justify-center font-black text-on-primary">G</span>
+          <span><span className="block text-body font-extrabold tracking-wide">GUMI</span><span className="block text-caption font-bold tracking-[.18em] text-white/45">CONTROL ROOM</span></span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">
           {tabs.map((t) => (
@@ -38,7 +38,7 @@ export function AdminShell({ tabs, active, onSelect, children }: {
 
       <div className="flex min-h-dvh flex-col">
         {/* Thanh trên */}
-        <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 lg:px-6">
+        <header className="flex items-center justify-between gap-2 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:px-8">
           <div className="flex items-center gap-2">
             <span className="rounded bg-danger/10 px-2 py-0.5 text-caption font-black uppercase tracking-wider text-danger">Admin</span>
             <span className="hidden text-small font-semibold text-muted sm:inline">{session?.email}</span>
@@ -63,8 +63,8 @@ export function AdminShell({ tabs, active, onSelect, children }: {
           ))}
         </nav>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
-          <div className="mx-auto max-w-5xl">{children}</div>
+        <main className="flex-1 overflow-auto p-4 lg:p-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
     </div>

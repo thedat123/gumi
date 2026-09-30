@@ -20,6 +20,8 @@ export interface ProgressInput {
   passed: Set<number>; // ngày được cứu bằng Sugar Pass (0 điểm, vẫn giữ chuỗi)
   rejected: Set<number>; // ngày bị admin gỡ ảnh
   quizScore?: number; // điểm thực của quiz Day 2 (thay cho điểm phẳng)
+  storyBonus?: number; // +10 cho minh chứng chia sẻ Story ngày 21
+  earnedPoints?: Record<number, number>; // điểm thực của game có thưởng theo kết quả
 }
 
 /** Trạng thái từng ngày cho hành trình 21 ngày (D1: ngày theo lịch chung). */
@@ -56,9 +58,9 @@ export function missionTotal(p: ProgressInput): number {
   let total = 0;
   for (const d of p.completed) {
     if (p.passed.has(d)) continue;
-    total += d === 2 && p.quizScore != null ? p.quizScore : missionPoints(d);
+    total += d === 2 && p.quizScore != null ? p.quizScore : (p.earnedPoints?.[d] ?? missionPoints(d));
   }
-  return total;
+  return total + (p.completed.has(21) ? (p.storyBonus ?? 0) : 0);
 }
 
 /** Thưởng chuỗi theo streak (số ngày liên tiếp mở chơi), mỗi mốc 5/10/15/21 một lần. */

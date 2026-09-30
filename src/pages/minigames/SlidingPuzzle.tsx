@@ -1,219 +1,194 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../api';
-import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Confetti, GameShell, GameStat } from '../../components/GameShell';
 import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
-import { vi } from '../../content/vi';
 import { playSfx } from '../../lib/sfx';
+import {
+  CAT_QUEUE, NEKO_COLS, NEKO_ROWS, START_CATS, fallCats, filledRows,
+  horizontalRange, pushUp, settleRows, type NekoCat, type NekoStyle,
+} from '../../lib/nekoSlide';
 
-const GRID = 6;
+const TARGET = 3;
+const PALETTE: Record<NekoStyle, string> = {
+  burgundy: '#B83556', rose: '#DC97A5', gold: '#FAB20A',
+  blue: '#3966A4', cream: '#FADED2', brown: '#845747',
+};
 
-type Orient = 'h' | 'v';
-interface Piece { id: string; row: number; col: number; len: number; o: Orient; hero?: boolean; face: string; hue: number }
-
-/** Các màn "giải cứu mèo" (kiểu Rush Hour): trượt mèo chắn đường để mèo chính (hero) thoát ra mép phải.
- *  Mọi màn đều được thiết kế chắc chắn GIẢI ĐƯỢC và dễ dần → phù hợp cửa ải tốt nghiệp. */
-const LEVELS: Piece[][] = [
-  [
-    { id: 'hero', row: 2, col: 0, len: 2, o: 'h', hero: true, face: '😺', hue: 20 },
-    { id: 'a', row: 0, col: 3, len: 2, o: 'v', face: '🐱', hue: 210 },
-    { id: 'b', row: 2, col: 4, len: 2, o: 'v', face: '🐈', hue: 285 },
-    { id: 'c', row: 0, col: 4, len: 2, o: 'h', face: '😸', hue: 140 },
-  ],
-  [
-    { id: 'hero', row: 2, col: 0, len: 2, o: 'h', hero: true, face: '😺', hue: 20 },
-    { id: 'v1', row: 0, col: 2, len: 3, o: 'v', face: '🐱', hue: 210 },
-    { id: 'v2', row: 2, col: 4, len: 2, o: 'v', face: '🐈', hue: 285 },
-    { id: 'h1', row: 5, col: 0, len: 2, o: 'h', face: '😹', hue: 45 },
-  ],
-  [
-    { id: 'hero', row: 2, col: 0, len: 2, o: 'h', hero: true, face: '😺', hue: 20 },
-    { id: 'v1', row: 2, col: 3, len: 3, o: 'v', face: '🐱', hue: 210 },
-    { id: 'v2', row: 2, col: 5, len: 2, o: 'v', face: '🐈', hue: 285 },
-    { id: 'h1', row: 0, col: 3, len: 2, o: 'h', face: '😸', hue: 140 },
-  ],
-];
-
-const clone = (lvl: Piece[]) => lvl.map((p) => ({ ...p }));
-const isSolved = (ps: Piece[]) => { const h = ps.find((p) => p.hero)!; return h.col + h.len === GRID; };
-
-/** Lưới đánh dấu ô đã bị chiếm (bỏ qua piece `exclude` khi tính vùng trượt cho chính nó). */
-function occupancy(ps: Piece[], exclude?: string): boolean[][] {
-  const g = Array.from({ length: GRID }, () => Array<boolean>(GRID).fill(false));
-  for (const p of ps) {
-    if (p.id === exclude) continue;
-    for (let k = 0; k < p.len; k++) {
-      const r = p.o === 'v' ? p.row + k : p.row;
-      const c = p.o === 'h' ? p.col + k : p.col;
-      g[r]![c] = true;
-    }
-  }
-  return g;
+/** Draw a horizontal cat as one body with a face, paws and tail; no emoji font dependency. */
+function CatArt({ len, style, spotted = false }: { len: number; style: NekoStyle; spotted?: boolean }) {
+  const width = len * 54;
+  const dark = style === 'blue' || style === 'burgundy' || style === 'brown';
+  const ink = dark ? '#fff8f0' : '#4b2735';
+  return (
+    <svg className="neko-art" viewBox={`0 0 ${width} 54`} aria-hidden="true" preserveAspectRatio="none">
+      <path d={`M8 13 Q7 8 5 3 L17 9 Q25 7 33 9 L43 3 L43 13 Q${width - 15} 8 ${width - 7} 18 Q${width - 2} 25 ${width - 7} 39 Q${width - 14} 44 38 42 Q25 47 12 42 Q1 39 4 27 Z`}
+        fill={PALETTE[style]} stroke="#4b2735" strokeWidth="2.3" strokeLinejoin="round" />
+      <path d="M8 15 Q13 11 19 13" fill="none" stroke="#fff" strokeWidth="2" opacity=".46" strokeLinecap="round" />
+      {spotted && <><ellipse cx={Math.max(38, width * .64)} cy="18" rx="8" ry="5" fill="#845747" opacity=".65" /><ellipse cx={Math.max(44, width * .78)} cy="31" rx="5" ry="4" fill="#845747" opacity=".55" /></>}
+      <circle cx="16" cy="25" r="2.1" fill={ink} /><circle cx="32" cy="25" r="2.1" fill={ink} />
+      <path d="M20 31 Q24 36 28 31 M24 28 l-2 2 h4 z" fill={ink} stroke={ink} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M11 40 Q16 44 20 40 M31 41 Q36 45 41 40" fill="none" stroke="#4b2735" strokeWidth="2" strokeLinecap="round" />
+      {len > 1 && <path d={`M${width - 26} 41 Q${width - 20} 47 ${width - 14} 40 M${width - 24} 14 Q${width - 13} 8 ${width - 8} 20`} fill="none" stroke="#4b2735" strokeWidth="2.3" strokeLinecap="round" />}
+    </svg>
+  );
 }
 
-/** Khoảng [lo, hi] mà toạ độ dẫn đầu (col nếu ngang, row nếu dọc) có thể trượt tới mà không đè ai. */
-function freeRange(p: Piece, g: boolean[][]): [number, number] {
-  const fits = (start: number): boolean => {
-    for (let k = 0; k < p.len; k++) {
-      const r = p.o === 'v' ? start + k : p.row;
-      const c = p.o === 'h' ? start + k : p.col;
-      if (r < 0 || c < 0 || r >= GRID || c >= GRID || g[r]![c]) return false;
-    }
-    return true;
-  };
-  const lead = p.o === 'h' ? p.col : p.row;
-  let lo = lead, hi = lead;
-  while (fits(lo - 1)) lo--;
-  while (fits(hi + 1)) hi++;
-  return [lo, hi];
-}
+type Drag = { source: 'tray' | 'board'; id?: number; startX: number; origin: number; col: number; lo: number; hi: number; pointerId: number };
 
-/** Ngày 21 — "Giải Cứu Mèo Gumi": trượt các bé mèo chắn lối để mèo chính thoát ra cửa phải.
- *  `onSolved` (Ngày 21): giải xong KHÔNG tự chốt điểm mà chuyển sang bước gửi lời nhắn tốt nghiệp. */
+/** Day 21: drag cats left/right. A complete eight-cell row disappears. */
 export function SlidingPuzzle({ onSolved }: { onSolved?: () => void } = {}) {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 21;
-  const m = vi.missions[day - 1];
-  const cfg = vi.minigames.slide;
-
-  const boardRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ id: string; o: Orient; startLead: number; lo: number; hi: number; startPx: number; cell: number; moved: boolean } | null>(null);
-
-  const [level, setLevel] = useState(0);
-  const [pieces, setPieces] = useState<Piece[]>(() => clone(LEVELS[0]!));
+  const [cats, setCats] = useState<NekoCat[]>(START_CATS);
+  const catsRef = useRef<NekoCat[]>(START_CATS);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [trayCol, setTrayCol] = useState(3);
+  const [lines, setLines] = useState(0);
+  const linesRef = useRef(0);
   const [moves, setMoves] = useState(0);
+  const [clearing, setClearing] = useState<number[]>([]);
+  const [message, setMessage] = useState('Dịch một mèo trên bàn; mèo ở khay sẽ tự đẩy các hàng lên.');
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
-  const [clearing, setClearing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<Drag | null>(null);
+  const timerRef = useRef<number | null>(null);
 
-  if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
-  if (done) return <MissionDone day={day} points={m.points} note={`Vượt cả ${LEVELS.length} màn trong ${moves} bước! ${cfg.success}`} />;
+  useEffect(() => () => { if (timerRef.current != null) window.clearTimeout(timerRef.current); }, []);
 
-  const heroRow = pieces.find((p) => p.hero)!.row;
+  const next = CAT_QUEUE[queueIndex % CAT_QUEUE.length]!;
+  const cell = () => (boardRef.current?.getBoundingClientRect().width ?? 320) / NEKO_COLS;
+  const changeCats = (nextCats: NekoCat[]) => { catsRef.current = nextCats; setCats(nextCats); };
 
-  const onDown = (e: ReactPointerEvent, p: Piece) => {
-    if (clearing) return;
-    const rect = boardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const g = occupancy(pieces, p.id);
-    const [lo, hi] = freeRange(p, g);
-    drag.current = {
-      id: p.id, o: p.o, startLead: p.o === 'h' ? p.col : p.row, lo, hi,
-      startPx: p.o === 'h' ? e.clientX : e.clientY, cell: rect.width / GRID, moved: false,
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
+  const pushNext = () => {
+    if (catsRef.current.some((cat) => cat.row === 0)) {
+      setMessage('Bàn đã chạm đỉnh. Hãy xoá một hàng trước khi thêm mèo.');
+      playSfx('wrong');
+      return;
+    }
+    setBusy(true);
+    setMessage('Mèo ở khay sẽ đẩy bàn lên sau 1 giây...');
+    timerRef.current = window.setTimeout(() => {
+      const raised = pushUp(catsRef.current, { id: 6 + queueIndex, col: trayCol, len: next.len, style: next.style });
+      setBusy(false);
+      if (!raised) { setMessage('Bàn đã chạm đỉnh. Hãy xoá một hàng trước khi thêm mèo.'); return; }
+      resolve(raised);
+      setQueueIndex((value) => value + 1);
+      setTrayCol(3);
+      setMessage('Các hàng đã lên một ô. Dịch mèo để chơi lượt tiếp.');
+      playSfx('pop');
+    }, 1000);
   };
 
-  const onMove = (e: ReactPointerEvent) => {
-    const d = drag.current;
-    if (!d) return;
-    const now = d.o === 'h' ? e.clientX : e.clientY;
-    const target = Math.min(d.hi, Math.max(d.lo, d.startLead + Math.round((now - d.startPx) / d.cell)));
-    setPieces((ps) => ps.map((p) => {
-      if (p.id !== d.id) return p;
-      const cur = p.o === 'h' ? p.col : p.row;
-      if (cur === target) return p;
-      d.moved = true;
-      return d.o === 'h' ? { ...p, col: target } : { ...p, row: target };
-    }));
+  const resolve = (nextCats: NekoCat[], fromMove = false) => {
+    const full = filledRows(nextCats);
+    changeCats(nextCats);
+    if (!full.length) { if (fromMove) pushNext(); return; }
+    setBusy(true);
+    setClearing(full);
+    playSfx('sparkle');
+    timerRef.current = window.setTimeout(() => {
+      const result = settleRows(catsRef.current);
+      changeCats(result.cats);
+      linesRef.current += result.cleared;
+      setLines(linesRef.current);
+      setClearing([]);
+      setBusy(false);
+      setMessage(`${result.cleared} hàng biến mất!`);
+      if (linesRef.current >= TARGET) {
+        setBurst((value) => value + 1);
+        playSfx('happy');
+        timerRef.current = window.setTimeout(() => {
+          if (onSolved) onSolved();
+          else { api.submitMinigame(day).catch(() => {}); setDone(true); }
+        }, 700);
+      } else if (fromMove) pushNext();
+    }, 390);
   };
 
-  const onUp = () => {
-    const d = drag.current;
-    drag.current = null;
-    if (!d || !d.moved) return;
-    playSfx('pop');
-    setMoves((n) => n + 1);
-    setPieces((ps) => {
-      if (!isSolved(ps)) return ps;
-      // Thắng màn: cho mèo trượt hẳn ra cửa rồi qua màn kế / hoàn thành.
-      setClearing(true);
-      playSfx('happy');
-      const last = level >= LEVELS.length - 1;
-      setTimeout(() => {
-        if (last) {
-          setBurst((n) => n + 1);
-          if (onSolved) { setTimeout(() => onSolved(), 900); }        // Ngày 21 → chuyển sang gửi lời nhắn (điểm chốt ở đó)
-          else { api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 900); }
-        } else { const nx = level + 1; setLevel(nx); setPieces(clone(LEVELS[nx]!)); setClearing(false); }
-      }, 650);
-      return ps;
-    });
+  const pointerDown = (event: ReactPointerEvent<HTMLButtonElement>, source: 'tray' | 'board', cat?: NekoCat) => {
+    if (busy || done) return;
+    const [lo, hi] = cat ? horizontalRange(catsRef.current, cat) : [0, NEKO_COLS - next.len];
+    const origin = cat?.col ?? trayCol;
+    dragRef.current = { source, id: cat?.id, startX: event.clientX, origin, col: origin, lo, hi, pointerId: event.pointerId };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const reset = () => { setPieces(clone(LEVELS[level]!)); };
+  const pointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const col = Math.max(drag.lo, Math.min(drag.hi, drag.origin + Math.round((event.clientX - drag.startX) / cell())));
+    if (col === drag.col) return;
+    drag.col = col;
+    if (drag.source === 'tray') setTrayCol(col);
+    else changeCats(catsRef.current.map((cat) => cat.id === drag.id ? { ...cat, col } : cat));
+  };
 
+  const pointerUp = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    dragRef.current = null;
+    if (drag.source === 'board' && drag.col !== drag.origin) { setMoves((value) => value + 1); playSfx('pop'); resolve(fallCats(catsRef.current), true); }
+  };
+
+  const keyDown = (event: React.KeyboardEvent<HTMLButtonElement>, cat?: NekoCat) => {
+    if (busy) return;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const step = event.key === 'ArrowLeft' ? -1 : 1;
+      if (cat) {
+        const current = catsRef.current.find((item) => item.id === cat.id)!;
+        const [lo, hi] = horizontalRange(catsRef.current, current);
+        const col = Math.max(lo, Math.min(hi, current.col + step));
+        if (col !== current.col) { setMoves((value) => value + 1); resolve(fallCats(catsRef.current.map((item) => item.id === cat.id ? { ...item, col } : item)), true); }
+      } else setTrayCol((value) => Math.max(0, Math.min(NEKO_COLS - next.len, value + step)));
+    }
+  };
+
+  const reset = () => {
+    if (timerRef.current != null) window.clearTimeout(timerRef.current);
+    changeCats(START_CATS);
+    setQueueIndex(0); setTrayCol(3); setLines(0); linesRef.current = 0;
+    setMoves(0); setClearing([]); setBusy(false); setDone(false);
+    setMessage('Dịch một mèo trên bàn; mèo ở khay sẽ tự đẩy các hàng lên.');
+  };
+
+  if (done) return <MissionDone day={day} points={25} note={`Bạn đã xoá ${TARGET} hàng trong ${moves} lượt! Gumi đã thoát khỏi khu rừng mèo.`} />;
+
+  const atTop = cats.some((cat) => cat.row === 0);
+  const trayStyle = { left: `${trayCol / NEKO_COLS * 100}%`, width: `${next.len / NEKO_COLS * 100}%` };
   return (
-    <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
-      hud={<><GameStat icon="map" value={cfg.level(level + 1, LEVELS.length)} /><GameStat icon="sparkle" value={cfg.moves(moves)} tone="accent" /></>}
-      footer={
-        <div className="flex items-center justify-between gap-2">
-          <p className="hidden text-caption font-semibold text-muted sm:block">{cfg.hint}</p>
-          <div className="flex flex-1 justify-end gap-2">
-            <Button variant="secondary" onClick={reset} className="px-4! py-1.5! text-small!">{cfg.reset}</Button>
-            {onSolved && <Button variant="ghost" onClick={onSolved} className="px-3! py-1.5! text-small!">{cfg.toMessage}</Button>}
+    <GameShell wide act={actOfDay(day)} title="Ngày 21: Neko Slide" intro="Trượt mèo nằm ngang, lấp đầy một hàng để xoá."
+      hud={<><GameStat icon="sparkle" value={`${lines}/${TARGET} hàng`} tone="accent" /><GameStat icon="map" value={`${moves} lượt`} /></>}
+      footer={<div className="neko-footer"><span aria-live="polite">{atTop && !busy ? 'Bàn đã chạm đỉnh. Xoá một hàng để tiếp tục.' : message}</span><Button variant="secondary" onClick={reset} className="px-4! py-2! text-small!">Chơi lại</Button></div>}>
+      <section className="neko-layout" aria-label="Bàn chơi Neko Slide">
+        <aside className="neko-score-panel"><span>MÀN CUỐI</span><strong>21</strong><small>🐟 {Math.max(0, TARGET - lines)} hàng còn lại</small></aside>
+        <div className="neko-main">
+          <div className="neko-board-header"><span>✦ NEKO SLIDE</span><span>{NEKO_COLS} × {NEKO_ROWS}</span></div>
+          <div ref={boardRef} className="neko-board" role="group" aria-label={`Bàn cờ ${NEKO_COLS} cột, ${NEKO_ROWS} hàng`}>
+            {Array.from({ length: NEKO_COLS * NEKO_ROWS }, (_, index) => <span key={index} className={`neko-cell neko-cell-${index % 5}`} aria-hidden="true" />)}
+            {cats.map((cat) => <button key={cat.id} type="button" className={`neko-cat ${clearing.includes(cat.row) ? 'neko-clear' : ''}`} style={{ left: `${cat.col / NEKO_COLS * 100}%`, top: `${cat.row / NEKO_ROWS * 100}%`, width: `${cat.len / NEKO_COLS * 100}%`, height: `${100 / NEKO_ROWS}%` }}
+              aria-label={`Mèo ở hàng ${cat.row + 1}, cột ${cat.col + 1}, dài ${cat.len} ô. Kéo ngang hoặc dùng phím trái phải.`}
+              onPointerDown={(event) => pointerDown(event, 'board', cat)} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { dragRef.current = null; }} onKeyDown={(event) => keyDown(event, cat)}>
+              <CatArt len={cat.len} style={cat.style} spotted={cat.style === 'cream' && cat.id % 2 === 1} />
+            </button>)}
+          </div>
+          <div className="neko-tray" aria-label="Mèo tiếp theo">
+            <span className="neko-tray-label">CHỌN CỘT · TỰ ĐẨY LÊN SAU MỖI LƯỢT</span>
+            <div className="neko-tray-track">
+              <button type="button" className="neko-tray-cat" style={trayStyle} aria-label={`Mèo dài ${next.len} ô. Kéo ngang để chọn cột; sau khi dịch mèo trên bàn, mèo này sẽ tự đẩy bàn lên.`}
+                onPointerDown={(event) => pointerDown(event, 'tray')} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { dragRef.current = null; }} onKeyDown={(event) => keyDown(event)}>
+                <CatArt len={next.len} style={next.style} />
+              </button>
+            </div>
           </div>
         </div>
-      }>
-      <div className="flex flex-1 items-center justify-center">
-        <div className="relative w-full max-w-[380px]">
-          {/* Cửa thoát bên phải, ngang hàng mèo chính */}
-          <div className="pointer-events-none absolute -right-1.5 z-10 flex items-center" style={{ top: `${(heroRow / GRID) * 100}%`, height: `${(1 / GRID) * 100}%` }}>
-            <span className="text-title">➡️</span>
-          </div>
-          <div
-            ref={boardRef}
-            className="relative aspect-square w-full overflow-hidden rounded-2xl border-4 border-[#6b3f2a] shadow-pop"
-            style={{
-              touchAction: 'none',
-              background:
-                'repeating-linear-gradient(45deg, #caa07d 0 8px, #c29873 8px 16px), linear-gradient(180deg, #d3ab86, #c69a72)',
-            }}
-          >
-            {/* Lưới ô nền kiểu vải đan */}
-            {Array.from({ length: GRID * GRID }, (_, i) => (
-              <span key={i} className="absolute border border-[#00000010]"
-                style={{ left: `${(i % GRID) / GRID * 100}%`, top: `${Math.floor(i / GRID) / GRID * 100}%`, width: `${100 / GRID}%`, height: `${100 / GRID}%` }} />
-            ))}
-
-            {pieces.map((p) => {
-              const horiz = p.o === 'h';
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  aria-label={p.hero ? 'Mèo chính' : 'Mèo chắn đường'}
-                  onPointerDown={(e) => onDown(e, p)}
-                  onPointerMove={onMove}
-                  onPointerUp={onUp}
-                  onPointerCancel={onUp}
-                  className={`absolute p-1 transition-[left,top] duration-150 ease-out ${clearing && p.hero ? 'opacity-0 duration-500' : ''}`}
-                  style={{
-                    left: `${(p.col / GRID) * 100}%`,
-                    top: `${(p.row / GRID) * 100}%`,
-                    width: `${((horiz ? p.len : 1) / GRID) * 100}%`,
-                    height: `${((horiz ? 1 : p.len) / GRID) * 100}%`,
-                  }}
-                >
-                  <span
-                    className={`flex h-full w-full items-center justify-center rounded-2xl border-2 shadow-soft ${p.hero ? 'border-white ring-2 ring-amber-300' : 'border-white/70'}`}
-                    style={{
-                      background: p.hero
-                        ? 'linear-gradient(180deg,#ffffff,#f0e6da)'
-                        : `linear-gradient(180deg, hsl(${p.hue} 55% 74%), hsl(${p.hue} 50% 62%))`,
-                    }}
-                  >
-                    <span className="text-title drop-shadow-sm" aria-hidden="true">{p.face}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        <aside className="neko-next-panel"><span>SẮP TỚI</span>{[1, 2, 3].map((offset) => { const upcoming = CAT_QUEUE[(queueIndex + offset) % CAT_QUEUE.length]!; return <div key={offset} className="neko-preview" style={{ '--preview': PALETTE[upcoming.style] } as CSSProperties}><CatArt len={upcoming.len} style={upcoming.style} /></div>; })}<span className="neko-goal">ĐẦY HÀNG<br />✦ XOÁ ✦</span></aside>
+      </section>
       <Confetti fire={burst} />
     </GameShell>
   );

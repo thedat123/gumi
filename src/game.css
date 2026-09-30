@@ -21,6 +21,83 @@
 @media (prefers-reduced-motion: reduce) { .game-bg::before, .game-bubble { animation: none; } }
 html.rm .game-bubble { display: none; }
 
+/* ===== Ngày 21: Cat Sliding Puzzle ===== */
+.slide-arena {
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.74);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(38,28,41,.88), rgba(76,46,54,.82));
+  box-shadow: 0 24px 52px -24px rgba(45,23,35,.7), inset 0 1px rgba(255,255,255,.25);
+}
+.slide-arena-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 5px 12px; color: #fff5ea; }
+.slide-objective { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 850; letter-spacing: .01em; }
+.slide-objective i { width: 9px; height: 9px; border-radius: 99px; background: #ffcf58; box-shadow: 0 0 0 4px rgba(255,207,88,.16), 0 0 14px #ffcf58; }
+.slide-difficulty { border: 1px solid rgba(255,255,255,.22); border-radius: 99px; padding: 4px 7px; color: rgba(255,255,255,.66); font-size: 9px; font-weight: 900; letter-spacing: .13em; }
+.slide-board {
+  border: 5px solid #251923;
+  border-radius: 20px;
+  box-shadow: 0 0 0 2px #d4a473, 0 16px 28px rgba(15,8,14,.42), inset 0 0 38px rgba(31,11,13,.4);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+    repeating-linear-gradient(100deg, #b9784c 0 8px, #a96843 8px 16px, #bc7a50 16px 24px);
+  background-size: 16.6667% 16.6667%, 16.6667% 16.6667%, auto;
+}
+.slide-board::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, transparent 35%, rgba(28,13,17,.36) 105%); }
+.slide-board-mark { position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%,-50%) rotate(-28deg); color: rgba(70,34,25,.17); font-size: clamp(17px, 5vw, 24px); font-weight: 950; line-height: .85; letter-spacing: .08em; text-align: center; }
+.slide-exit { position: absolute; right: -38px; z-index: 3; display: flex; align-items: center; gap: 1px; padding: 0 6px; border-radius: 0 8px 8px 0; background: linear-gradient(90deg,#f0a62f,#ffd468); color: #6e3a1e; box-shadow: 0 3px 0 #8f5624; font-size: 8px; font-weight: 950; letter-spacing: .08em; }
+.slide-exit b { font-size: 23px; line-height: .6; }
+.slide-cat { z-index: 2; touch-action: none; user-select: none; -webkit-user-select: none; }
+.slide-cat-body { position: relative; overflow: hidden; border: 2px solid rgba(255,255,255,.66); border-radius: 15px; box-shadow: inset 0 2px 3px rgba(255,255,255,.34), inset 0 -5px 8px rgba(62,24,25,.19), 0 4px 6px rgba(45,20,18,.38); }
+.slide-cat-body::before { content: ''; position: absolute; top: 8%; left: 12%; width: 42%; height: 25%; border-radius: 999px; background: rgba(255,255,255,.3); filter: blur(1px); }
+.slide-cat-hero { border-color: #fff8cf; box-shadow: inset 0 2px 4px rgba(255,255,255,.8), inset 0 -5px 8px rgba(170,106,49,.22), 0 0 0 3px rgba(255,202,67,.66), 0 4px 7px rgba(45,20,18,.42); }
+.slide-cat-face { position: relative; z-index: 1; font-size: clamp(22px, 8vw, 37px); filter: drop-shadow(0 2px 1px rgba(44,20,15,.18)); transform: translateY(-1px); }
+.slide-cat:focus-visible { z-index: 5; outline: 3px solid #fff7c4; outline-offset: 2px; border-radius: 17px; }
+.slide-cat-escape { transform: translateX(150%) !important; }
+.slide-progress { display: flex; justify-content: center; gap: 6px; padding: 13px 2px 2px; }
+.slide-progress span { width: 26px; height: 5px; border-radius: 99px; background: rgba(255,255,255,.2); transition: background .25s, box-shadow .25s; }
+.slide-progress .is-active { background: #ffcd59; box-shadow: 0 0 9px rgba(255,205,89,.72); }
+.slide-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 auto; width: 100%; max-width: 430px; }
+.slide-instruction { display: flex; align-items: center; gap: 7px; color: var(--color-muted); font-size: 12px; font-weight: 700; }
+.slide-instruction span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 99px; background: rgba(255,255,255,.72); color: var(--color-primary); font-size: 15px; }
+
+/* Day 21: patterned 8×10 board and horizontal cats, with the next-cat tray below. */
+.neko-layout { display: grid; grid-template-columns: minmax(82px, 1fr) minmax(0, 480px) minmax(82px, 1fr); align-items: center; gap: 18px; width: min(100%, 850px); margin: auto; padding: 8px 0 20px; }
+.neko-main { min-width: 0; padding: 11px; border: 3px solid #572b29; border-radius: 16px; background: repeating-linear-gradient(90deg, #c69577 0 3px, #c28e70 3px 6px); box-shadow: 0 16px 32px rgba(67,29,30,.27), inset 0 2px rgba(255,238,223,.44); }
+.neko-board-header { display: flex; justify-content: space-between; padding: 0 3px 7px; color: #4b2735; font-size: 10px; font-weight: 900; letter-spacing: .13em; }
+.neko-board { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(10, 1fr); aspect-ratio: 8 / 10; overflow: hidden; border: 3px solid #4b1d1b; background: #aa7167; box-shadow: 0 0 0 2px #f8d8b9, inset 0 0 18px rgba(63,17,19,.24); }
+.neko-cell { position: relative; display: block; min-width: 0; min-height: 0; border: 1.5px solid #512020; background-color: #b57e73; background-image: repeating-linear-gradient(0deg, transparent 0 4px, rgba(255,224,214,.13) 4px 6px, transparent 6px 10px), repeating-linear-gradient(110deg, transparent 0 7px, rgba(83,37,40,.11) 7px 10px, transparent 10px 15px); }
+.neko-cell-1 { background-color: #c08a81; background-image: repeating-linear-gradient(130deg, rgba(255,230,221,.18) 0 3px, transparent 3px 8px); }
+.neko-cell-2 { background-color: #aa716a; background-image: repeating-linear-gradient(90deg, rgba(255,227,206,.2) 0 2px, transparent 2px 7px); }
+.neko-cell-3 { background-color: #bd8077; background-image: repeating-linear-gradient(45deg, rgba(255,239,227,.12) 0 3px, transparent 3px 9px); }
+.neko-cell-4 { background-color: #a96e66; background-image: repeating-linear-gradient(120deg, rgba(92,43,42,.13) 0 3px, transparent 3px 8px); }
+.neko-cat, .neko-tray-cat { position: absolute; z-index: 3; display: grid; place-items: center; min-width: 0; padding: 0; border: 0; background: none; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab !important; }
+.neko-cat { transition: top .35s ease-in, left .1s ease-out; }
+.neko-cat:active, .neko-tray-cat:active { cursor: grabbing !important; }
+.neko-art { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 1px rgba(53,23,28,.42)); }
+.neko-cat:focus-visible, .neko-tray-cat:focus-visible { z-index: 8; outline: 3px solid #ffd15e; outline-offset: -3px; }
+.neko-clear { animation: neko-clear .39s ease-in forwards; }
+@keyframes neko-clear { 45% { filter: brightness(1.6); transform: scale(1.06); } 100% { opacity: 0; transform: scale(.45); } }
+.neko-tray { padding: 8px 3px 2px; }
+.neko-tray-label { display: block; margin-bottom: 4px; color: #5e302b; font-size: 9px; font-weight: 900; letter-spacing: .11em; text-align: center; }
+.neko-tray-track { position: relative; height: clamp(42px, 5.6vw, 60px); overflow: hidden; border: 3px solid #4b1d1b; border-radius: 999px; background: #602721; box-shadow: inset 0 4px 8px rgba(27,7,8,.42); touch-action: none; }
+.neko-tray-cat { top: 0; bottom: 0; height: 100%; transition: left .08s ease-out; }
+.neko-score-panel, .neko-next-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; border: 3px solid #54241e; border-radius: 15px; padding: 14px 8px; background: #6c2d24; color: #fff2e7; text-align: center; box-shadow: 0 5px 0 #47201c, inset 0 1px rgba(255,229,212,.18); }
+.neko-score-panel > span, .neko-next-panel > span:first-child { font-size: 10px; font-weight: 900; letter-spacing: .13em; }
+.neko-score-panel strong { color: #ffcf72; font-size: clamp(34px, 4vw, 53px); line-height: .9; text-shadow: 0 3px #3e1a1a; }
+.neko-score-panel small { font-size: 12px; font-weight: 800; }
+.neko-next-panel { gap: 8px; }
+.neko-preview { display: grid; place-items: center; width: 100%; max-width: 94px; height: 52px; border: 2px solid rgba(255,229,212,.47); border-radius: 10px; background: #421b1d; }
+.neko-preview .neko-art { width: 88%; height: 78%; }
+.neko-goal { margin-top: 4px; color: #ffd17b; font-size: 10px; font-weight: 900; letter-spacing: .07em; line-height: 1.35; }
+.neko-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 620px; margin: 2px auto 0; color: var(--color-muted); font-size: 12px; font-weight: 700; }
+@media (max-width: 650px) { .neko-layout { grid-template-columns: minmax(0,1fr); width: min(100%, 420px); gap: 6px; padding: 0; } .neko-score-panel, .neko-next-panel { display: none; } .neko-main { padding: 7px; } .neko-board-header { padding-bottom: 5px; } .neko-tray { padding-top: 5px; } .neko-tray-track { height: 45px; } .neko-footer { align-items: flex-start; } }
+@media (max-height: 720px) and (max-width: 650px) { .neko-layout { width: min(100%, 340px); } .neko-tray-track { height: 38px; } }
+@media (prefers-reduced-motion: reduce) { .neko-clear { animation: none; opacity: .3; } }
+.game-premium-header { position: relative; isolation: isolate; }
+.game-premium-header::before { content: ''; position: absolute; inset: 0 18px auto; height: 2px; border-radius: 0 0 999px 999px; background: linear-gradient(90deg, transparent, rgba(255,192,94,.95), rgba(189,75,126,.7), transparent); }
+.game-premium-footer { box-shadow: 0 -10px 34px rgba(47,20,51,.12), 0 3px 12px rgba(47,20,51,.08); }
+
 /* Xuất hiện mềm */
 .pop-in { animation: pop-in .4s cubic-bezier(.2,1.3,.4,1) both; }
 @keyframes pop-in { 0% { opacity: 0; transform: scale(.86) translateY(8px); } 100% { opacity: 1; transform: none; } }

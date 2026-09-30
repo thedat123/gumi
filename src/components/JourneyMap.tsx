@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone } from '../lib/scoring';
@@ -8,13 +8,13 @@ import { RegionScene } from './RegionScene';
 import type { DayState } from '../api/types';
 
 /* ---- Con đường leo núi: Ngày 1 ở DƯỚI (xuất phát) → Ngày 21 ở TRÊN (đích). Một con đường liền mạch. ---- */
-const W = 380;
-const RH = 90;         // khoảng cách dọc giữa 2 chặng
-const TOP = 96;        // chừa chỗ cho cờ ĐÍCH
+const W = 420;
+const RH = 104;        // khoảng cách dọc giữa 2 chặng
+const TOP = 116;       // chừa chỗ cho cờ ĐÍCH
 const N = 21;
-const H = TOP + (N - 1) * RH + 104;
+const H = TOP + (N - 1) * RH + 128;
 const yOf = (day: number) => TOP + (N - day) * RH;
-const xOf = (day: number) => (isMilestone(day) ? 190 : 190 + 116 * Math.sin(day * 0.8 + 0.4));
+const xOf = (day: number) => (isMilestone(day) ? 210 : 210 + 128 * Math.sin(day * 0.8 + 0.4));
 const reached = (s: DayState) => s === 'checked' || s === 'passed' || s === 'open' || s === 'dying';
 
 // Ranh giới 3 vùng đất (theo y): trên cùng là Đỉnh 0% (Hồi 3), dưới cùng là Đầm Lầy (Hồi 1).
@@ -102,13 +102,16 @@ export function JourneyMap({ days, today }: { days: DayState[]; today: number })
   const charState = days[charDay - 1] ?? 'future';
 
   return (
-    <div className="relative w-full overflow-hidden rounded-card border border-white/50 shadow-soft" style={{ height: H }}>
+    <div className="journey-world relative w-full overflow-hidden border border-white/50 shadow-soft" style={{ height: H }}>
       {/* Bối cảnh 3 vùng đất xếp chồng thành một sườn núi */}
       {BANDS.map((b) => (
         <div key={b.act} className="absolute inset-x-0 overflow-hidden" style={{ top: b.top, height: b.height }}>
           <RegionScene act={b.act} />
         </div>
       ))}
+
+      <div className="jrays" />
+      <div className="jmotes">{Array.from({ length: 15 }, (_, i) => <i key={i} className="jmote" style={{ left: `${(i * 37) % 100}%`, '--s': `${4 + (i % 4) * 2}px`, '--d': `${13 + (i % 6) * 2}s`, '--delay': `${-i * 1.4}s`, '--dx': `${(i % 2 ? 1 : -1) * (8 + i)}px` } as CSSProperties} />)}</div>
 
       {/* Nhãn vùng đất */}
       {BANDS.map((b) => {
@@ -128,10 +131,13 @@ export function JourneyMap({ days, today }: { days: DayState[]; today: number })
             <stop offset="0" stopColor="#FA990A" /><stop offset="0.5" stopColor="#B83556" /><stop offset="1" stopColor="#55768C" />
           </linearGradient>
         </defs>
-        <path d={pathThrough(pts)} fill="none" stroke="rgba(58,36,30,0.18)" strokeWidth="17" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="10" strokeLinecap="round" strokeDasharray="0.1 15" vectorEffect="non-scaling-stroke" />
-        {frontier >= 2 && <path d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="11" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
+        <path d={pathThrough(pts)} fill="none" stroke="rgba(24,30,44,0.3)" strokeWidth="23" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="15" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={pathThrough(pts)} fill="none" stroke="rgba(91,70,72,0.26)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 15" vectorEffect="non-scaling-stroke" />
+        {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
       </svg>
+
+      {charState !== 'future' && <div className="jbeacon" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px` }}><i className="jbeacon-glow" /><i className="jbeacon-ring" /></div>}
 
       {/* Cờ ĐÍCH ở đỉnh */}
       <div className="absolute left-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-pill bg-primary px-4 py-1.5 text-on-primary shadow-pop" style={{ top: 34 }}>
@@ -150,6 +156,7 @@ export function JourneyMap({ days, today }: { days: DayState[]; today: number })
       <div className="absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-pill bg-surface/90 px-4 py-1 shadow-soft backdrop-blur" style={{ top: H - 40 }}>
         <Icon name="flag" size={15} className="text-primary" /><span className="text-small font-bold text-text">Xuất phát</span>
       </div>
+      <div className="jcinema" />
     </div>
   );
 }

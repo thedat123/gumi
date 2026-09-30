@@ -41,6 +41,10 @@ describe('điểm', () => {
     const p = P({ completed: new Set([1, 2, 3]), quizScore: 8 });
     expect(missionTotal(p)).toBe(15 + 8 + 15);
   });
+  it('dùng điểm thực của game và cộng thưởng Story tốt nghiệp một lần', () => {
+    const p = P({ completed: new Set([6, 19, 21]), earnedPoints: { 6: 10, 19: 30 }, storyBonus: 10 });
+    expect(missionTotal(p)).toBe(10 + 30 + 15 + 10);
+  });
   it('streakBonus theo mốc 5/10/15/21 cộng dồn', () => {
     expect(streakBonus(5)).toBe(10);
     expect(streakBonus(10)).toBe(10 + 20);

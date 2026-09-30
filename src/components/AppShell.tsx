@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
 import { InstallButton } from './InstallButton';
+import { InAppReminder } from './InAppReminder';
 import { useSession } from '../app/session';
 
 /**
@@ -11,8 +12,7 @@ import { useSession } from '../app/session';
  * - Các trang khác dùng thanh điều hướng dạng viên thuốc nổi ở dưới.
  */
 export function AppShell() {
-  const { profile, session, signOut } = useSession();
-  const isAdmin = profile?.role === 'admin';
+  const { session, signOut } = useSession();
   const { pathname } = useLocation();
   const isRoom = pathname === '/'; // màn chính đã có dock riêng → ẩn thanh điều hướng dưới
   const isMission = pathname.startsWith('/mission'); // màn nhiệm vụ: cột hẹp kiểu game mobile (GameShell tự bung full-bleed trên điện thoại)
@@ -26,7 +26,6 @@ export function AppShell() {
     { to: '/', end: true, label: vi.nav.home },
     { to: '/journey', end: false, label: vi.nav.journey },
     { to: '/leaderboard', end: false, label: vi.nav.leaderboard },
-    ...(isAdmin ? [{ to: '/admin', end: false, label: vi.nav.admin }] : []),
   ];
   const barLink = ({ isActive }: { isActive: boolean }) =>
     `flex min-h-11 flex-1 items-center justify-center rounded-control px-2 text-small font-semibold transition-colors ${isActive ? 'bg-primary text-on-primary shadow-pop' : 'text-muted'}`;
@@ -66,6 +65,8 @@ export function AppShell() {
           <Outlet />
         </div>
       </main>
+
+      <InAppReminder />
 
       {/* Thanh điều hướng dưới (nổi) — ẩn ở màn Phòng Gumi, màn chơi & onboarding (chưa có hồ sơ) */}
       {session && !immersive && !isOnboarding && (

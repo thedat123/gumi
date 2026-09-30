@@ -1,0 +1,15 @@
+.streak-flame {
+  display: inline-block;
+  flex: none;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(189, 47, 14, .5)) drop-shadow(0 0 4px rgba(255, 133, 22, .38));
+}
+.streak-flame-body { transform-origin: 50% 90%; animation: streak-flame-dance 1.5s ease-in-out infinite alternate; }
+.streak-flame-middle { transform-origin: 50% 86%; animation: streak-flame-dance 1.15s ease-in-out infinite alternate-reverse; }
+.streak-flame-ember { animation: streak-ember-drift 1.7s ease-out infinite; }
+.streak-flame-ember-right { animation-delay: .65s; }
+@keyframes streak-flame-dance { from { transform: rotate(-3deg) scale(.96, 1); } to { transform: rotate(3deg) scale(1.03, 1.06); } }
+@keyframes streak-ember-drift { 0%, 15% { opacity: .25; transform: translateY(1px) scale(.75); } 55% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px) scale(1.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .streak-flame-body, .streak-flame-middle, .streak-flame-ember { animation: none; }
+}

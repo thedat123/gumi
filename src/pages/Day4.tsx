@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
-import { ChapterTease } from '../components/ChapterTease';
 import { Confetti, GameShell, GameStat } from '../components/GameShell';
-import { Gumi } from '../components/Gumi';
+import { CompletionPanel } from '../components/CompletionPanel';
 import { Icon } from '../components/Icon';
 import { actOfDay } from '../lib/scoring';
 import { vi } from '../content/vi';
@@ -43,18 +41,9 @@ export function Day4() {
   };
 
   if (phase === 'success') {
-    return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-3 pt-4 text-center">
-        <Gumi state="bo_pho" size={150} event="cheer" eventKey={1} />
-        <Banner kind="success">{vi.day4.success}</Banner>
-        <p className="text-small text-muted">{vi.day4.crashInfo}</p>
-        <ChapterTease day={DAY} />
-        <div className="flex w-full max-w-xs flex-col items-stretch gap-2 sm:max-w-md sm:flex-row">
-          <Link to="/journey" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
-          <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-border-strong/50 bg-surface px-5 font-semibold text-muted">{vi.minigames.common.backToRoom}</Link>
-        </div>
-      </div>
-    );
+    return <CompletionPanel day={DAY} points={vi.missions[DAY - 1]!.points} note={vi.day4.success}>
+      <p className="text-small text-muted">{vi.day4.crashInfo}</p>
+    </CompletionPanel>;
   }
 
   if (phase === 'intro') {

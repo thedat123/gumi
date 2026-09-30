@@ -10,13 +10,13 @@ import { MemoryMatch } from './minigames/MemoryMatch';
 import { QuickQuiz } from './minigames/QuickQuiz';
 import { SortGame } from './minigames/SortGame';
 import { SpinWheel } from './minigames/SpinWheel';
-import { SugarRun } from './minigames/SugarRun';
 import { WordHunt } from './minigames/WordHunt';
+import { BossBattle } from './minigames/BossBattle';
 
 // Điều phối màn chơi theo ngày cho hành trình 21 ngày. Các ngày thường giữ nguyên (quiz/đuổi hình/check-in ảnh);
 // riêng 3 CỬA ẢI cuối Hồi (gặp Boss) là GAME ARCADE full màn:
 //   7  → Flappy Bird "Bay Qua Cơn Thèm" (qua mỗi cột +1, tối đa 50đ)
-//   14 → Endless Runner "Chạy Trốn Cơn Thèm" (nhảy/trượt né đồ ngọt)
+//   14 → Boss Battle "Đánh Bại Boss Đường" (hứng nước lành, né đường xấu)
 //   16 → CROSSWORD "Gumi Bắt Chữ" (đồng hồ 3 phút, hết giờ dừng)
 //   21 → "Giải Cứu Mèo Gumi" (sliding) rồi gửi Lời Nhắn Tốt Nghiệp lên bức tường
 export function MissionRouter() {
@@ -32,7 +32,7 @@ export function MissionRouter() {
     case 9: return <WordHunt />;
     case 11: return <Day4 />;
     case 12: case 18: return <MemoryMatch />;
-    case 14: return <SugarRun />;                   // CỬA ẢI Hồi 2 — Endless Runner né đồ ngọt
+    case 14: return <BossBattle />;                 // CỬA ẢI Hồi 2 — hứng nước lành hạ Boss Đường
     case 21: return <Day21Final />;                 // CỬA ẢI cuối — Giải Cứu Mèo Gumi (sliding) → gửi lời nhắn tốt nghiệp
     case 19: return <SpinWheel />;
     default: return <CheckIn />; // DRINK / SHARE → check-in ảnh

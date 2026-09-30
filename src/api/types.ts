@@ -32,6 +32,13 @@ export interface CampaignState {
   startDate: string; // ISO date (Asia/Ho_Chi_Minh) — ngày tạo tài khoản = Ngày 1
 }
 
+export interface ReminderStatus {
+  phase: CampaignPhase;
+  day: number;
+  lastPlayDate: string | null;
+  lastCompletedDate: string | null;
+}
+
 /** Tổng hợp cho Dashboard: get_my_journey + get_campaign_state + get_my_rank. */
 export interface Journey {
   phase: CampaignPhase;
@@ -204,17 +211,18 @@ export interface Api {
   createProfile(input: CreateProfileInput): Promise<Profile>;
   updateProfile(patch: Partial<CreateProfileInput>): Promise<Profile>;
   getCampaignState(): Promise<CampaignState>;
+  getReminderStatus(): Promise<ReminderStatus>;
   getJourney(): Promise<Journey>;
   /** Đánh dấu "bắt đầu chơi" hôm nay → cập nhật & trả về streak ngày liên tiếp. */
   markPlayed(): Promise<number>;
   getLeaderboard(): Promise<Leaderboard>;
-  submitCheckin(day: number, level: SugarLevel, fileName: string): Promise<CheckinResult>;
+  submitCheckin(day: number, level: SugarLevel, file: File | string): Promise<CheckinResult>;
   /** Tiêu 1 Bùa để CỨU chuỗi khi lỡ đúng 1 ngày (không bỏ qua chặng); trả về chuỗi được giữ. */
   useStreakFreeze(): Promise<number>;
   getQuizQuestions(): Promise<QuizQuestion[]>;
   submitQuiz(guesses: Record<number, number>): Promise<QuizResult>;
-  submitMinigame(day: number): Promise<CheckinResult>;
-  submitWallPost(text: string): Promise<void>;
+  submitMinigame(day: number, earnedPoints?: number): Promise<CheckinResult>;
+  submitWallPost(text: string, storyProof?: File): Promise<void>;
   getWallPosts(): Promise<WallPost[]>;
   getSummary(): Promise<Summary>;
   admin: AdminApi;

@@ -24,6 +24,10 @@ button:disabled, [aria-disabled="true"], input:disabled, select:disabled, textar
 
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.feature-modal { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 640px) {
+  .feature-modal { padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
+}
 
 /* --- gradient thương hiệu (kết hợp 6 màu bảng) --- */
 .grad-brand { background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-pink) 100%); }
@@ -51,3 +55,19 @@ html.gfx-low *, html.gfx-low *::before, html.gfx-low *::after {
   -webkit-backdrop-filter: none !important;
 }
 html.gfx-low body { background: var(--color-bg); }
+
+/* Khu vận hành là một sản phẩm riêng: nền, navigation và độ tương phản tách hẳn thế giới game. */
+.admin-portal { background: #f4f6fa; }
+.admin-sidebar { background: radial-gradient(110% 65% at 0% 0%, #373d56 0%, #202432 52%, #161923 100%); box-shadow: 12px 0 32px rgba(22,25,35,.08); }
+.admin-mark { border-radius: 12px; background: linear-gradient(145deg, #e55e7d, #a92a4d); box-shadow: 0 8px 18px rgba(184,53,86,.34); }
+.admin-portal main > div > div > h1, .admin-portal h1 { letter-spacing: -.035em; }
+
+/* Tủ đồ: preview dùng chính sprite SVG nên phụ kiện trong item card và trên sân khấu
+   có cùng toạ độ gắn, tránh cảm giác icon minh hoạ khác với đồ đang mặc. */
+.wardrobe-modal { background: linear-gradient(145deg, #fffaf7, #f6e7df); }
+.wardrobe-studio { min-height: 215px; background-image: radial-gradient(circle at 50% 14%, rgba(255,255,255,.98), rgba(255,255,255,0) 47%), linear-gradient(135deg, #fff4ec, #ebd8f5 55%, #d6ebed); }
+.wardrobe-studio::after { content: ''; position: absolute; inset: auto 0 0; height: 34%; pointer-events: none; background: linear-gradient(transparent, rgba(169,107,87,.09)); }
+.wardrobe-placement { position: absolute; left: 14px; bottom: 12px; z-index: 2; border: 1px solid rgba(184,53,86,.22); border-radius: 999px; padding: 5px 9px; background: rgba(255,255,255,.78); color: var(--color-primary); font-size: 10px; font-weight: 900; letter-spacing: .1em; box-shadow: 0 4px 14px rgba(77,36,45,.1); }
+.wardrobe-item-preview { box-shadow: inset 0 1px rgba(255,255,255,.7), 0 5px 12px rgba(73,39,38,.1); }
+.wardrobe-item-preview .gumi { transform: translateY(8px); }
+@media (min-width: 640px) { .wardrobe-studio { min-height: 245px; } .wardrobe-items { max-height: 29dvh; } }

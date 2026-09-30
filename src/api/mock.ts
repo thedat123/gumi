@@ -4,6 +4,7 @@
 import { vi } from '../content/vi';
 import { gramsPerDrink, gramsToSpoons, type SugarLevel } from '../lib/sugar';
 import { computeDays, gumiStateOf, totalPoints, TOTAL_DAYS } from '../lib/scoring';
+import { drinkTarget } from '../lib/drinkChallenge';
 import {
   ApiError,
   type AdminApi,
@@ -72,6 +73,8 @@ interface Persisted {
   lastDoneDate: string | null; // ngày (YYYY-MM-DD) hoàn thành chặng gần nhất → chốt "mỗi ngày 1 chặng"
   lastPlayDate: string | null; // ngày mở chơi gần nhất → tính streak "bắt đầu chơi"
   playStreak: number;          // số ngày liên tiếp bấm bắt đầu chơi
+  storyBonus: number;
+  earnedPoints: Record<number, number>;
 }
 
 // Không seed dữ liệu giả: tường bắt đầu trống, bảng xếp hạng chỉ hiển thị người chơi thật.
@@ -121,7 +124,7 @@ function genPlayers(count: number): AdminPlayer[] {
 const PLAYERS_SEED = genPlayers(78);
 
 function fresh(): Persisted {
-  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES, lastDoneDate: null, lastPlayDate: null, playStreak: 0 };
+  return { session: null, users: {}, profile: null, campaignDay: 1, completed: [], passed: [], rejected: [], levels: {}, quiz: null, wall: [...SEED_WALL], passesLeft: PASSES, lastDoneDate: null, lastPlayDate: null, playStreak: 0, storyBonus: 0, earnedPoints: {} };
 }
 
 function load(): Persisted {
@@ -176,24 +179,22 @@ export function createMockApi(): Api {
   const emitAuth = () => listeners.forEach((cb) => cb(state.session));
   // Phiên hiện tại có phải tài khoản test không → dùng để MỞ HẾT gating.
   const isTestSession = () => !!state.session && !!testAccount(state.session.email);
-  // Test HOẶC admin → mở hết mọi chặng, bỏ qua khoá theo chặng + cap mỗi-ngày-một-chặng.
-  const isUnlocked = () => isTestSession() || state.profile?.role === 'admin';
+  // Chỉ tài khoản test được mở hết. Quyền admin không đồng nghĩa với quyền bỏ qua tiến độ.
+  const isUnlocked = () => isTestSession();
 
   const progress = () => ({
-    // Test/admin: coi như đã tới chặng cuối → mọi nút trên bản đồ bấm được.
+    // Tester: coi như đã tới chặng cuối → mọi nút trên bản đồ bấm được.
     campaignDay: isUnlocked() ? TOTAL_DAYS : state.campaignDay,
     completed: new Set(state.completed),
     passed: new Set(state.passed),
     rejected: new Set(state.rejected),
     quizScore: state.quiz?.score,
+    storyBonus: state.storyBonus,
+    earnedPoints: state.earnedPoints,
   });
 
   const todayStr = mockToday;
   const yesterdayStr = () => new Date(Date.now() + (mockDayOffset - 1) * 86_400_000).toISOString().slice(0, 10);
-  // Hôm nay đã hoàn thành một chặng chưa → khoá chặng kế tới ngày mai (mỗi ngày 1 chặng).
-  // Test/admin bỏ qua giới hạn này để chơi thẳng qua các chặng.
-  const doneToday = () => !isUnlocked() && state.lastDoneDate === todayStr();
-
   const twoDaysAgoStr = () => new Date(Date.now() + (mockDayOffset - 2) * 86_400_000).toISOString().slice(0, 10);
   // Streak "bắt đầu chơi": còn sống khi chơi hôm nay/hôm qua; LỠ 1 NGÀY = "hấp hối" nhưng CHƯA đứt
   // (vẫn hiện số); lỡ ≥2 ngày → đứt (về 0).
@@ -210,6 +211,9 @@ export function createMockApi(): Api {
     if (!state.completed.includes(day)) state.completed.push(day);
     if (day === state.campaignDay && state.campaignDay <= TOTAL_DAYS) state.campaignDay = day + 1;
     state.lastDoneDate = todayStr();
+  };
+  const ensurePlayable = (day: number) => {
+    if (!isUnlocked() && day !== state.campaignDay) throw new ApiError('not_today');
   };
 
   // Chiến dịch còn "đang chạy" chừng nào chưa quá ngày 10 mà chưa hoàn thành. Xong đủ 10 ngày vẫn coi là running để hiện màn tốt nghiệp.
@@ -385,28 +389,36 @@ export function createMockApi(): Api {
       const unlocked = isUnlocked();
       // Cá nhân hoá: mốc bắt đầu = hôm nay (ngày người chơi "tạo tài khoản" trong phiên mock).
       const startDate = new Date().toISOString().slice(0, 10);
-      const day = unlocked ? TOTAL_DAYS : doneToday() ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS);
+      const day = unlocked ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS);
       return delay({ phase: unlocked ? 'running' : phaseOf(), day, startDate });
+    },
+
+    async getReminderStatus() {
+      requireSession();
+      const unlocked = isUnlocked();
+      return delay({
+        phase: unlocked ? 'running' as const : phaseOf(),
+        day: unlocked ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS),
+        lastPlayDate: state.lastPlayDate,
+        lastCompletedDate: state.lastDoneDate,
+      });
     },
 
     async getJourney(): Promise<Journey> {
       requireSession();
       const p = progress();
       const unlocked = isUnlocked();
-      const locked = doneToday();
-      // Test/admin: mọi chặng chưa hoàn thành đều 'open'. Người thường: khoá chặng kế nếu đã xong hôm nay.
+      // Tester: mọi chặng chưa hoàn thành đều 'open'. Người thường: chỉ mở chặng kế tiếp.
       const days = unlocked
         ? computeDays(p).map((s) => (s === 'checked' || s === 'passed' || s === 'rejected' ? s : 'open'))
-        : locked
-          ? computeDays(p).map((s) => (s === 'open' ? 'future' : s))
-          : computeDays(p);
+        : computeDays(p);
       const phase = unlocked ? 'running' : phaseOf();
       const streak = playStreakLive();
       const points = totalPoints(p, streak);
       const rejectedDay = state.rejected[0];
       return delay({
         phase,
-        day: unlocked ? TOTAL_DAYS : locked ? Math.max(state.campaignDay - 1, 1) : Math.min(state.campaignDay, TOTAL_DAYS),
+        day: unlocked ? TOTAL_DAYS : Math.min(state.campaignDay, TOTAL_DAYS),
         days,
         totalPoints: points,
         streak,
@@ -457,16 +469,17 @@ export function createMockApi(): Api {
       });
     },
 
-    async submitCheckin(day, level, fileName): Promise<CheckinResult> {
+    async submitCheckin(day, level, file): Promise<CheckinResult> {
       requireSession();
       await delay(null, 700);
       const testing = isUnlocked();
-      if (!fileName) throw new ApiError('photo_invalid');
-      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
-      if (!testing && day !== state.campaignDay) throw new ApiError('not_today');
+      if (!file || (typeof file !== 'string' && !file.size)) throw new ApiError('photo_invalid');
+      ensurePlayable(day);
       if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
       if (!testing && state.completed.includes(day)) throw new ApiError('already_done');
       if (LEVEL_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
+      const maxLevel = drinkTarget(day, state.profile?.level ?? 100);
+      if (maxLevel !== null && level > maxLevel) throw new ApiError('level_not_allowed');
       if (LEVEL_DAYS.includes(day)) state.levels[day] = level;
       advance(day);
       save();
@@ -481,34 +494,37 @@ export function createMockApi(): Api {
     async submitQuiz(guesses): Promise<QuizResult> {
       requireSession();
       await delay(null, 500);
-      // 1 câu (trà sữa): trúng khoảng 12–15 = full 2 điểm; lệch thì trừ dần theo khoảng cách tới mép gần nhất.
-      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
+      // 1 câu (trà sữa): trúng khoảng 12–15 = đủ 10 điểm; lệch thì trừ dần.
+      ensurePlayable(2);
       const guess = guesses[0] ?? 0;
       const lo = vi.quiz.correctMin, hi = vi.quiz.correctMax;
       const answer = Math.round((lo + hi) / 2);
       const dist = guess >= lo && guess <= hi ? 0 : Math.min(Math.abs(guess - lo), Math.abs(guess - hi));
-      const points = Math.round(Math.max(0, 2 - dist * 0.4) * 10) / 10;
-      const result: QuizResult = { score: points, max: 2, items: [{ id: 0, guess, answer, points }] };
+      const points = Math.max(0, 10 - dist * 2);
+      const result: QuizResult = { score: points, max: 10, items: [{ id: 0, guess, answer, points }] };
       state.quiz = result;
       advance(2);
       save();
       return result;
     },
 
-    async submitMinigame(day): Promise<CheckinResult> {
+    async submitMinigame(day, earnedPoints): Promise<CheckinResult> {
       requireSession();
       await delay(null, 400);
       if (!MINIGAME_DAYS.includes(day)) throw new ApiError('server');
-      if (doneToday()) throw new ApiError('not_today'); // đã xong chặng hôm nay → chờ mai
+      ensurePlayable(day);
+      if (earnedPoints !== undefined) state.earnedPoints[day] = earnedPoints;
       advance(day);
       save();
-      return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
+      return { ok: true, points: earnedPoints ?? vi.missions[day - 1]?.points ?? 0 };
     },
 
-    async submitWallPost(text) {
+    async submitWallPost(text, storyProof) {
       const s = requireSession();
       await delay(null, 400);
+      ensurePlayable(TOTAL_DAYS);
       state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date(0).toISOString() }, ...state.wall];
+      state.storyBonus = storyProof ? 10 : 0;
       advance(TOTAL_DAYS);
       save();
     },

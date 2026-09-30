@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../api';
 import { Button } from '../../components/Button';
+import { Banner } from '../../components/Banner';
 import { Confetti, GameShell } from '../../components/GameShell';
 import { Icon } from '../../components/Icon';
 import { MissionDone } from '../../components/MissionDone';
@@ -33,8 +34,10 @@ export function SpinWheel() {
   const [reward, setReward] = useState<number | null>(null);
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  if (done) return <MissionDone day={day} points={m.points} note={vi.minigames.spin.success} />;
+  if (done) return <MissionDone day={day} points={reward ?? m.points} note={vi.minigames.spin.success} />;
 
   const spin = () => {
     if (spinning) return;
@@ -45,7 +48,13 @@ export function SpinWheel() {
     setAngle((a) => a - (a % 360) + 360 * 5 + (360 - (idx * STEP + STEP / 2)));
     setTimeout(() => { setReward(SEG[idx]!); setSpinning(false); setBurst((n) => n + 1); playSfx('sparkle'); }, 2800);
   };
-  const finish = async () => { try { await api.submitMinigame(day); } catch { /* mock */ } setDone(true); };
+  const finish = async () => {
+    if (reward === null || saving) return;
+    setSaving(true); setSaveError(false);
+    try { await api.submitMinigame(day, reward); setDone(true); }
+    catch { setSaveError(true); }
+    finally { setSaving(false); }
+  };
 
   return (
     <GameShell act={actOfDay(day)} title={vi.minigames.spin.title} intro={vi.minigames.spin.intro}>
@@ -82,9 +91,10 @@ export function SpinWheel() {
         )}
       </div>
 
+      {saveError && <Banner kind="error">Chưa lưu được điểm. Bấm lại để thử.</Banner>}
       {reward === null
         ? <Button onClick={spin} loading={spinning} block>{spinning ? vi.minigames.spin.spinning : vi.minigames.spin.spin}</Button>
-        : <Button onClick={finish} block>{vi.minigames.common.backHome}</Button>}
+        : <Button onClick={finish} loading={saving} block>Nhận +{reward} điểm</Button>}
 
       <Confetti fire={burst} />
     </GameShell>

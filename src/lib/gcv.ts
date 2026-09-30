@@ -4,6 +4,7 @@
 // Bật bằng VITE_GCV_API_KEY (khoá API của một Google Cloud project đã bật Cloud Vision API).
 // LƯU Ý: nên gọi qua server/edge và hạn chế khoá theo HTTP referrer khi lên production.
 import type { VlmResult } from './vlm';
+import { readSugarPercent } from './drinkChallenge';
 
 const KEY = import.meta.env.VITE_GCV_API_KEY as string | undefined;
 export const gcvAvailable = !!KEY;
@@ -24,14 +25,16 @@ const TEXT_DRINK_RE = /(đường|duong|sugar|trà|tra\b|cà phê|ca phe|coffee|
 
 interface Ann { description?: string; name?: string; score?: number }
 
-/** Tìm % đường trong text OCR (ưu tiên số đứng gần "đường/sugar", nếu không thì số % hợp lệ đầu tiên). */
+/** Tìm mức đường trong text OCR khi số gắn với từ "đường/sugar". */
 function findSugar(raw: string): number | null {
+  const explicit = readSugarPercent(raw);
+  if (explicit !== null) return explicit;
   const t = raw.toLowerCase().replace(/\s+/g, ' ');
+  if (/(không đường|khong duong|no sugar|sugar free|unsweetened|0\s?%\s*(?:đường|duong|sugar))/.test(t)) return 0;
   // Menu VN hay ghi số TRƯỚC chữ ("70% đường"); cũng bắt kiểu "đường 70%". Ưu tiên số cạnh từ khoá đường.
   const near = t.match(/(\d{1,3})\s?%?\s*(?:đường|duong|sugar)|(?:đường|duong|sugar)[^\d]{0,8}(\d{1,3})\s?%?/);
   if (near) { const n = +(near[1] ?? near[2]!); if (n <= 100) return n; }
-  const any = t.match(/\b(\d{1,3})\s?%/);
-  return any && +any[1]! <= 100 ? +any[1]! : null;
+  return null;
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -86,6 +89,7 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
     return {
       available: true, ran: true, ok: isDrink, isDrink,
       drink: name, sugarPercent, confidence: best,
+      isUnsweetened: sugarPercent === 0,
       reason: isDrink
         ? `Nhận ra: ${name || (sugarPercent !== null ? `tem/hoá đơn (${sugarPercent}% đường)` : 'đồ uống')}`
         : 'Chưa thấy ly/cốc/chai hay tem/hoá đơn đồ uống — chụp rõ ly nước hoặc tem giảm đường nhé.',

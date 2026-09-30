@@ -9,6 +9,7 @@ import { FoodTray } from '../components/FoodTray';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { RoomCritters } from '../components/RoomCritters';
 import { SkinPicker } from '../components/SkinPicker';
+import { StreakFlame } from '../components/StreakFlame';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { actOfDay, approvedCount, gumiStage } from '../lib/scoring';
@@ -74,6 +75,8 @@ export function GumiRoom() {
         const todayDone = s.days[todayIdx] === 'checked';
         const m = vi.missions[todayIdx];
         const running = s.phase === 'running' && s.day >= 1 && s.day <= vi.journey.total;
+        const weather = WEATHERS[weatherIdx]!.w ?? (() => { const hour = new Date().getHours(); return hour >= 5 && hour < 16 ? 'day' : hour >= 16 && hour < 19 ? 'sunset' : 'night'; })();
+        const roomBrightness = (lightsOn ? 1 : 0.67) * ({ day: 1, cloudy: 0.91, sunset: 0.86, rain: 0.82, snow: 0.96, fog: 0.9, night: 0.7 }[weather] ?? 1);
 
         const useFreeze = async () => {
           try { await api.useStreakFreeze(); fire('revive'); state.reload(); }
@@ -148,7 +151,9 @@ export function GumiRoom() {
                 {/* Gumi to giữa phòng (mục tiêu thả đồ ăn) */}
                 <div data-feed-target className="flex flex-1 flex-col items-center justify-end pb-1">
                   <span className="mb-1 rounded-pill bg-surface/92 px-4 py-1 text-small font-bold text-primary shadow-soft backdrop-blur" data-testid="gumi-caption">{vi.gumi.stage[stage]}</span>
-                  <Gumi state={s.gumi} size={240} interactive progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} feed={feed} />
+                  <div className="room-gumi-grounded" style={{ filter: `brightness(${roomBrightness}) saturate(${lightsOn ? 1 : 0.82})` }}>
+                    <Gumi state={s.gumi} size={240} interactive progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} feed={feed} />
+                  </div>
                 </div>
 
                 {/* Khay cho ăn + nút nhiệm vụ hôm nay + dock */}
@@ -222,7 +227,7 @@ function Stat({ icon, iconClass, value, label }: { icon: IconName; iconClass?: s
   return (
     <span className="flex min-w-[4.5rem] flex-col items-center rounded-card border border-border bg-surface/92 px-3 py-1.5 shadow-soft backdrop-blur">
       <span className="flex items-center gap-1 text-title font-bold leading-none">
-        <Icon name={icon} size={16} filled className={iconClass} />{value}
+        {icon === 'flame' ? <StreakFlame size={21} /> : <Icon name={icon} size={16} filled className={iconClass} />}{value}
       </span>
       {label && <span className="text-caption font-semibold text-muted">{label}</span>}
     </span>

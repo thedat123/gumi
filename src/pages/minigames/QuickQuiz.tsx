@@ -18,21 +18,32 @@ export function QuickQuiz() {
   const cfg = BY_DAY[day];
   const m = vi.missions[day - 1];
   const [note, setNote] = useState<string | null>(null);
+  const [earned, setEarned] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   if (!cfg || !m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
-  if (note !== null) return <MissionDone day={day} points={m.points} note={note} />;
+  if (note !== null) return <MissionDone day={day} points={earned ?? m.points} note={note} />;
 
   const isRebus = day === 16; // đuổi hình bắt chữ → đề emoji cỡ lớn
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={vi.minigames.quiz.intro}>
       <div className="flex flex-1 flex-col justify-center">
+        {saveError && <Banner kind="error">Chưa lưu được kết quả. Bấm Hoàn thành để thử lại.</Banner>}
+        {saving && <Banner kind="info">Đang lưu kết quả…</Banner>}
         <QuizGame
           questions={cfg.questions}
           promptClass={isRebus ? 'text-[44px]' : 'text-title'}
           seconds={10}
           onComplete={(correct) => {
-            api.submitMinigame(day).catch(() => {});
-            setNote(`Bạn trả lời đúng ${correct}/${cfg.questions.length} câu. ${cfg.note}`);
+            if (saving) return;
+            const points = day === 17 ? correct * 5 : m.points;
+            setEarned(points);
+            setSaving(true); setSaveError(false);
+            void api.submitMinigame(day, day === 17 ? points : undefined)
+              .then(() => setNote(`Bạn trả lời đúng ${correct}/${cfg.questions.length} câu. ${cfg.note}`))
+              .catch(() => setSaveError(true))
+              .finally(() => setSaving(false));
           }}
         />
       </div>

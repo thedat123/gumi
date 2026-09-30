@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Icon } from './Icon';
+import { vi } from '../content/vi';
 
 /** Vài bong bóng nổi trong nền game (trang trí). */
 function Bubbles() {
@@ -26,25 +27,29 @@ function Bubbles() {
  * Khung nhập vai dùng chung cho mọi minigame: nền động theo vùng đất, thanh trên có nút Thoát + tựa game + HUD (điểm/tiến độ/đồng hồ).
  * Chiếm gần trọn khung nhìn để cảm giác "vào một màn chơi thật", không còn là mấy nút nhỏ.
  */
-export function GameShell({ act = 1, title, intro, hud, footer, children }: {
-  act?: 1 | 2 | 3; title: string; intro?: string; hud?: ReactNode; footer?: ReactNode; children: ReactNode;
+export function GameShell({ act = 1, title, intro, hud, footer, children, wide = false }: {
+  act?: 1 | 2 | 3; title: string; intro?: string; hud?: ReactNode; footer?: ReactNode; children: ReactNode; wide?: boolean;
 }) {
+  const { day: dayParam } = useParams();
+  const day = Number(dayParam);
+  const mission = vi.missions[day - 1];
   return (
     <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
-      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">
-        <header className="mb-3 flex items-center gap-3">
-          <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface/85 text-muted shadow-soft backdrop-blur transition-transform active:scale-90">
+      <div className={`relative z-10 mx-auto flex w-full flex-1 flex-col ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}>
+        <header className="game-premium-header mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:p-4">
+          <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface text-muted shadow-soft transition-transform active:scale-90">
             <Icon name="x" size={20} />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-title font-extrabold leading-tight">{title}</h1>
-            {intro && <p className="truncate text-caption font-medium text-muted">{intro}</p>}
+            {mission && <p className="mb-0.5 text-[10px] font-black uppercase tracking-[.16em] text-primary/80">CHẶNG {String(day).padStart(2, '0')} / 21 · {mission.kind} · +{mission.points} ĐIỂM</p>}
+            <h1 className="text-title font-extrabold leading-tight text-text">{title}</h1>
+            {intro && <p className="mt-1 line-clamp-2 text-caption font-medium leading-relaxed text-muted">{intro}</p>}
           </div>
-          {hud}
+          {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px]">{hud}</div>}
         </header>
         <div className="flex flex-1 flex-col">{children}</div>
-        {footer && <div className="mt-3">{footer}</div>}
+        {footer && <div className="game-premium-footer sticky bottom-0 z-20 mt-4 rounded-[20px] border border-white/60 bg-surface/90 p-2.5 shadow-[0_-8px_30px_rgba(51,24,55,.12)] backdrop-blur-xl">{footer}</div>}
       </div>
     </div>
   );

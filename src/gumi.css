@@ -123,3 +123,9 @@
 }
 html.rm .gumi, html.rm .gumi * { animation: none !important; transition: none !important; }
 html.rm .g-sparkle, html.rm .g-flash { display: none; }
+.acc-piece {
+  filter: drop-shadow(0 2px 1.5px rgba(42, 22, 18, .28));
+}
+.acc-slot { pointer-events: none; }
+.acc-glasses .acc-piece { filter: drop-shadow(0 1.5px 1px rgba(31, 20, 18, .24)); }
+.acc-behind .acc-piece { filter: drop-shadow(0 4px 3px rgba(42, 22, 18, .22)); }
