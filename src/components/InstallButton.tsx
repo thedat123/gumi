@@ -22,7 +22,7 @@ export function InstallButton({ className = '' }: { className?: string }) {
     <>
       <button
         type="button"
-        onClick={() => (canInstall ? promptInstall() : setHint(true))}
+        onClick={() => setHint(true)}
         className={`inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-3 text-caption font-bold text-on-primary shadow-pop outline-none transition-all hover:brightness-[1.06] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${className}`}
       >
         <DownloadIcon /><span>{vi.pwa.install}</span>
@@ -39,7 +39,18 @@ export function InstallButton({ className = '' }: { className?: string }) {
               <InstallGuide />
             </div>
 
-            <button type="button" onClick={() => setHint(false)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.pwa.close}</button>
+            {/* Trình duyệt hỗ trợ cài trực tiếp (Android/Chrome) → nút cài 1 chạm. */}
+            {canInstall && (
+              <button
+                type="button"
+                onClick={async () => { await promptInstall(); setHint(false); }}
+                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop"
+              >
+                <DownloadIcon /><span>{vi.pwa.install}</span>
+              </button>
+            )}
+
+            <button type="button" onClick={() => setHint(false)} className={`inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-semibold ${canInstall ? 'mt-2 text-muted' : 'mt-5 bg-primary text-on-primary shadow-pop'}`}>{vi.pwa.close}</button>
           </div>
         </div>
       )}
