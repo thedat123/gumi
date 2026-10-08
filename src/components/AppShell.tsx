@@ -47,9 +47,13 @@ export function AppShell() {
       {/* Header dính trên — thanh chuẩn: chiều cao cố định, nội dung căn giữa, có max-width */}
       <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
-          <NavLink to="/" className="flex items-center gap-2.5">
-            <img src="/icons/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-[11px] shadow-pop ring-2 ring-surface" />
-            <span className="text-gradient text-body font-extrabold tracking-tight sm:text-title">{vi.app.name}</span>
+          <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
+            <img src="/icons/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-[11px] shadow-pop ring-2 ring-surface" />
+            {/* Mobile: tên ngắn gọn 1 dòng; từ sm trở lên: tên đầy đủ. Không xuống dòng. */}
+            <span className="text-gradient truncate whitespace-nowrap text-body font-extrabold tracking-tight sm:text-title">
+              <span className="sm:hidden">{vi.app.shortName}</span>
+              <span className="hidden sm:inline">{vi.app.name}</span>
+            </span>
           </NavLink>
           <div className="flex items-center gap-2">
             <InstallButton />

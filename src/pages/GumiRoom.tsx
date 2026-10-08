@@ -99,7 +99,7 @@ export function GumiRoom() {
                   <RoomScene3D key={`${ROOMS[roomIdx]!.v}-${weatherIdx}-${lightsOn ? 1 : 0}`} act={roomAct} variant={ROOMS[roomIdx]!.v} weather={WEATHERS[weatherIdx]!.w ?? undefined} lights={lightsOn} />
                 )}
               </Suspense>
-              <RoomCritters outdoor={ROOMS[roomIdx]!.v === 'garden'} />
+              <RoomCritters variant={ROOMS[roomIdx]!.v} brightness={roomBrightness} />
             </div>
 
             {/* Đổi phòng */}

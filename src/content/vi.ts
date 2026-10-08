@@ -7,7 +7,7 @@ export interface Line { who: Speaker; text: string }
 export interface Chapter { day: number; intro: Line[]; win: Line[]; tease: string }
 
 export const vi = {
-  app: { name: 'Level Down Challenge', tagline: 'Đường bớt một nấc, chất thêm một bậc' },
+  app: { name: 'Level Down Challenge', shortName: 'Level Down', tagline: 'Đường bớt một nấc, chất thêm một bậc' },
   nav: { home: 'Phòng Gumi', journey: 'Bản đồ', leaderboard: 'Xếp hạng', admin: 'Quản trị' },
   common: {
     loading: 'Đang tải…', retry: 'Thử lại', back: 'Quay lại', logout: 'Đăng xuất',

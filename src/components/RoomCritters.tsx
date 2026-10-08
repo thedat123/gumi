@@ -157,10 +157,13 @@ function Aquarium() {
 
 /**
  * NPC nền — KHÁC NHAU theo cảnh:
- *  - Trong nhà: bình cá, robot hút bụi, chuột chạy, mối bay (tông trầm, "gia dụng").
- *  - Ngoài trời (ban công): bướm, chim, ong, bọ rùa, lá rơi (thiên nhiên).
+ *  - Phòng khách: hồ cá (sáng/tối theo đèn phòng), robot hút bụi, chuột chạy, mối bay.
+ *  - Nhà bếp: KHÔNG có hồ cá — chỉ robot hút bụi, chuột, mối bay.
+ *  - Ban công (outdoor): bướm, chim, ong, bọ rùa, lá rơi (thiên nhiên).
+ * brightness: độ sáng phòng (1 = sáng, thấp hơn = tối) để hồ cá mờ/tối theo đèn.
  */
-export function RoomCritters({ outdoor = false }: { outdoor?: boolean }) {
+export function RoomCritters({ variant = 'living', brightness = 1 }: { variant?: 'living' | 'kitchen' | 'garden'; brightness?: number }) {
+  const outdoor = variant === 'garden';
   if (outdoor) {
     return (
       <div className="npc-move pointer-events-none absolute inset-0 z-[5] overflow-hidden" aria-hidden="true">
@@ -175,7 +178,10 @@ export function RoomCritters({ outdoor = false }: { outdoor?: boolean }) {
   }
   return (
     <div className="npc-move pointer-events-none absolute inset-0 z-[5] overflow-hidden" aria-hidden="true">
-      <div className="npc" style={{ left: '2%', bottom: '6%' }}><Aquarium /></div>
+      {/* Hồ cá CHỈ ở phòng khách; sáng/tối theo đèn phòng (brightness). */}
+      {variant === 'living' && (
+        <div className="npc" style={{ left: '2%', bottom: '6%', filter: `brightness(${brightness}) saturate(${brightness < 1 ? 0.8 : 1})`, transition: 'filter 0.4s ease' }}><Aquarium /></div>
+      )}
       <div className="npc" style={{ top: '90%', ...a('npc-patrol 26s linear -9s infinite reverse') }}><Vacuum /></div>
       <div className="npc" style={{ top: '93%', ...a('npc-patrol 16s ease-in-out -5s infinite') }}><div style={a('npc-hop 0.34s ease-in-out infinite')}><Mouse /></div></div>
       <div className="npc" style={{ top: '13%', ...a('npc-cross 26s linear -6s infinite') }}><div style={a('npc-float 2.4s ease-in-out infinite')}><Butterfly hue="#B7A98E" hue2="#CFC3A8" /></div></div>

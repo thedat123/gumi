@@ -1,5 +1,4 @@
 import { lazy, Suspense, type ReactElement } from 'react';
-import { RoomCritters } from './RoomCritters';
 
 const PixiScene = lazy(() => import('./PixiScene').then((m) => ({ default: m.PixiScene })));
 
@@ -344,9 +343,8 @@ export function RoomScene({ act = 1, variant = 'living' }: { act?: 1 | 2 | 3; va
       {variant === 'kitchen' && <Kitchen p={p} />}
       {garden && <Garden p={p} />}
 
-      {/* Thảm + NPC sống động */}
+      {/* Thảm (NPC sống động do GumiRoom render overlay — tránh trùng + đồng bộ variant/đèn) */}
       <div className="absolute bottom-[6%] left-1/2 w-[76%] min-w-[260px] max-w-[560px] -translate-x-1/2"><Rug /></div>
-      <RoomCritters />
 
       <Suspense fallback={null}><PixiScene act={act === 3 ? 3 : 'room'} /></Suspense>
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(130% 95% at 50% 24%, transparent 56%, rgba(58,36,30,0.22) 100%)' }} />

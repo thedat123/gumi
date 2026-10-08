@@ -62,27 +62,31 @@ function Walkthrough({ platform }: { platform: Platform }) {
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <p className="px-2 text-center text-caption text-muted">{note}</p>
+    // Mobile: xếp dọc. Desktop (sm+): 2 cột — điện thoại trái · hướng dẫn phải → gọn chiều cao, không bị cắt.
+    <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
       <Phone platform={platform} step={step} />
 
-      {/* Thanh tiến trình chạy theo mỗi cảnh (như thanh tua video) */}
-      <div className="h-1 w-[180px] overflow-hidden rounded-full bg-border/50">
-        {!reduce.current && (
-          <span key={step} className="block h-full rounded-full bg-primary" style={{ transformOrigin: 'left', animation: `ig-progress ${STEP_MS}ms linear forwards` }} />
-        )}
-      </div>
+      <div className="flex w-full flex-col items-center gap-3 sm:flex-1 sm:items-start sm:text-left">
+        <p className="px-2 text-center text-caption text-muted sm:px-0 sm:text-left">{note}</p>
 
-      <p className="min-h-[2.75rem] px-2 text-center text-small font-medium text-text">
-        <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-caption font-bold text-on-primary align-[-2px]">{step + 1}</span>
-        {steps[step]}
-      </p>
+        <p className="min-h-[2.75rem] px-2 text-center text-small font-medium text-text sm:px-0 sm:text-left">
+          <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-caption font-bold text-on-primary align-[-2px]">{step + 1}</span>
+          {steps[step]}
+        </p>
 
-      <div className="flex gap-1.5" role="tablist" aria-label="Các bước">
-        {Array.from({ length: STEPS }).map((_, i) => (
-          <button key={i} type="button" role="tab" aria-selected={i === step} aria-label={`Bước ${i + 1}`} onClick={() => setStep(i)}
-            className={`h-2 rounded-full transition-all ${i === step ? 'w-5 bg-primary' : 'w-2 bg-border-strong/40'}`} />
-        ))}
+        {/* Thanh tiến trình chạy theo mỗi cảnh (như thanh tua video) */}
+        <div className="h-1 w-[180px] overflow-hidden rounded-full bg-border/50 sm:w-full">
+          {!reduce.current && (
+            <span key={step} className="block h-full rounded-full bg-primary" style={{ transformOrigin: 'left', animation: `ig-progress ${STEP_MS}ms linear forwards` }} />
+          )}
+        </div>
+
+        <div className="flex gap-1.5" role="tablist" aria-label="Các bước">
+          {Array.from({ length: STEPS }).map((_, i) => (
+            <button key={i} type="button" role="tab" aria-selected={i === step} aria-label={`Bước ${i + 1}`} onClick={() => setStep(i)}
+              className={`h-2 rounded-full transition-all ${i === step ? 'w-5 bg-primary' : 'w-2 bg-border-strong/40'}`} />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -23,14 +23,15 @@ export function InstallButton({ className = '' }: { className?: string }) {
       <button
         type="button"
         onClick={() => setHint(true)}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-3 text-caption font-bold text-on-primary shadow-pop outline-none transition-all hover:brightness-[1.06] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${className}`}
+        aria-label={vi.pwa.install}
+        className={`inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-2.5 text-caption font-bold text-on-primary shadow-pop outline-none transition-all hover:brightness-[1.06] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:px-3 ${className}`}
       >
-        <DownloadIcon /><span>{vi.pwa.install}</span>
+        <DownloadIcon /><span className="hidden sm:inline">{vi.pwa.install}</span>
       </button>
 
       {hint && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={() => setHint(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-5 text-center shadow-pop" onClick={(e) => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-5 text-center shadow-pop sm:max-w-lg sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div aria-hidden="true" className="mb-2 text-headline">📲</div>
             <h2 id="ios-install-title" className="text-title font-bold">{vi.pwa.title}</h2>
 
