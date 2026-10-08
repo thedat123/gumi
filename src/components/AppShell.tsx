@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
 import { InstallButton } from './InstallButton';
-import { InAppReminder } from './InAppReminder';
+import { ReminderNotifier } from './ReminderNotifier';
 import { Loading } from './Loading';
 import { useSession } from '../app/session';
 
@@ -14,8 +14,9 @@ import { useSession } from '../app/session';
  * - Các trang khác dùng thanh điều hướng dạng viên thuốc nổi ở dưới.
  */
 export function AppShell() {
-  const { session, signOut } = useSession();
+  const { session, profile, signOut } = useSession();
   const { pathname } = useLocation();
+  const isAdmin = profile?.role === 'admin';
   const isRoom = pathname === '/'; // màn chính đã có dock riêng → ẩn thanh điều hướng dưới
   const isMission = pathname.startsWith('/mission'); // màn nhiệm vụ: cột hẹp kiểu game mobile (GameShell tự bung full-bleed trên điện thoại)
   const isChapter = pathname.startsWith('/chapter'); // màn kể chuyện: full-bleed, tự căn max-w bên trong
@@ -23,6 +24,15 @@ export function AppShell() {
   const isJourney = pathname === '/journey'; // bản đồ hành trình chạy rộng hơn trên desktop
   const isOnboarding = pathname === '/onboarding'; // chưa có hồ sơ → không hiện nav (các mục cần hồ sơ)
   const immersive = isRoom || isGame;
+
+  // Bề rộng khung nội dung dùng CHUNG cho header + main (+ thanh nav dưới cùng max-w-md)
+  // → logo/nút trên header thẳng mép với khối nội dung, nhìn cân giữa & ăn khớp hơn.
+  const contentMax = isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-md';
+  // Trang full-bleed (phòng/màn chơi/bản đồ) giữ header gọn max-w-6xl thay vì tràn kín.
+  const headerMax = isRoom || isChapter || isMission || isJourney ? 'max-w-6xl' : contentMax;
+  // Trang dạng cột (landing, đăng nhập, hồ sơ…): canh GIỮA theo chiều dọc khi còn chỗ trống,
+  // nội dung dài hơn màn thì tự về trên & cuộn (nhờ my-auto) — đẹp cả desktop lẫn mobile.
+  const columnLayout = !immersive && !isJourney;
 
   const items = [
     { to: '/', end: true, label: vi.nav.home },
@@ -36,13 +46,19 @@ export function AppShell() {
     <div className="flex min-h-dvh flex-col">
       {/* Header dính trên — thanh chuẩn: chiều cao cố định, nội dung căn giữa, có max-width */}
       <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
+        <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
           <NavLink to="/" className="flex items-center gap-2.5">
             <img src="/icons/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-[11px] shadow-pop ring-2 ring-surface" />
             <span className="text-gradient text-body font-extrabold tracking-tight sm:text-title">{vi.app.name}</span>
           </NavLink>
           <div className="flex items-center gap-2">
             <InstallButton />
+            {isAdmin && (
+              <NavLink to="/admin" aria-label="Trang quản trị"
+                className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-danger/30 bg-danger/10 px-3 text-caption font-black uppercase tracking-wider text-danger shadow-soft transition-colors hover:bg-danger/15 active:scale-95">
+                <Icon name="paw" size={14} filled /> <span className="hidden sm:inline">Admin</span>
+              </NavLink>
+            )}
             {session ? (
               <button
                 onClick={() => signOut()}
@@ -62,14 +78,14 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className={`flex-1 ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
-        <div key={pathname} className={`mx-auto w-full ${immersive || isJourney ? '' : 'page-in'} ${isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-md'}`}>
+      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
+        <div key={pathname} className={`mx-auto w-full ${columnLayout ? 'my-auto' : ''} ${immersive || isJourney ? '' : 'page-in'} ${contentMax}`}>
           {/* Giữ header + nav khi trang con (chunk lazy) đang tải, chỉ vùng nội dung hiện spinner. */}
           <Suspense fallback={<Loading />}><Outlet /></Suspense>
         </div>
       </main>
 
-      <InAppReminder />
+      <ReminderNotifier />
 
       {/* Thanh điều hướng dưới (nổi) — ẩn ở màn Phòng Gumi, màn chơi & onboarding (chưa có hồ sơ) */}
       {session && !immersive && !isOnboarding && (

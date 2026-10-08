@@ -5,9 +5,11 @@
 .game-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .game-bg::before {
   content: ''; position: absolute; inset: -20%;
+  /* Lớp CUỐI (dưới cùng) phủ KÍN toàn vùng để KHÔNG lộ nền trang; các vầng sáng tô accent lên trên. */
   background: radial-gradient(70% 55% at 50% 8%, var(--g1) 0%, transparent 60%),
               radial-gradient(80% 60% at 85% 100%, var(--g2) 0%, transparent 60%),
-              radial-gradient(70% 60% at 10% 90%, var(--g3) 0%, transparent 55%);
+              radial-gradient(70% 60% at 10% 90%, var(--g3) 0%, transparent 55%),
+              linear-gradient(165deg, var(--g1) 0%, var(--g2) 52%, var(--g3) 100%);
   animation: game-hue 14s ease-in-out infinite alternate;
 }
 @keyframes game-hue { 0% { transform: scale(1) translateY(0); } 100% { transform: scale(1.08) translateY(-2%); } }

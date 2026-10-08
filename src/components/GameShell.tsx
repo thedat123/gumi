@@ -48,7 +48,7 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
           </div>
           {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px]">{hud}</div>}
         </header>
-        <div className="flex flex-1 flex-col">{children}</div>
+        <div className="flex flex-1 flex-col justify-center">{children}</div>
         {footer && <div className="game-premium-footer sticky bottom-0 z-20 mt-4 rounded-[20px] border border-white/60 bg-surface/90 p-2.5 shadow-[0_-8px_30px_rgba(51,24,55,.12)] backdrop-blur-xl">{footer}</div>}
       </div>
     </div>

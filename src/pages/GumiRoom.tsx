@@ -159,9 +159,10 @@ export function GumiRoom() {
                 </div>
 
                 {/* Gumi to giữa phòng (mục tiêu thả đồ ăn) */}
-                <div data-feed-target className="flex flex-1 flex-col items-center justify-end pb-1">
-                  <span className="mb-1 rounded-pill bg-surface/92 px-4 py-1 text-small font-bold text-primary shadow-soft backdrop-blur" data-testid="gumi-caption">{vi.gumi.stage[stage]}</span>
-                  <div className="room-gumi-grounded" style={{ filter: `brightness(${roomBrightness}) saturate(${lightsOn ? 1 : 0.82})` }}>
+                <div data-feed-target className="flex min-h-0 flex-1 flex-col items-center justify-end pb-2 lg:pb-3">
+                  <div className="room-gumi-grounded relative" style={{ filter: `brightness(${roomBrightness}) saturate(${lightsOn ? 1 : 0.82})` }}>
+                    {/* Nhãn "Sugar …" bám ngay trên đầu Gumi (không trôi lên che TV), nhỏ gọn vừa đủ đọc */}
+                    <span className="pointer-events-none absolute left-1/2 top-[4%] z-10 -translate-x-1/2 whitespace-nowrap rounded-pill bg-surface/92 px-2.5 py-0.5 text-caption font-bold text-primary shadow-soft backdrop-blur" data-testid="gumi-caption">{vi.gumi.stage[stage]}</span>
                     <Gumi state={s.gumi} size={240} interactive progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} feed={feed} />
                   </div>
                 </div>
@@ -235,7 +236,7 @@ export function GumiRoom() {
 
 function Stat({ icon, iconClass, value, label }: { icon: IconName; iconClass?: string; value: string; label?: string }) {
   return (
-    <span className="flex min-w-[4.5rem] flex-col items-center rounded-card border border-border bg-surface/92 px-3 py-1.5 shadow-soft backdrop-blur">
+    <span className="flex min-w-18 flex-col items-center rounded-card border border-border bg-surface/92 px-3 py-1.5 shadow-soft backdrop-blur">
       <span className="flex items-center gap-1 text-title font-bold leading-none">
         {icon === 'flame' ? <StreakFlame size={21} /> : <Icon name={icon} size={16} filled className={iconClass} />}{value}
       </span>

@@ -189,9 +189,9 @@ function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh
   const body = ctx.createLinearGradient(x, 0, x + w, 0);
   body.addColorStop(0, '#F2A0B8'); body.addColorStop(0.5, '#EE7DA0'); body.addColorStop(1, '#D45E82');
   ctx.fillStyle = body; round(ctx, x, y, w, hh, 8); ctx.fill();
-  // sọc kẹo
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = Math.max(3, w * 0.09);
-  for (let i = -hh; i < hh + w; i += w * 0.5) { ctx.beginPath(); ctx.moveTo(x, y + i); ctx.lineTo(x + w, y + i - w); ctx.stroke(); }
+  // highlight dọc mảnh bên trái cho thân ống có khối (thay cho sọc chéo cũ hay tràn ra ngoài)
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  round(ctx, x + w * 0.16, y, Math.max(3, w * 0.12), hh, 4); ctx.fill();
   // nắp
   ctx.fillStyle = '#C94E74';
   const capH = Math.min(18, w * 0.4);

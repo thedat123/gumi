@@ -355,6 +355,7 @@ export function createMockApi(): Api {
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
       await delay(null, 200); // mock: không lưu; bản thật gọi admin_set_checkin_status
     },
+    async photoUrl() { return null; }, // mock dùng emoji, không có ảnh thật
   };
 
   return {
@@ -403,6 +404,10 @@ export function createMockApi(): Api {
         lastCompletedDate: state.lastDoneDate,
       });
     },
+
+    // Mock không có server đẩy push — chỉ giả lập thành công để UI chạy mượt khi demo.
+    async savePushSubscription() { await delay(undefined); },
+    async deletePushSubscription() { await delay(undefined); },
 
     async getJourney(): Promise<Journey> {
       requireSession();

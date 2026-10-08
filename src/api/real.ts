@@ -109,6 +109,11 @@ const admin: AdminApi = {
   async setCheckinStatus(id, status: CheckinStatus, reason) {
     await rpc('admin_set_checkin_status', { p_id: id, p_status: status, p_reason: reason ?? null });
   },
+  async photoUrl(path) {
+    if (!path || !path.includes('/')) return null;         // không phải đường dẫn ảnh (mock dùng emoji)
+    const { data } = await db().storage.from('checkins').createSignedUrl(path, 3600);
+    return data?.signedUrl ?? null;
+  },
 };
 
 export function createSupabaseApi(): Api {
@@ -139,6 +144,12 @@ export function createSupabaseApi(): Api {
         lastCompletedDate: completed.data?.created_at ? vnDateKey(new Date(completed.data.created_at)) : null,
       };
     },
+    savePushSubscription: (sub) =>
+      rpc<void>('save_push_subscription', {
+        p_endpoint: sub.endpoint, p_p256dh: sub.p256dh, p_auth: sub.auth,
+        p_ua: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      }),
+    deletePushSubscription: (endpoint) => rpc<void>('delete_push_subscription', { p_endpoint: endpoint }),
     getJourney: () => rpc<Journey>('get_my_journey'),
     markPlayed: () => rpc<number>('mark_played'),
     getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),

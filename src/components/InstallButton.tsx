@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { vi } from '../content/vi';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
+import { InstallGuide } from './InstallGuide';
 
 /** Icon tải-về-máy (mũi tên vào khay) — không có trong bộ Icon nên vẽ inline. */
 function DownloadIcon() {
@@ -29,19 +30,16 @@ export function InstallButton({ className = '' }: { className?: string }) {
 
       {hint && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={() => setHint(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom w-full max-w-sm rounded-card bg-surface p-5 text-center shadow-pop" onClick={(e) => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-5 text-center shadow-pop" onClick={(e) => e.stopPropagation()}>
             <div aria-hidden="true" className="mb-2 text-headline">📲</div>
-            <h2 id="ios-install-title" className="text-title font-bold">{vi.pwa.iosTitle}</h2>
-            <p className="mt-2 text-small text-muted">{vi.pwa.iosNote}</p>
-            <ol className="mt-3 flex flex-col gap-2 text-left">
-              {vi.pwa.iosSteps.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-small">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-caption font-bold text-on-primary">{i + 1}</span>
-                  <span>{s}</span>
-                </li>
-              ))}
-            </ol>
-            <button type="button" onClick={() => setHint(false)} className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.pwa.close}</button>
+            <h2 id="ios-install-title" className="text-title font-bold">{vi.pwa.title}</h2>
+
+            {/* Video hướng dẫn thao tác (2 tab iPhone/Android, tự chạy lặp) */}
+            <div className="mt-4">
+              <InstallGuide />
+            </div>
+
+            <button type="button" onClick={() => setHint(false)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop">{vi.pwa.close}</button>
           </div>
         </div>
       )}

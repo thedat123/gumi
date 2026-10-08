@@ -148,9 +148,10 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
       {/* Các chặng */}
       {days.map((state, i) => <Node key={i + 1} day={i + 1} state={state} isToday={i + 1 === today} replayAll={replayAll} />)}
 
-      {/* Gumi đang đứng trên đường tại chặng hiện tại */}
-      <div ref={meRef} className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 82}px` }}>
-        <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={64} />
+      {/* Gumi đang đứng trên đường tại chặng hiện tại — to gấp đôi (≈1/2 mèo phòng khách) cho rõ;
+          offset top theo tỉ lệ size để CHÂN vẫn chạm đúng mốc. */}
+      <div ref={meRef} className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
+        <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
       </div>
 
       {/* Vạch xuất phát ở chân núi */}

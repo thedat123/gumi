@@ -71,3 +71,39 @@ VITE_DATA_SOURCE=auto
 Migrations đã được chạy thử trên Postgres 16 với stub tối thiểu cho schema
 `auth`/`storage` (`auth.users`, `auth.uid()`, `storage.buckets/objects/foldername`).
 Toàn bộ RPC + luồng admin + công thức điểm/chuỗi cho kết quả khớp `src/lib/scoring.ts`.
+
+## Thông báo đẩy (Web Push) — noti ra khay HĐH kể cả khi ĐÓNG app
+
+`migrations/0021_push_notifications.sql` dựng bảng `push_subscriptions` + `push_log` và các RPC:
+`save_push_subscription` / `delete_push_subscription` (client), `reminder_targets` / `claim_push_slot`
+(chỉ `service_role`). Việc GỬI do Edge Function `send-reminders` lo, pg_cron gọi mỗi phút.
+
+**Dòng chảy:** trình duyệt subscribe (VAPID public key) → lưu endpoint lên Supabase →
+edge function tới giờ nhắc thì đẩy push → service worker (`public/sw.js`, sự kiện `push`) hiện noti.
+Chống gửi trùng bằng `claim_push_slot` (mỗi user/ngày/mốc 1 lần). iOS: chỉ chạy khi PWA đã *Add to Home Screen* (≥16.4).
+
+Thiết lập một lần:
+```bash
+# 1) Sinh cặp khoá VAPID
+npm i -D web-push          # nếu chưa có
+npm run vapid
+#   → VITE_VAPID_PUBLIC_KEY vào .env.local (frontend)
+#   → private key dùng ở bước 3
+
+# 2) Chạy migration
+supabase db push           # gồm 0021_push_notifications.sql
+
+# 3) Deploy edge function + đặt secrets (private key CHỈ ở đây)
+supabase functions deploy send-reminders
+supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@domain
+
+# 4) Đặt lịch pg_cron (SQL Editor): làm theo supabase/functions/send-reminders/cron.sql
+```
+
+Gọi thử bằng tay (không cần chờ cron):
+```bash
+curl -X POST https://<ref>.supabase.co/functions/v1/send-reminders \
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>"
+# → {"ok":true,"targets":N,"sent":..,"skipped":..,"pruned":..}
+```
+⚠️ Lịch nhắc trong `supabase/functions/send-reminders/index.ts` phải GIỮ ĐỒNG BỘ với `src/lib/reminders.ts`.

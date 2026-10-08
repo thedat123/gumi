@@ -42,16 +42,33 @@ function gpuIsWeak(): boolean {
 
 function detect(): Tier {
   if (typeof window === 'undefined') return 'high';
-  const nav = navigator as Navigator & { deviceMemory?: number };
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const memKnown = typeof nav.deviceMemory === 'number';
   const mem = nav.deviceMemory ?? 4;                 // GB (một số trình duyệt không có → giả định 4)
   const cores = nav.hardwareConcurrency ?? 4;
+  const saveData = nav.connection?.saveData === true; // người dùng bật "tiết kiệm dữ liệu" → ưu tiên nhẹ
   const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
   const smallW = Math.min(window.screen?.width ?? 1024, window.innerWidth || 1024);
   const mobile = coarse && smallW <= 820;
 
-  if (gpuIsWeak() || mem <= 2 || cores <= 2) return 'low';
+  if (saveData || gpuIsWeak() || mem <= 2 || cores <= 2) return 'low';
+  // Điện thoại KHÔNG báo RAM + ít nhân thường là máy đời thấp → coi là yếu để chạy mượt.
+  if (mobile && !memKnown && cores <= 4) return 'low';
   if (mem <= 4 || cores <= 4 || (mobile && (mem <= 6 || cores <= 6))) return 'mid';
   return 'high';
+}
+
+/** Ép hạng đồ hoạ thủ công qua URL `?gfx=low|mid|high` hoặc localStorage['gfx'].
+ *  Hữu ích khi auto-detect bắt sai máy (người dùng máy siêu yếu có thể ép 'low' để chạy mượt). */
+function forcedTier(): Tier | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('gfx');
+    if (fromUrl) localStorage.setItem('gfx', fromUrl);         // nhớ lựa chọn cho các lần sau
+    const s = (fromUrl || localStorage.getItem('gfx') || '').toLowerCase();
+    if (s === 'low' || s === 'mid' || s === 'high') return s;
+  } catch { /* private mode */ }
+  return null;
 }
 
 let cached: Quality | null = null;
@@ -61,7 +78,7 @@ export function getQuality(): Quality {
   const reduce = typeof window !== 'undefined'
     && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       || document.documentElement.classList.contains('rm'));
-  const tier = detect();
+  const tier = forcedTier() ?? detect();
   cached = { tier, reduce, ...PRESET[tier] };
   return cached;
 }

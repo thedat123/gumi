@@ -172,22 +172,23 @@ export function Crossword() {
   );
 
   return (
-    <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
+    <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro} wide
       hud={<><GameStat icon="clock" value={mmss} tone={timeLeft <= 15 ? 'accent' : 'info'} /><GameStat icon="check" value={`${solvedCount}/${words.length}`} tone="success" /></>}>
-      <div className="flex flex-1 flex-col gap-4">
-        <div className="overflow-x-auto rounded-card border border-border bg-white p-2 shadow-soft">
-          <div className="mx-auto w-max">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 lg:flex-row lg:items-center lg:gap-10">
+        <div className="flex flex-col items-center gap-3">
+        <div className="mx-auto w-max max-w-full overflow-x-auto">
+          <div className="w-max">
             {Array.from({ length: cfg.rows }, (_, ri) => (
               <div key={ri} className="flex">
                 {Array.from({ length: cfg.cols }, (_, ci) => {
                   const key = K(ri + 1, ci + 1);
                   const cell = cells.get(key);
-                  if (!cell) return <span key={ci} className="h-7 w-7 sm:h-8 sm:w-8" />;
+                  if (!cell) return <span key={ci} className="h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11" />;
                   const isSolved = (cell.across != null && solved[cell.across]) || (cell.down != null && solved[cell.down]);
                   const inWord = activeCells.has(key);
                   const isActive = active?.key === key;
                   return (
-                    <span key={ci} className="relative h-7 w-7 sm:h-8 sm:w-8">
+                    <span key={ci} className="relative h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11">
                       {cell.num && <span className="pointer-events-none absolute left-[2px] top-0 z-10 text-[8px] font-bold leading-none text-muted">{cell.num}</span>}
                       <input
                         ref={(el) => { refs.current[key] = el; }}
@@ -208,8 +209,9 @@ export function Crossword() {
           </div>
         </div>
         <p className="-mt-2 text-center text-caption text-muted">{cfg.tapDir}</p>
+        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid w-full gap-3 sm:grid-cols-2">
           <ClueList dir="across" label={cfg.acrossLabel} />
           <ClueList dir="down" label={cfg.downLabel} />
         </div>

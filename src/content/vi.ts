@@ -721,12 +721,22 @@ export const vi = {
   toast: { success: 'Thành công', error: 'Có lỗi', info: 'Thông tin' },
   pwa: {
     install: 'Cài app',
+    title: 'Cài Level Down lên điện thoại',
+    tabIos: 'iPhone',
+    tabAndroid: 'Android',
     iosTitle: 'Cài Level Down lên iPhone',
     iosNote: 'iPhone không cho cài tự động — làm 3 bước sau (phải mở bằng Safari; Chrome/Cốc Cốc không cài được):',
     iosSteps: [
       'Bấm nút Chia sẻ ⬆️ ở thanh Safari.',
       'Kéo xuống, chọn "Thêm vào Màn hình chính".',
       'Bấm "Thêm" — xong, icon hiện ở màn hình chính!',
+    ],
+    androidTitle: 'Cài Level Down lên Android',
+    androidNote: 'Mở bằng Chrome rồi làm 3 bước sau (thường chỉ mất 5 giây):',
+    androidSteps: [
+      'Bấm nút menu ⋮ ở góc trên bên phải Chrome.',
+      'Chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").',
+      'Bấm "Cài đặt" — icon hiện ở màn hình chính!',
     ],
     close: 'Đã hiểu',
   },

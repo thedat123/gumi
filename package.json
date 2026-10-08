@@ -14,6 +14,7 @@
     "gen:narration": "tsx scripts/gen-narration.ts",
     "tokens": "node scripts/gen-theme.mjs",
     "icons": "node scripts/gen-icons.mjs",
+    "vapid": "node scripts/gen-vapid.mjs",
     "admin:migration": "node scripts/gen-admin-migration.mjs",
     "db:seed": "bash scripts/seed-all.sh",
     "check": "npm run typecheck && npm test && npm run build"
@@ -40,10 +41,12 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "msedge-tts": "^2.0.8",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vite": "^8.3.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "web-push": "^3.6.7"
   }
 }

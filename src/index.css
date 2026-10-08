@@ -57,10 +57,21 @@ html.gfx-low *, html.gfx-low *::before, html.gfx-low *::after {
 html.gfx-low body { background: var(--color-bg); }
 
 /* Khu vận hành là một sản phẩm riêng: nền, navigation và độ tương phản tách hẳn thế giới game. */
-.admin-portal { background: #f4f6fa; }
-.admin-sidebar { background: radial-gradient(110% 65% at 0% 0%, #373d56 0%, #202432 52%, #161923 100%); box-shadow: 12px 0 32px rgba(22,25,35,.08); }
-.admin-mark { border-radius: 12px; background: linear-gradient(145deg, #e55e7d, #a92a4d); box-shadow: 0 8px 18px rgba(184,53,86,.34); }
-.admin-portal main > div > div > h1, .admin-portal h1 { letter-spacing: -.035em; }
+.admin-portal { background: radial-gradient(130% 90% at 100% 0%, #eef1f8 0%, #f4f6fa 45%, #eef0f6 100%); }
+.admin-sidebar { background: radial-gradient(120% 70% at 0% 0%, #3b4162 0%, #222739 52%, #141825 100%); box-shadow: 14px 0 40px rgba(20,24,37,.12); }
+.admin-mark { border-radius: 13px; background: linear-gradient(145deg, #e55e7d, #a92a4d); box-shadow: 0 10px 22px rgba(184,53,86,.4), inset 0 1px 0 rgba(255,255,255,.25); }
+.admin-portal h1 { letter-spacing: -.035em; }
+/* Thanh nhấn bên trái mục nav đang chọn */
+.admin-navbar { position: absolute; left: -2px; top: 50%; height: 60%; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #f2a9bc, #e55e7d); transform: translateY(-50%); transition: opacity .2s ease; box-shadow: 0 0 10px rgba(229,94,125,.6); }
+.admin-userchip { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+/* Topbar kính mờ dính trên */
+.admin-topbar { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--color-border); }
+html.gfx-low .admin-topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--color-surface); }
+/* KPI card: dải màu nhấn trên + nền sạch */
+.admin-kpi { position: relative; overflow: hidden; }
+.admin-kpi::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--kpi, #B83556); opacity: .9; }
+.admin-row { transition: background-color .14s ease; }
+.admin-row:hover { background: rgba(184,53,86,.045); }
 
 /* Tủ đồ: preview dùng chính sprite SVG nên phụ kiện trong item card và trên sân khấu
    có cùng toạ độ gắn, tránh cảm giác icon minh hoạ khác với đồ đang mặc. */

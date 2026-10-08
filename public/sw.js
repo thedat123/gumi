@@ -25,6 +25,54 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Nhận WEB PUSH từ server (chạy cả khi app ĐÃ ĐÓNG) → hiện thông báo ra khay HĐH.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = { body: event.data ? event.data.text() : '' }; }
+  const title = data.title || 'Gumi nhắc bạn 🐱';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      tag: data.tag || 'gumi-reminder',   // trùng tag → thay thế, không chồng thông báo
+      renotify: true,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: data.url || '/' },
+      lang: 'vi',
+    }),
+  );
+});
+
+// Trình duyệt xoay khoá subscription: báo các tab đang mở re-sync (client sẽ subscribe + lưu lại).
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clients) client.postMessage({ type: 'push-resubscribe' });
+    })(),
+  );
+});
+
+// Bấm vào thông báo lời nhắc → đưa người dùng vào đúng chương trong ngày.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clients) {
+        if ('focus' in client) {
+          await client.focus();
+          if ('navigate' in client) { try { await client.navigate(url); } catch { /* cùng app, bỏ qua */ } }
+          return;
+        }
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(url);
+    })(),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;

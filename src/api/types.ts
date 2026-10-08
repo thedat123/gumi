@@ -203,6 +203,8 @@ export interface AdminApi {
   listCheckins(day: number): Promise<AdminCheckin[]>;
   listFlags(): Promise<AdminCheckin[]>;
   setCheckinStatus(id: string, status: CheckinStatus, reason?: string): Promise<void>;
+  /** URL ký tạm để XEM ảnh check-in (bucket riêng tư). Trả null nếu không phải đường dẫn ảnh. */
+  photoUrl(path: string): Promise<string | null>;
 }
 
 export interface Api {
@@ -213,6 +215,10 @@ export interface Api {
   updateProfile(patch: Partial<CreateProfileInput>): Promise<Profile>;
   getCampaignState(): Promise<CampaignState>;
   getReminderStatus(): Promise<ReminderStatus>;
+  /** Lưu Web Push subscription của thiết bị hiện tại (để server đẩy noti kể cả khi đóng app). */
+  savePushSubscription(sub: { endpoint: string; p256dh: string; auth: string }): Promise<void>;
+  /** Xoá Web Push subscription theo endpoint (khi người dùng tắt noti). */
+  deletePushSubscription(endpoint: string): Promise<void>;
   getJourney(): Promise<Journey>;
   /** Đánh dấu "bắt đầu chơi" hôm nay → cập nhật & trả về streak ngày liên tiếp. */
   markPlayed(): Promise<number>;

@@ -692,14 +692,12 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       flatTV(0, 2.8, -2.7, 2.0);                                   // TV treo tường trên tủ, nhỏ & hạ thấp để không bị HUD che (kênh GUMI TV)
       place('plantSmall1', -1.05, 1.28, -2.62, 0.55, 0); place('plantSmall1', 1.05, 1.28, -2.62, 0.55, 0);
       place('pottedPlant', -4.0, 0, -2.5, 1.55, 0); place('pottedPlant', 4.0, 0, -2.5, 1.55, 0);
-      // Thảm định khu CHÍNH GIỮA
-      place('rugRounded', 0, 0.03, -0.5, 4.6, 0, 0xDED3C2);
+      // Thảm định khu CHÍNH GIỮA — dời RA SAU + to hơn để nằm ngay DƯỚI CHÂN Gumi (hết cảm giác bay)
+      place('rugRounded', 0, 0.03, -1.3, 5.6, 0, 0xDED3C2);
       // HAI sofa ngà QUAY MẶT VÀO NHAU quanh bàn trà (cụm tiếp khách đối xứng)
       place('loungeSofa', -2.7, 0, -0.5, 3.0, Math.PI / 2, 0x46433F);   // sofa trái, hướng vào giữa
       place('loungeSofa', 2.7, 0, -0.5, 3.0, -Math.PI / 2, 0x46433F);   // sofa phải, hướng vào giữa
-      // Bàn trà gỗ óc chó chính giữa + sách xếp gọn
-      place('tableCoffee', 0, 0, -0.5, 1.6, 0, 0x40342A);
-      place('books', 0, 0.47, -0.5, 0.5, 0.25, 0xC7A96E);            // sách tông đồng/brass → nổi trên mặt bàn đậm
+      // (BỎ bàn trà + sách giữa phòng → chừa thảm trống cho Gumi ĐỨNG TRÊN THẢM, không còn như đứng trên bàn)
       // Hai bàn phụ đối xứng ngoài hai đầu sofa
       place('sideTable', -4.5, 0, -1.5, 0.9, 0, 0x40342A); place('sideTable', 4.5, 0, -1.5, 0.9, 0, 0x40342A);
       // Hai đèn cây đối xứng phía sau hai đầu sofa (trái BẤM bật/tắt)
@@ -708,7 +706,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       const plL = new THREE.PointLight(p.lamp, 3.0, 7.0, 2); plL.position.set(-4.4, 1.9, 0.5); scene.add(plL); lamp = plL;
       const plR = new THREE.PointLight(p.lamp, 3.0, 7.0, 2); plR.position.set(4.4, 1.9, 0.5); scene.add(plR);
       pendant(0, -0.5);                                         // đèn thả trần CHÍNH GIỮA trên bàn trà
-      contact(-2.7, -0.5, 3.4); contact(2.7, -0.5, 3.4); contact(0, -0.5, 1.6); contact(-4.0, -2.5, 1.7); contact(4.0, -2.5, 1.7);
+      contact(-2.7, -0.5, 3.4); contact(2.7, -0.5, 3.4); contact(-4.0, -2.5, 1.7); contact(4.0, -2.5, 1.7); // (bỏ bóng sàn giữa của bàn trà cũ)
     } else if (variant === 'kitchen') {
       featureWall(0xEDE6D8);                                          // tường kem sang, phẳng
       // TẤM ĐÁ MARBLE ĐẬM liền sau bếp (feature slab từ mặt quầy lên hút mùi) — kiểu 5 sao, KHÔNG phủ hết tường
@@ -754,26 +752,16 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       // Tường trên TỐI GIẢN: cửa sổ ôm hai bên tấm đá + đồng hồ căn giữa (bỏ tủ trên → thoáng, sáng, 5 sao)
       wallClock(0, 5.05, 0.42);                                      // đồng hồ căn GIỮA trên hút mùi (giờ hệ thống thật)
 
-      // ĐÈN THẢ trần trên ĐẢO BẾP — hai chao đối xứng
-      pendant(-0.85, -0.3, 0x3A3A3F, 5.0); pendant(0.85, -0.3, 0x3A3A3F, 5.0);
-
-      // ===== ĐẢO BẾP kiểu WATERFALL (mặt đá tràn xuống 2 cạnh) — nét hiện đại nhất =====
-      box(2.8, 1.0, 1.3, mat(0xEDE7DC, 0.55), 0, 0.5, -0.3);            // thân đảo phẳng LÌ, không tay nắm (handleless)
-      box(3.12, 0.13, 1.54, mat(0x6F4E34, 0.35, 0.12), 0, 1.06, -0.3); // mặt bàn gỗ óc chó dày
-      box(0.13, 1.06, 1.54, mat(0x6F4E34, 0.35, 0.12), -1.495, 0.53, -0.3); // waterfall cạnh TRÁI
-      box(0.13, 1.06, 1.54, mat(0x6F4E34, 0.35, 0.12), 1.495, 0.53, -0.3);  // waterfall cạnh PHẢI
-      // 2 ghế đẩu tối giản (chân đen mảnh + đệm gỗ)
-      for (const sx of [-0.78, 0.78]) { cyl(0.15, 0.18, 0.72, 22, mat(0x2A2A2E, 0.4, 0.55), sx, 0.36, 0.64); cyl(0.2, 0.2, 0.05, 26, mat(0x5A4636, 0.5), sx, 0.73, 0.64); contact(sx, 0.64, 0.85); }
-      // Điểm nhấn TỐI GIẢN trên đảo: 1 chậu cây + khay phẳng (đã bỏ nồi/thớt/dao thô)
-      place('plantSmall1', -0.65, 1.13, -0.35, 0.5, 0);
-      box(0.52, 0.03, 0.3, mat(0x2E2E33, 0.35, 0.3), 0.55, 1.14, -0.1);   // khay decor phẳng, gọn
+      // (BỎ đảo bếp + 2 ghế đẩu + đồ trên đảo + đèn thả giữa → chừa sàn+thảm trống cho Gumi
+      //  ĐỨNG TRÊN THẢM, không còn kẹt dưới mặt đảo. Dãy bếp + thiết bị ở tường sau vẫn đầy đủ.)
+      pendant(-2.6, -2.4, 0x3A3A3F, 5.0); pendant(2.6, -2.4, 0x3A3A3F, 5.0);   // đèn thả dời về TRÊN QUẦY BẾP (tường sau)
 
       // Thảm runner CHÍNH GIỮA · cây góc đối xứng · đèn tổng
       place('rugRectangle', 0, 0.02, 0.9, 3.4, 0, 0xDCD2C2);
       place('pottedPlant', -5.2, 0, 0.6, 1.4, 0); place('pottedPlant', 5.2, 0, 0.6, 1.4, 0);
       const kGlow = new THREE.PointLight(0xFFF1D6, 2.4, 15, 2); kGlow.position.set(0, 6.7, 0.6); scene.add(kGlow);
       lamp = tableLamp(5.2, -1.2, false);                           // đèn đứng góc phải (BẤM bật/tắt)
-      contact(0, -0.3, 3.6); contact(-5.2, 0.6, 1.6); contact(5.2, 0.6, 1.6);
+      contact(-5.2, 0.6, 1.6); contact(5.2, 0.6, 1.6);
     } else {
       floorMat.map!.repeat.set(3, 3);
       // LAN CAN gỗ + tay vịn
@@ -814,17 +802,12 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       for (let i = 0; i <= 14; i++) { const t = i / 14, bx = -5 + t * 10, byy = 3.2 - Math.sin(t * Math.PI) * 0.6; const bulb = new THREE.Mesh(track(new THREE.SphereGeometry(0.07, 8, 6)), track(new THREE.MeshBasicMaterial({ color: i % 2 ? 0xFFE29A : 0xFFF3D6 }))); bulb.position.set(bx, byy, -1.2); scene.add(bulb); }
       const fl1 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl1.position.set(-2.4, 3, -0.8); scene.add(fl1);
       const fl2 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl2.position.set(2.4, 3, -0.8); scene.add(fl2);
-      // Thảm ngoài trời CHÍNH GIỮA
+      // Thảm ngoài trời CHÍNH GIỮA — chừa trống cho Gumi ĐỨNG TRÊN THẢM (đã BỎ bàn bistro + nến giữa)
       place('rugRounded', 0, 0.02, 0.6, 3.8, 0, 0xDBCBB2);
-      // BÀN BISTRO CHÍNH GIỮA + 2 tách nước đối xứng
-      cyl(0.08, 0.1, 0.95, 12, mat(0x8A5E3C, 0.6), 0, 0.48, 0.3); cyl(0.64, 0.64, 0.12, 28, mat(0xEAD9C2, 0.7), 0, 1.02, 0.3); contact(0, 0.3, 1.7);
-      cyl(0.09, 0.07, 0.1, 12, mat(0xFFFFFF, 0.5), -0.28, 1.13, 0.3); cyl(0.09, 0.07, 0.1, 12, mat(0xFFFFFF, 0.5), 0.28, 1.13, 0.3);
-      // Đèn nến trên bàn — ánh ấm chill buổi tối
-      box(0.15, 0.2, 0.15, track(new THREE.MeshStandardMaterial({ color: 0xE8C98A, roughness: 0.4, emissive: 0xFFD98A, emissiveIntensity: 0.6 })), 0, 1.16, 0.3);
-      const candle = new THREE.PointLight(0xFFCE86, 1.1, 3.2, 2); candle.position.set(0, 1.34, 0.3); scene.add(candle);
       // Nệm ngồi bệt (pouf) — góc thư giãn ngắm phố
       cyl(0.42, 0.46, 0.34, 24, mat(0xC97A5A, 0.9), -3.0, 0.17, 1.9); contact(-3.0, 1.9, 1.35);
-      // HAI ghế MÀU ĐỒNG NHẤT (ngà), đối xứng, cùng hướng vào bàn
+      const candle = new THREE.PointLight(0xFFCE86, 0.8, 4, 2); candle.position.set(-3.0, 0.8, 1.9); scene.add(candle); // ánh ấm nhẹ ở góc pouf
+      // HAI ghế (ngà), đối xứng, cùng hướng vào GIỮA (giờ hướng về Gumi trên thảm)
       place('loungeChair', -1.7, 0, 0.5, 1.2, 0.5, 0x4E4E52); place('loungeChair', 1.7, 0, 0.5, 1.2, -0.5, 0x4E4E52);
       contact(-1.7, 0.5, 1.5); contact(1.7, 0.5, 1.5);
       // ĐÈN LỒNG phát sáng ở 2 góc ĐỐI XỨNG (ấm cúng)
