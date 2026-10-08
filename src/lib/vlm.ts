@@ -8,9 +8,13 @@ const KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 // nên thử lần lượt: model nào đang rảnh sẽ trả nhanh; model nghẽn thì bỏ qua NGAY (timeout) thay vì chờ ~20s.
 // Đặt VITE_GEMINI_MODEL để ép dùng đúng 1 model.
 const ENV_MODEL = import.meta.env.VITE_GEMINI_MODEL as string | undefined;
-const MODELS = ENV_MODEL ? [ENV_MODEL] : ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.5-flash'];
+// gemini-2.5-* đã bị khoá với tài khoản mới (404) → dùng 3.x. gemini-3.1-flash-lite cho phép TẮT
+// "thinking" (thinkingBudget:0) nên nhanh nhất; các model/alias khác từ chối budget 0 (400) và chậm hơn.
+const MODELS = ENV_MODEL ? [ENV_MODEL] : ['gemini-3.1-flash-lite', 'gemini-flash-lite-latest'];
+// Model hỗ trợ TẮT thinking qua thinkingBudget:0 (các model khác trả 400 nếu gửi tham số này).
+const THINKING_OFF = new Set(['gemini-3.1-flash-lite']);
 const urlOf = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${KEY}`;
-const TIMEOUT_MS = 4500; // bỏ qua model treo sau 4.5s (ưu tiên trả nhanh)
+const TIMEOUT_MS = 15000; // key chậm + ảnh lớn: cho tới 15s/model rồi mới bỏ qua (trước 4.5s cắt oan model đang chạy đúng).
 
 export const vlmAvailable = !!KEY;
 
@@ -58,10 +62,14 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
     const { compressImage } = await import('./image');
     const small = await compressImage(file, 1280, 0.8); // 1280px: đọc được TEM nhỏ trên ly; vẫn nhẹ để upload + suy diễn nhanh
     const { mime, data } = await toBase64(small);
-    const body = JSON.stringify({
+    // Body dựng THEO TỪNG MODEL: chỉ model trong THINKING_OFF mới gắn thinkingBudget:0 (tắt thinking → nhanh);
+    // gửi tham số này cho model không hỗ trợ sẽ bị 400. maxOutputTokens rộng để JSON ('reason') không bị cắt.
+    const bodyFor = (model: string) => JSON.stringify({
       contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data } }] }],
-      // thinkingBudget: 0 → TẮT bước "suy nghĩ" của Gemini 2.5 Flash-Lite (giảm mạnh độ trễ, thường về dưới ~1s).
-      generationConfig: { temperature: 0, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 }, maxOutputTokens: 220 },
+      generationConfig: {
+        temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 500,
+        ...(THINKING_OFF.has(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+      },
     });
 
     for (const model of MODELS) {
@@ -69,13 +77,13 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
       const to = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
       let res: Response;
       try {
-        res = await fetch(urlOf(model), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: ctrl.signal });
+        res = await fetch(urlOf(model), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: bodyFor(model), signal: ctrl.signal });
       } catch {
         continue; // timeout / lỗi mạng → thử model kế
       } finally {
         clearTimeout(to);
       }
-      if (res.status === 503 || res.status === 429 || res.status === 404) continue; // quá tải/không có → model kế
+      if (res.status === 503 || res.status === 429 || res.status === 404 || res.status === 400) continue; // quá tải/không có/sai tham số → model kế
       if (!res.ok) return { ...EMPTY, available: true };
       const j = await res.json();
       const text: string = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
