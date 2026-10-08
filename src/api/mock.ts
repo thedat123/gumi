@@ -475,7 +475,7 @@ export function createMockApi(): Api {
       });
     },
 
-    async submitCheckin(day, level, file): Promise<CheckinResult> {
+    async submitCheckin(day, level, file, needsReview = false): Promise<CheckinResult> {
       requireSession();
       await delay(null, 700);
       const testing = isUnlocked();
@@ -483,13 +483,24 @@ export function createMockApi(): Api {
       ensurePlayable(day);
       if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
       if (!testing && state.completed.includes(day)) throw new ApiError('already_done');
+      const points = vi.missions[day - 1]?.points ?? 0;
+
+      if (needsReview) {
+        // AI không nhận diện được → gửi admin duyệt tay. Ghi nhận tạm thời, thêm ảnh pending để demo màn Admin.
+        ADMIN_SEED.unshift({ id: `c-rev-${Date.now()}`, user: state.profile?.name ?? 'Bạn', day, status: 'pending', emoji: '🥤', flag: 'AI chưa nhận diện — chờ duyệt tay' });
+        if (LEVEL_DAYS.includes(day) && [70, 50, 30, 0].includes(level)) state.levels[day] = level;
+        advance(day);
+        save();
+        return { ok: true, points, pending: true };
+      }
+
       if (LEVEL_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
       const maxLevel = drinkTarget(day, state.profile?.level ?? 100);
       if (maxLevel !== null && level > maxLevel) throw new ApiError('level_not_allowed');
       if (LEVEL_DAYS.includes(day)) state.levels[day] = level;
       advance(day);
       save();
-      return { ok: true, points: vi.missions[day - 1]?.points ?? 0 };
+      return { ok: true, points };
     },
 
     async getQuizQuestions(): Promise<QuizQuestion[]> {

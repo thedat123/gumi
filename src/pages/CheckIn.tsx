@@ -33,7 +33,8 @@ export function CheckIn() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [phase, setPhase] = useState<'idle' | 'uploading' | 'success'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'uploading' | 'reviewing' | 'success'>('idle');
+  const [pending, setPending] = useState(false); // ảnh gửi admin duyệt tay (chờ duyệt)
   const [error, setError] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
   const [ocr, setOcr] = useState<Ocr>('idle');
@@ -128,6 +129,8 @@ export function CheckIn() {
   };
 
   const canSubmit = !!file && (!needsStamp || verdict?.kind === 'pass');
+  // AI chưa pass (ảnh sai hoặc AI lỗi/bận) nhưng đã có ảnh → cho phép gửi admin duyệt tay.
+  const canReview = needsStamp && !!file && !!verdict && verdict.kind !== 'pass';
 
   const submit = async () => {
     setPhase('uploading');
@@ -137,6 +140,7 @@ export function CheckIn() {
       const level: SugarLevel = needsLevel ? storedSugarLevel(verdict!.percent!) : 0;
       await api.submitCheckin(day, level, file ?? '');
       playSfx('win');
+      setPending(false);
       setPhase('success');
     } catch (err) {
       setPhase('idle');
@@ -145,17 +149,43 @@ export function CheckIn() {
     }
   };
 
+  // Fallback: AI không nhận diện được → gửi ảnh cho admin duyệt tay (ghi nhận tạm thời, chờ duyệt).
+  const submitForReview = async () => {
+    if (!file) return;
+    setShowVerdict(false);
+    setPhase('reviewing');
+    setError(null);
+    try {
+      const level: SugarLevel = needsLevel && verdict?.percent != null ? storedSugarLevel(verdict.percent) : 0;
+      const r = await api.submitCheckin(day, level, file, true);
+      playSfx('win');
+      setPending(r.pending !== false);
+      setPhase('success');
+    } catch (err) {
+      setPhase('idle');
+      setError(messageFor(err));
+      setRetryable(errorCode(err) === 'network');
+    }
+  };
+
+  const retake = () => {
+    setPreview((o) => { if (o) URL.revokeObjectURL(o); return null; });
+    setFileName(null); setFile(null); setOcr('idle'); setVlm(null); setVerdict(null); setShowVerdict(false);
+  };
+
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
 
   if (phase === 'success') {
-    return <CompletionPanel day={day} points={m.points} note="Ảnh check-in của bạn đã được ghi nhận." />;
+    return <CompletionPanel day={day} points={m.points} note={pending ? vi.checkin.review.pendingNote : 'Ảnh check-in của bạn đã được ghi nhận.'} />;
   }
 
   const sugarSeen = vlm?.sugarPercent ?? null;
 
   return (
     <GameShell act={actOfDay(day)} title={`Ngày ${m.day}: ${m.title}`} intro={m.description}
-      footer={<Button onClick={submit} loading={phase === 'uploading'} disabled={!canSubmit} block>{phase === 'uploading' ? vi.checkin.uploading : vi.checkin.submit}</Button>}>
+      footer={canReview
+        ? <Button onClick={submitForReview} loading={phase === 'reviewing'} block>{phase === 'reviewing' ? vi.checkin.review.sending : vi.checkin.review.cta}</Button>
+        : <Button onClick={submit} loading={phase === 'uploading'} disabled={!canSubmit} block>{phase === 'uploading' ? vi.checkin.uploading : vi.checkin.submit}</Button>}>
       {error && <div className="mb-2"><Banner kind="error" action={retryable ? <Button variant="secondary" onClick={submit}>{vi.checkin.retry}</Button> : undefined}>{error}</Banner></div>}
 
       <Card className="flex flex-col gap-3">
@@ -212,17 +242,25 @@ export function CheckIn() {
 
             {ocr === 'unknown' && <Banner kind="info">{detail}</Banner>}
             {ocr === 'fail' && (
-              <Banner kind="error" action={<Button variant="secondary" onClick={() => { setPreview((o) => { if (o) URL.revokeObjectURL(o); return null; }); setFileName(null); setOcr('idle'); setVlm(null); }}>{vi.checkin.ocr.retake}</Button>}>
+              <Banner kind="error" action={<Button variant="secondary" onClick={retake}>{vi.checkin.ocr.retake}</Button>}>
                 {detail || vlm?.reason || vi.checkin.ocr.fail}
               </Banner>
             )}
+            {/* AI chưa pass → hướng dẫn gửi admin duyệt tay (nút ở footer "Nhờ ban tổ chức duyệt tay"). */}
+            {canReview && <p className="rounded-control border border-info/25 bg-info/5 px-3 py-2 text-caption leading-relaxed text-muted">{vi.checkin.review.hint}</p>}
           </div>
         )}
         {needsStamp && <p className="text-caption leading-relaxed text-muted">{vi.checkin.ocr.hint}</p>}
       </Card>
       {showVerdict && verdict && <FeatureModal title={verdict.title} eyebrow="Kết quả kiểm tra của Gumi" tone={verdict.kind === 'pass' ? 'success' : verdict.kind === 'fail' ? 'error' : 'info'} onClose={() => setShowVerdict(false)}
-        action={<Button block variant={verdict.kind === 'pass' ? 'secondary' : 'primary'} onClick={() => setShowVerdict(false)}>{verdict.kind === 'pass' ? 'Tiếp tục gửi check-in' : 'Đã hiểu, chụp lại ảnh'}</Button>}>
+        action={verdict.kind === 'pass'
+          ? <Button block variant="secondary" onClick={() => setShowVerdict(false)}>Tiếp tục gửi check-in</Button>
+          : <div className="flex w-full flex-col gap-2">
+              <Button block onClick={submitForReview}>{vi.checkin.review.cta}</Button>
+              <Button block variant="secondary" onClick={retake}>{vi.checkin.ocr.retake}</Button>
+            </div>}>
         <p>{verdict.detail}</p>
+        {verdict.kind !== 'pass' && <p className="mt-2 text-caption leading-relaxed text-muted">{vi.checkin.review.hint}</p>}
       </FeatureModal>}
     </GameShell>
   );

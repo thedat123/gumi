@@ -153,14 +153,14 @@ export function createSupabaseApi(): Api {
     getJourney: () => rpc<Journey>('get_my_journey'),
     markPlayed: () => rpc<number>('mark_played'),
     getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),
-    async submitCheckin(day, level: SugarLevel, file): Promise<CheckinResult> {
+    async submitCheckin(day, level: SugarLevel, file, needsReview = false): Promise<CheckinResult> {
       const s = (await auth.getSession());
       if (!s) throw new ApiError('forbidden');
       const path = `${s.userId}/${day}.jpg`;
       const photo = typeof file === 'string' ? new Blob([file], { type: 'image/jpeg' }) : file;
       const { error: upErr } = await db().storage.from('checkins').upload(path, photo, { upsert: true, contentType: photo.type || 'image/jpeg' });
       if (upErr) throw new ApiError('network', upErr.message);
-      return rpc<CheckinResult>('submit_checkin', { p_day: day, p_level: level, p_path: path });
+      return rpc<CheckinResult>('submit_checkin', { p_day: day, p_level: level, p_path: path, p_needs_review: needsReview });
     },
     useStreakFreeze: () => rpc<number>('use_streak_freeze'),
     getQuizQuestions: () => rpc<QuizQuestion[]>('get_quiz_questions'),

@@ -23,7 +23,10 @@ export type DrinkVerdict = { kind: 'pass' | 'fail' | 'unknown'; title: string; d
 
 export function judgeDrink(day: number, baseline: SugarLevel, evidence: VlmResult | null): DrinkVerdict {
   const target = drinkTarget(day, baseline);
-  if (!evidence?.ran || !evidence.ok) return { kind: 'fail', title: 'Ảnh chưa hợp lệ', detail: evidence?.reason || 'Hãy chụp rõ ly, bình nước hoặc tem/hoá đơn đồ uống.', percent: null };
+  // AI chạy KHÔNG xong (mạng/quá tải/thiết bị yếu) — KHÔNG phải ảnh sai → cho gửi admin duyệt tay.
+  if (!evidence?.ran) return { kind: 'unknown', title: 'AI chưa kiểm được ảnh', detail: evidence?.reason || 'AI đang bận hoặc thiết bị chưa nhận diện được. Bạn có thể gửi ban tổ chức duyệt tay.', percent: null };
+  // AI chạy xong nhưng KHÔNG thấy đồ uống → ảnh sai thật, nên chụp lại (vẫn có thể gửi duyệt tay nếu chắc).
+  if (!evidence.ok) return { kind: 'fail', title: 'Ảnh chưa hợp lệ', detail: evidence.reason || 'Hãy chụp rõ ly, bình nước hoặc tem/hoá đơn đồ uống.', percent: null };
   if (day === 10) {
     const noSugar = evidence.sugarPercent === 0 || (evidence.sugarPercent === null && evidence.isUnsweetened);
     if (evidence.sugarPercent !== null && evidence.sugarPercent > 0) return {

@@ -260,6 +260,13 @@ export const vi = {
       hint: '📸 Chụp thấy rõ LY NƯỚC hoặc tem/nhãn (tên, size, % đường) để Gumi ghi nhận nhé. Ảnh được kiểm tra ngay trên máy bạn, không gửi đi đâu cả.',
       retake: 'Chụp lại ảnh khác',
     },
+    // Fallback khi AI không nhận diện được → gửi ban tổ chức duyệt tay.
+    review: {
+      cta: 'Nhờ ban tổ chức duyệt tay',
+      sending: 'Đang gửi duyệt tay…',
+      hint: 'AI chưa chắc chắn về ảnh này. Nếu đúng là ly/tem đồ uống thật của bạn, gửi để ban tổ chức duyệt tay (ảnh giả sẽ bị loại & trừ điểm).',
+      pendingNote: 'Ảnh đã gửi ban tổ chức DUYỆT TAY. Bạn vẫn được ghi nhận ngày hôm nay trong lúc chờ — nếu ảnh không hợp lệ, ngày này sẽ bị gỡ.',
+    },
   },
   leaderboard: {
     title: 'Sugar Slayer', me: 'Bạn', empty: 'Chưa có ai lên bảng. Hãy là người đầu tiên!', loading: 'Đang tải bảng xếp hạng…', error: 'Không tải được bảng xếp hạng.', retry: 'Thử lại',

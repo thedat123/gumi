@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { vi } from '../content/vi';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { InstallGuide } from './InstallGuide';
@@ -29,9 +30,11 @@ export function InstallButton({ className = '' }: { className?: string }) {
         <DownloadIcon /><span className="hidden sm:inline">{vi.pwa.install}</span>
       </button>
 
-      {hint && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={() => setHint(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-5 text-center shadow-pop sm:max-w-lg sm:p-6" onClick={(e) => e.stopPropagation()}>
+      {/* Portal ra document.body: tránh bị header (có backdrop-filter) biến thành containing block
+          cho position:fixed → modal sẽ luôn phủ đúng viewport, không bị cắt mép trên trên desktop. */}
+      {hint && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-text/50 p-4 sm:items-center" onMouseDown={(e) => { if (e.target === e.currentTarget) setHint(false); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="ios-install-title" className="safe-bottom max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-5 text-center shadow-pop sm:max-w-lg sm:p-6">
             <div aria-hidden="true" className="mb-2 text-headline">📲</div>
             <h2 id="ios-install-title" className="text-title font-bold">{vi.pwa.title}</h2>
 
@@ -53,7 +56,8 @@ export function InstallButton({ className = '' }: { className?: string }) {
 
             <button type="button" onClick={() => setHint(false)} className={`inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-semibold ${canInstall ? 'mt-2 text-muted' : 'mt-5 bg-primary text-on-primary shadow-pop'}`}>{vi.pwa.close}</button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

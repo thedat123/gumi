@@ -115,6 +115,7 @@ export interface Summary {
 export interface CheckinResult {
   ok: true;
   points: number;
+  pending?: boolean; // true khi ảnh đang CHỜ admin duyệt tay (AI chưa xác nhận được)
 }
 
 export interface AdminCheckin {
@@ -223,7 +224,8 @@ export interface Api {
   /** Đánh dấu "bắt đầu chơi" hôm nay → cập nhật & trả về streak ngày liên tiếp. */
   markPlayed(): Promise<number>;
   getLeaderboard(): Promise<Leaderboard>;
-  submitCheckin(day: number, level: SugarLevel, file: File | string): Promise<CheckinResult>;
+  /** needsReview=true → AI không nhận diện được, gửi ảnh cho admin duyệt tay (ghi nhận tạm thời, chờ duyệt). */
+  submitCheckin(day: number, level: SugarLevel, file: File | string, needsReview?: boolean): Promise<CheckinResult>;
   /** Tiêu 1 Bùa để CỨU chuỗi khi lỡ đúng 1 ngày (không bỏ qua chặng); trả về chuỗi được giữ. */
   useStreakFreeze(): Promise<number>;
   getQuizQuestions(): Promise<QuizQuestion[]>;
