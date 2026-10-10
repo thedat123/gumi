@@ -24,7 +24,7 @@ export async function ensureNotificationPermission(): Promise<NotificationPermis
 }
 
 /** Bắn một thông báo ra khay hệ điều hành qua Service Worker. Trả về true nếu bắn được. */
-export async function showReminderNotification(opts: { tag: string; body: string; url: string }): Promise<boolean> {
+export async function showReminderNotification(opts: { tag: string; body: string; url: string; requireInteraction?: boolean }): Promise<boolean> {
   if (!notificationsSupported() || Notification.permission !== 'granted') return false;
   try {
     const reg = await navigator.serviceWorker.ready;
@@ -34,6 +34,7 @@ export async function showReminderNotification(opts: { tag: string; body: string
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       data: { url: opts.url },
+      requireInteraction: opts.requireInteraction ?? false, // giữ hiện đến khi tự tắt (hữu ích cho noti thử)
       // @ts-expect-error — renotify chưa có trong lib.dom nhưng được hỗ trợ rộng rãi
       renotify: true,
       lang: 'vi',

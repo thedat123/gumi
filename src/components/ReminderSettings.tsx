@@ -28,14 +28,14 @@ export function ReminderSettings() {
       if (p !== 'granted') { setMsg({ kind: 'error', text: 'Bạn đã chặn thông báo. Hãy bật lại trong cài đặt trình duyệt rồi thử lại.' }); return; }
       const ok = await subscribePush();
       setSubscribed(ok);
-      if (ok) { await showReminderNotification({ tag: 'gumi-test', body: 'Đã bật nhắc nhở! Gumi sẽ nhắc bạn mỗi ngày nhé 🐱', url: '/' }); setMsg({ kind: 'success', text: 'Đã bật — bạn vừa nhận một thông báo thử.' }); }
+      if (ok) { await showReminderNotification({ tag: `gumi-test-${Date.now()}`, body: 'Đã bật nhắc nhở! Gumi sẽ nhắc bạn mỗi ngày nhé 🐱', url: '/' }); setMsg({ kind: 'success', text: 'Đã bật — bạn vừa nhận một thông báo thử.' }); }
       else setMsg({ kind: 'error', text: 'Chưa đăng ký được. Trên iPhone cần "Thêm vào MH chính" rồi mở từ app.' });
     } finally { setBusy(false); }
   };
 
   const test = async () => {
     setBusy(true); setMsg(null);
-    const ok = await showReminderNotification({ tag: 'gumi-test', body: 'Đây là thông báo thử từ Gumi 🐱', url: '/' });
+    const ok = await showReminderNotification({ tag: `gumi-test-${Date.now()}`, body: 'Đây là thông báo thử từ Gumi 🐱', url: '/', requireInteraction: true });
     setMsg(ok ? { kind: 'success', text: 'Đã gửi thông báo thử — kiểm tra khay thông báo nhé.' } : { kind: 'error', text: 'Chưa gửi được. Kiểm tra quyền thông báo.' });
     setBusy(false);
   };
