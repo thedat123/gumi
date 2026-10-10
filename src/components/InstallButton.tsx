@@ -25,7 +25,7 @@ export function InstallButton({ className = '' }: { className?: string }) {
         type="button"
         onClick={() => setHint(true)}
         aria-label={vi.pwa.install}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-2.5 text-caption font-bold text-on-primary shadow-pop outline-none transition-all hover:brightness-[1.06] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:px-3 ${className}`}
+        className={`inline-flex h-9 items-center gap-1.5 rounded-pill border border-black/15 bg-primary px-2.5 text-caption font-bold text-on-primary shadow-pop outline-none transition-all hover:brightness-[1.06] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:px-3 ${className}`}
       >
         <DownloadIcon /><span className="hidden sm:inline">{vi.pwa.install}</span>
       </button>
@@ -48,7 +48,7 @@ export function InstallButton({ className = '' }: { className?: string }) {
               <button
                 type="button"
                 onClick={async () => { await promptInstall(); setHint(false); }}
-                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control bg-primary px-5 font-semibold text-on-primary shadow-pop"
+                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary shadow-pop"
               >
                 <DownloadIcon /><span>{vi.pwa.install}</span>
               </button>

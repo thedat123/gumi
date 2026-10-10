@@ -35,7 +35,7 @@ export function Wall() {
 
   if (posted) {
     return <CompletionPanel day={21} points={storyProof ? 25 : 15} note={vi.wall.postedSub}
-      action={<Link to="/summary" className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-5 font-bold text-on-primary shadow-pop">{vi.wall.viewCard}</Link>} />;
+      action={<Link to="/summary" className="inline-flex min-h-12 w-full items-center justify-center rounded-control border border-black/15 bg-primary px-5 font-bold text-on-primary shadow-pop">{vi.wall.viewCard}</Link>} />;
   }
 
   return (

@@ -78,7 +78,7 @@ export function AppShell() {
             ) : (
               <span className="flex items-center gap-1.5">
                 {pathname !== '/login' && <NavLink to="/login" className={`h-9 items-center whitespace-nowrap rounded-control px-3 text-small font-semibold text-primary transition-colors hover:bg-primary/5 ${pathname !== '/signup' ? 'hidden sm:inline-flex' : 'inline-flex'}`}>{vi.auth.login}</NavLink>}
-                {pathname !== '/signup' && <NavLink to="/signup" className="inline-flex h-9 items-center whitespace-nowrap rounded-control bg-primary px-3.5 text-small font-semibold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-95">{vi.signup.title}</NavLink>}
+                {pathname !== '/signup' && <NavLink to="/signup" className="inline-flex h-9 items-center whitespace-nowrap rounded-control border border-black/15 bg-primary px-3.5 text-small font-semibold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-95">{vi.signup.title}</NavLink>}
               </span>
             )}
           </div>

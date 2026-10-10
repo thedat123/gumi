@@ -26,7 +26,7 @@ export function SystemState({ fixed = 'not_found', onRetry }: { fixed?: Kind; on
       </div>
       <div className="flex gap-2">
         {c.retry && <Button variant="secondary" onClick={onRetry ?? (() => location.reload())}>{vi.errors.retry}</Button>}
-        <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.errors.home}</Link>
+        <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary">{vi.errors.home}</Link>
       </div>
     </div>
   );

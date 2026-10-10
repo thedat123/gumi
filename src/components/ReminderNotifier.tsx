@@ -23,15 +23,15 @@ export function ReminderNotifier() {
 
     const sync = async () => { if (!cancelled && notificationPermission() === 'granted') await subscribePush(); };
 
-    // Đã có quyền từ trước → đồng bộ subscription ngay (xử lý cả khi khoá bị xoay).
-    void sync();
-
-    // Chưa hỏi → xin quyền sau thao tác đầu tiên (iOS bắt buộc có cử chỉ), rồi đăng ký.
     const ask = async () => {
       if (!notificationsSupported()) return;
       const perm = await ensureNotificationPermission();
       if (perm === 'granted') await sync();
     };
+
+    // Ai cũng BẮT BUỘC bật nhắc: xin quyền NGAY khi vào app (đã có quyền thì chỉ đồng bộ subscription).
+    void ask();
+    // Fallback cho trình duyệt yêu cầu CỬ CHỈ mới cho hỏi (iOS/Safari): hỏi lại ở lần chạm đầu.
     if (notificationPermission() === 'default') {
       window.addEventListener('pointerdown', ask, { once: true });
     }

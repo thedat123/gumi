@@ -54,7 +54,7 @@ export function SortGame() {
       <Gumi state="hap_hoi" size={140} />
       <Banner kind="error">{vi.minigames.sort.outOfTries}</Banner>
       <p className="max-w-xs text-small text-muted">{vi.minigames.sort.outOfTriesSub}</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
 

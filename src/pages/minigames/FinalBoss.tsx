@@ -175,12 +175,12 @@ export function FinalBoss() {
           <ArcadeOverlay>
             <p className="text-title font-extrabold text-white drop-shadow">Trận cuối! 👑😈</p>
             <p className="max-w-sm text-small font-medium text-white/90">Rê để <b>né đạn kẹo ✦</b>. Gumi <b>tự bắn nước lành 💧</b> lên — cứ đứng dưới Boss mà xả! Boss càng ít máu càng <b>cuồng nộ</b> (3 pha). Còn 3 mạng.</p>
-            <button type="button" onClick={start} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
+            <button type="button" onClick={start} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
           </ArcadeOverlay>
         ) : mode === 'dead' ? (
           <ArcadeOverlay>
             <Banner kind="error">Gục mất rồi! Boss còn {hp}/{HP_MAX} độ ngọt.</Banner>
-            <button type="button" onClick={start} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
+            <button type="button" onClick={start} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
           </ArcadeOverlay>
         ) : null
       }

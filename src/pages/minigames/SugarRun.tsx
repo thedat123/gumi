@@ -181,12 +181,12 @@ export function SugarRun() {
           <ArcadeOverlay>
             <p className="text-title font-extrabold text-white drop-shadow">Chạy trốn cơn thèm! 🐱</p>
             <p className="max-w-sm text-small font-medium text-white/90">Vuốt <b>lên</b> để nhảy qua bánh kẹo, vuốt <b>xuống</b> để trượt né chướng ngại trên cao. Nhặt <b>nước lành 💧</b> +2 điểm. Về đích {TARGET} mốc, còn 3 mạng.</p>
-            <button type="button" onClick={jump} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
+            <button type="button" onClick={jump} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
           </ArcadeOverlay>
         ) : mode === 'dead' ? (
           <ArcadeOverlay>
             <Banner kind="error">Ngã rồi! Bạn qua {score}/{TARGET} mốc.</Banner>
-            <button type="button" onClick={jump} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
+            <button type="button" onClick={jump} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
           </ArcadeOverlay>
         ) : null
       }

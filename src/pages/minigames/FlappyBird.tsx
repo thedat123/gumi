@@ -122,12 +122,12 @@ export function FlappyBird() {
           <ArcadeOverlay>
             <p className="text-title font-extrabold text-white drop-shadow">Chạm để bay 🐣</p>
             <p className="max-w-xs text-small font-medium text-white/90">Lách qua {TARGET} cột đường để hạ Boss Cơn Thèm. Chạm màn hình hoặc bấm Space.</p>
-            <button type="button" onClick={flap} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
+            <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
           </ArcadeOverlay>
         ) : mode === 'dead' ? (
           <ArcadeOverlay>
             <Banner kind="error">Ối! Đụng cột rồi. Điểm: {score}/{TARGET}</Banner>
-            <button type="button" onClick={flap} className="rounded-pill bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
+            <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
           </ArcadeOverlay>
         ) : null
       }

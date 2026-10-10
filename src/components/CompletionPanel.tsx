@@ -28,7 +28,7 @@ export function CompletionPanel({ day, points, note, children, action }: {
         <SugarFactPopup day={day} />
         <ChapterTease day={day} />
         {action ?? <div className="grid grid-cols-2 gap-2">
-          <Link to="/journey" className="inline-flex min-h-12 items-center justify-center rounded-control bg-primary px-3 text-center text-small font-bold text-on-primary shadow-pop">Về bản đồ</Link>
+          <Link to="/journey" className="inline-flex min-h-12 items-center justify-center rounded-control border border-black/15 bg-primary px-3 text-center text-small font-bold text-on-primary shadow-pop">Về bản đồ</Link>
           <Link to="/" className="inline-flex min-h-12 items-center justify-center rounded-control border border-border bg-surface px-3 text-center text-small font-bold text-text shadow-soft">Về phòng Gumi</Link>
         </div>}
       </div>

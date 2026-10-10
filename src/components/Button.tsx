@@ -3,12 +3,14 @@ import type { ButtonHTMLAttributes, Ref } from 'react';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'accent';
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> { variant?: Variant; loading?: boolean; block?: boolean; ref?: Ref<HTMLButtonElement> }
 
+// Mọi button đều có VIỀN NGOÀI bao bọc: filled dùng viền tối nhẹ (black/15) cho cạnh rõ, nét;
+// secondary/ghost dùng viền theo border token. Nhìn chỉn chu, không "trôi" vào nền.
 const VARIANT: Record<Variant, string> = {
-  primary: 'bg-primary text-on-primary shadow-pop hover:brightness-[1.06]',
+  primary: 'bg-primary text-on-primary border border-black/15 shadow-pop hover:brightness-[1.06]',
   secondary: 'bg-surface text-text border border-border-strong/55 shadow-soft hover:border-border-strong',
-  danger: 'bg-danger text-on-primary shadow-soft hover:brightness-[1.06]',
-  ghost: 'bg-transparent text-primary underline-offset-4 hover:underline',
-  accent: 'bg-accent text-on-accent shadow-soft hover:brightness-[1.04]',
+  danger: 'bg-danger text-on-primary border border-black/15 shadow-soft hover:brightness-[1.06]',
+  ghost: 'bg-surface/60 text-primary border border-border shadow-soft hover:border-primary/50 hover:bg-primary/5',
+  accent: 'bg-accent text-on-accent border border-black/10 shadow-soft hover:brightness-[1.04]',
 };
 
 function Spinner() {

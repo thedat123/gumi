@@ -88,7 +88,7 @@ function ReviewCard({ c, busy, onAct }: { c: AdminCheckin; busy: boolean; onAct:
           <Icon name="x" size={16} /> Từ chối
         </button>
         <button onClick={() => onAct(c.id, 'approved')} disabled={busy}
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control bg-success text-small font-bold text-white shadow-pop transition-all hover:brightness-105 active:scale-95 disabled:opacity-50">
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control border border-black/15 bg-success text-small font-bold text-white shadow-pop transition-all hover:brightness-105 active:scale-95 disabled:opacity-50">
           <Icon name="check" size={16} /> Duyệt
         </button>
       </div>
@@ -275,7 +275,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
             ))}
           </div>
           <button onClick={() => exportCsv(rows)} disabled={rows.length === 0}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-small font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.05] active:scale-95 disabled:opacity-40">
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-black/15 bg-primary px-3 text-small font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.05] active:scale-95 disabled:opacity-40">
             <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV
           </button>
         </div>

@@ -25,7 +25,7 @@ export function Summary() {
             <div className="flex flex-col gap-4 pt-2">
               <h1 className="text-headline font-bold">{vi.summary.title}</h1>
               <Banner kind="info">{vi.summary.notEligible}</Banner>
-              <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-semibold text-on-primary">{vi.summary.backHome}</Link>
+              <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary">{vi.summary.backHome}</Link>
             </div>
           );
         }
