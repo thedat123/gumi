@@ -25,10 +25,11 @@ export function AppShell() {
   const isOnboarding = pathname === '/onboarding'; // chưa có hồ sơ → không hiện nav (các mục cần hồ sơ)
   const immersive = isRoom || isGame;
 
-  // Bề rộng khung nội dung dùng CHUNG cho header + main (+ thanh nav dưới cùng max-w-md)
-  // → logo/nút trên header thẳng mép với khối nội dung, nhìn cân giữa & ăn khớp hơn.
-  const contentMax = isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-md';
-  // Trang full-bleed (phòng/màn chơi/bản đồ) giữ header gọn max-w-6xl thay vì tràn kín.
+  // Bề rộng khung nội dung dùng CHUNG cho header + main (+ thanh nav dưới cùng max-w-md).
+  // Trang nội dung sau đăng nhập (Hồ sơ/Xếp hạng/Tổng kết) được NỚI RỘNG để desktop dàn nhiều cột
+  // (từng trang tự canh max-w bên trong); mobile vẫn xếp dọc như cũ. Form (onboarding/auth) tự cap hẹp.
+  const contentMax = isRoom || isChapter || isMission || isJourney ? 'max-w-none' : !session ? 'max-w-3xl' : 'max-w-5xl';
+  // Header canh theo mép khung nội dung (trang full-bleed dùng max-w-6xl cho gọn).
   const headerMax = isRoom || isChapter || isMission || isJourney ? 'max-w-6xl' : contentMax;
   // Trang dạng cột (landing, đăng nhập, hồ sơ…): canh GIỮA theo chiều dọc khi còn chỗ trống,
   // nội dung dài hơn màn thì tự về trên & cuộn (nhờ my-auto) — đẹp cả desktop lẫn mobile.

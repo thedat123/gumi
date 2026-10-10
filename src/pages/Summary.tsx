@@ -66,8 +66,9 @@ export function Summary() {
         const onFacebook = async () => { const { shareFacebook } = await import('../lib/shareCard'); shareFacebook(window.location.origin); };
 
         return (
-          <div className="flex flex-col items-center gap-3 pt-2">
-            <div data-testid="story-card" className="grad-story flex aspect-[9/16] w-full max-w-xs flex-col items-center gap-2 rounded-card p-5 text-center text-on-primary shadow-pop">
+          /* Desktop: 2 cột (trái = thẻ story 9:16, phải = chia sẻ + hạng); mobile: xếp dọc, canh giữa. */
+          <div className="mx-auto grid w-full max-w-3xl items-center gap-5 pt-2 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-8">
+            <div data-testid="story-card" className="grad-story mx-auto flex aspect-[9/16] w-full max-w-xs flex-col items-center gap-2 rounded-card p-5 text-center text-on-primary shadow-pop">
               <p className="text-small font-bold">{vi.summary.graduated}</p>
               <Gumi state="tien_hoa" size={120} />
               <p className="text-caption">{vi.summary.evolveCaption}</p>
@@ -77,21 +78,24 @@ export function Summary() {
               <p className="mt-auto text-body font-bold">{vi.summary.totalPoints}: {s.totalPoints}</p>
             </div>
 
-            <p className="text-caption text-muted">{s.rankFinal ? vi.summary.final : vi.summary.provisional}</p>
+            <div className="mx-auto flex w-full max-w-xs flex-col gap-3 lg:mx-0 lg:max-w-sm lg:pt-2">
+              <h1 className="text-title font-bold max-lg:sr-only">{vi.summary.title}</h1>
+              <p className="text-caption text-muted">{s.rankFinal ? vi.summary.final : vi.summary.provisional}</p>
 
-            {/* Chia sẻ Story / Instagram / Facebook */}
-            <div className="flex w-full max-w-xs flex-col gap-2">
-              <Button block loading={busy} onClick={onShare}>
-                <span className="inline-flex items-center gap-2"><Icon name="camera" size={18} />{vi.summary.share}</span>
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="secondary" block onClick={onDownload} disabled={busy}>{vi.summary.downloadImage}</Button>
-                <Button variant="secondary" block onClick={onFacebook} disabled={busy}>{vi.summary.facebook}</Button>
+              {/* Chia sẻ Story / Instagram / Facebook */}
+              <div className="flex w-full flex-col gap-2">
+                <Button block loading={busy} onClick={onShare}>
+                  <span className="inline-flex items-center gap-2"><Icon name="camera" size={18} />{vi.summary.share}</span>
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="secondary" block onClick={onDownload} disabled={busy}>{vi.summary.downloadImage}</Button>
+                  <Button variant="secondary" block onClick={onFacebook} disabled={busy}>{vi.summary.facebook}</Button>
+                </div>
               </div>
+              {note && <Banner kind="success">{note}</Banner>}
+              <p className="text-caption text-muted">{vi.summary.shareNote}</p>
+              <Link to="/" className="text-small text-primary underline underline-offset-2">{vi.summary.backHome}</Link>
             </div>
-            {note && <Banner kind="success">{note}</Banner>}
-            <p className="max-w-xs text-caption text-muted">{vi.summary.shareNote}</p>
-            <Link to="/" className="text-small text-primary underline underline-offset-2">{vi.summary.backHome}</Link>
           </div>
         );
       }}

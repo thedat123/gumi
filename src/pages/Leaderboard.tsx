@@ -13,7 +13,7 @@ export function Leaderboard() {
   const state = useAsync(() => api.getLeaderboard(), []);
 
   return (
-    <div className="flex flex-col gap-4 pt-2">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-2">
       <h1 className="flex items-center gap-2 text-headline font-bold"><Icon name="trophy" size={26} filled className="text-accent" /><span className="text-gradient">{vi.leaderboard.title}</span></h1>
       <AsyncView state={state} empty={<Banner kind="info">{vi.leaderboard.empty}</Banner>}>
         {(lb) => (
@@ -21,7 +21,8 @@ export function Leaderboard() {
             {lb.top.length === 0 ? (
               <Banner kind="info">{vi.leaderboard.empty}</Banner>
             ) : (
-              <ol className="flex flex-col gap-2">
+              /* Desktop: dàn 2 cột (hạng đọc trái→phải theo hàng); mobile: 1 cột. */
+              <ol className="grid gap-2 lg:grid-cols-2">
                 {lb.top.map((r) => {
                   const podium = ['bg-accent/20 border-accent!', 'bg-pink/20 border-pink!', 'bg-info/12 border-info!'][r.rank - 1];
                   return (

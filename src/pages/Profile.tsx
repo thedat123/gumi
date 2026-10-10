@@ -34,31 +34,35 @@ export function Profile() {
   };
 
   return (
-    <div className="flex flex-col gap-4 pt-2">
+    <div className="mx-auto w-full max-w-4xl pt-2">
       <h1 className="text-headline font-bold">{vi.profile.title}</h1>
-      {session && <p className="text-caption text-muted">{vi.session.signedInAs(session.email)}</p>}
-      {saved && <Banner kind="success">{vi.profile.saved}</Banner>}
+      {session && <p className="mt-1 text-caption text-muted">{vi.session.signedInAs(session.email)}</p>}
 
-      <Input label={vi.profile.name} value={name} maxLength={40} onChange={(e) => { setName(e.target.value); setSaved(false); }} error={!nameOk && name.length > 0 ? vi.onboarding.nameError : undefined} />
+      {/* Desktop: 2 cột (trái = danh tính, phải = đổi mật khẩu). Mobile: xếp dọc. */}
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-4">
+          {saved && <Banner kind="success">{vi.profile.saved}</Banner>}
+          <Input label={vi.profile.name} value={name} maxLength={40} onChange={(e) => { setName(e.target.value); setSaved(false); }} error={!nameOk && name.length > 0 ? vi.onboarding.nameError : undefined} />
 
-      <fieldset>
-        <legend className="mb-2 font-semibold">{vi.profile.avatar}</legend>
-        <div className="grid grid-cols-4 gap-2">
-          {AVATARS.map((a) => (
-            <button key={a} type="button" aria-pressed={avatar === a} aria-label={`Avatar ${a}`} onClick={() => { setAvatar(a); setSaved(false); }}
-              className={`relative flex min-h-11 items-center justify-center rounded-control border-2 py-2 text-headline transition-all ${avatar === a ? 'scale-105 border-primary bg-primary/10 shadow-pop ring-2 ring-primary/40' : 'border-border-strong bg-surface hover:border-primary/50 active:scale-95'}`}>
-              {a}
-              {avatar === a && <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-caption font-black text-on-primary shadow-soft">✓</span>}
-            </button>
-          ))}
+          <fieldset>
+            <legend className="mb-2 font-semibold">{vi.profile.avatar}</legend>
+            <div className="grid grid-cols-4 gap-2">
+              {AVATARS.map((a) => (
+                <button key={a} type="button" aria-pressed={avatar === a} aria-label={`Avatar ${a}`} onClick={() => { setAvatar(a); setSaved(false); }}
+                  className={`relative flex min-h-11 items-center justify-center rounded-control border-2 py-2 text-headline transition-all ${avatar === a ? 'scale-105 border-primary bg-primary/10 shadow-pop ring-2 ring-primary/40' : 'border-border-strong bg-surface hover:border-primary/50 active:scale-95'}`}>
+                  {a}
+                  {avatar === a && <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-caption font-black text-on-primary shadow-soft">✓</span>}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <Button onClick={save} loading={busy} disabled={!nameOk} block>{vi.profile.save}</Button>
+          <Button variant="secondary" onClick={async () => { await signOut(); nav('/welcome'); }} block>{vi.profile.logout}</Button>
         </div>
-      </fieldset>
 
-      <Button onClick={save} loading={busy} disabled={!nameOk} block>{vi.profile.save}</Button>
-
-      <ChangePassword />
-
-      <Button variant="secondary" onClick={async () => { await signOut(); nav('/welcome'); }} block>{vi.profile.logout}</Button>
+        <ChangePassword />
+      </div>
     </div>
   );
 }
