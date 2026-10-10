@@ -70,7 +70,7 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
   const SCREENS = [
     ['home', '/'], ['journey', '/journey'], ['chapter1', '/chapter/1'],
     ['mission1-drink', '/mission/1'], ['mission2-quiz', '/mission/2'], ['mission3-game', '/mission/3'],
-    ['mission4-share', '/mission/4'], ['mission21-final', '/mission/21'],
+    ['mission4-share', '/mission/4'], ['mission19-spin', '/mission/19'], ['mission21-final', '/mission/21'],
     ['profile', '/me'], ['leaderboard', '/leaderboard'],
   ];
   for (const [name, path] of SCREENS) {

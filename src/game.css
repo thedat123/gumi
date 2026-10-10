@@ -130,8 +130,14 @@ html.gfx-low .game-bg::before { animation: none; }
 .timer-track { height: 8px; border-radius: 999px; background: rgba(58,36,30,.12); overflow: hidden; }
 .timer-fill { height: 100%; background: linear-gradient(90deg, #4F9E5D, #F5C542); }
 
-/* Vòng quay phát sáng */
-.wheel-glow { filter: drop-shadow(0 10px 24px rgba(184,53,86,.35)); }
+/* ===== Vòng Quay May Mắn (Chiếc Nón Kỳ Diệu) ===== */
+.wheel-glow { filter: drop-shadow(0 12px 30px rgba(184,53,86,.4)); }
+/* Bóng đèn quanh vành — nhấp nháy đuổi nhau khi đang quay */
+@keyframes bulb-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.wheel-spinning .wheel-bulb { animation: bulb-blink .5s ease-in-out infinite; }
+/* Kim chỉ nảy nhẹ khi quay (cảm giác va vào răng) */
+@keyframes peg-tick { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-9deg); } }
+.wheel-spinning .wheel-pointer { animation: peg-tick .09s ease-in-out infinite; transform-origin: 50% 20%; }
 
 /* ===== Confetti ===== */
 .confetti-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
