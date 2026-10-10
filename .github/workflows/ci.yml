@@ -58,3 +58,9 @@ jobs:
           # Bake biến Supabase vào bundle production (Vite đọc VITE_* lúc build) → OAuth Google thật chạy.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Nhận diện ảnh check-in: KHÔNG map ở đây thì Vite build ra key rỗng → app rơi về on-device (chậm + đọc sai).
+          VITE_GCV_API_KEY: ${{ secrets.VITE_GCV_API_KEY }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          # Các biến prod khác (để trống nếu chưa tạo secret cũng không sao).
+          VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}

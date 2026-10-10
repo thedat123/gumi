@@ -97,18 +97,8 @@ export function CheckIn() {
     // 1) GOOGLE CLOUD VISION (ưu tiên cao nhất): nhanh <1s, rẻ, scale — nhận đồ uống + đọc % đường trên tem.
     const gcv = await import('../lib/gcv');
     if (gcv.gcvAvailable && day !== 10 && day !== 20) {
-      let r = await gcv.verifyDrink(f);
+      const r = await gcv.verifyDrink(f);
       if (request !== pickRequest.current) return;
-      // GCV nhận ra đồ uống nhưng OCR CHƯA bắt được mức đường (tem ghi kiểu lạ) → nhờ Gemini VLM
-      // ĐỌC HIỂU tem để quy ra %. Nhờ vậy mọi loại tem đều có cơ hội đọc, GCV vẫn lo phần nhanh/rẻ cho đa số.
-      if (r.ok && r.sugarPercent === null && needsLevel) {
-        const { vlmAvailable, verifyDrink } = await import('../lib/vlm');
-        if (vlmAvailable) {
-          const v = await verifyDrink(f);
-          if (request !== pickRequest.current) return;
-          if (v.ran && v.sugarPercent !== null) r = { ...r, sugarPercent: v.sugarPercent, isUnsweetened: v.isUnsweetened };
-        }
-      }
       applyEvidence(r);
       return;
     }
@@ -132,10 +122,13 @@ export function CheckIn() {
     const stamp = await readStamp(f, setProg);
     if (request !== pickRequest.current) return;
     const percent = readSugarPercent(stamp.text);
-    applyEvidence({ available: true, ran: !vis.unavailable || !stamp.unavailable,
-      ok: vis.ok || stamp.ok, isDrink: vis.ok || stamp.ok, drink: vis.labels.join(', '),
+    const confirmed = vis.ok || stamp.ok;
+    // On-device (CLIP/OCR) KÉM tin cậy hơn GCV: nếu KHÔNG chắc thì để 'unknown' (gửi duyệt tay),
+    // KHÔNG phán 'Ảnh chưa hợp lệ' — tránh oan cho ảnh đồ uống thật. ran:false ⇒ judgeDrink trả 'unknown'.
+    applyEvidence({ available: true, ran: confirmed,
+      ok: confirmed, isDrink: confirmed, drink: vis.labels.join(', '),
       sugarPercent: percent, isUnsweetened: percent === 0, confidence: vis.score,
-      reason: vis.unavailable && stamp.unavailable ? 'Thiết bị chưa nhận diện được ảnh. Vui lòng thử lại khi có kết nối.' : 'Chưa nhận ra đồ uống hoặc tem/hoá đơn rõ nét.' });
+      reason: confirmed ? '' : 'Thiết bị này nhận diện hạn chế hoặc ảnh chưa đủ rõ. Nếu đúng là đồ uống thật, gửi ban tổ chức duyệt tay.' });
   };
 
   const canSubmit = !!file && (!needsStamp || verdict?.kind === 'pass');
