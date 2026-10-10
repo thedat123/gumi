@@ -81,12 +81,12 @@ interface Persisted {
 const SEED_WALL: WallPost[] = [];
 
 const ADMIN_SEED: AdminCheckin[] = [
-  { id: 'c1', user: 'Mai Anh', day: 3, status: 'approved', emoji: '🧋' },
-  { id: 'c2', user: 'Quang Huy', day: 3, status: 'pending', emoji: '🥤' },
-  { id: 'c3', user: 'Bảo Ngọc', day: 3, status: 'pending', emoji: '🍵' },
-  { id: 'c4', user: 'Thanh Tùng', day: 3, status: 'rejected', emoji: '🧃' },
-  { id: 'c5', user: 'Phương Linh', day: 3, status: 'pending', emoji: '☕️', flag: 'ảnh trùng ngày khác' },
-  { id: 'c6', user: 'Đức Minh', day: 3, status: 'pending', emoji: '🥛', flag: 'nghi ngờ chỉnh sửa' },
+  { id: 'c1', user: 'Mai Anh', day: 1, status: 'approved', emoji: '🧋' },
+  { id: 'c2', user: 'Quang Huy', day: 1, status: 'pending', emoji: '🥤', flag: 'AI chưa nhận diện — chờ duyệt tay' },
+  { id: 'c3', user: 'Bảo Ngọc', day: 5, status: 'pending', emoji: '🍵', flag: 'AI chưa nhận diện — chờ duyệt tay' },
+  { id: 'c4', user: 'Thanh Tùng', day: 4, status: 'rejected', emoji: '🧃' },
+  { id: 'c5', user: 'Phương Linh', day: 4, status: 'pending', emoji: '☕️', flag: 'ảnh trùng ngày khác' },
+  { id: 'c6', user: 'Đức Minh', day: 1, status: 'pending', emoji: '🥛', flag: 'nghi ngờ chỉnh sửa' },
 ];
 
 // Ngưỡng đạt chỉ tiêu nhận quà: hoàn thành từ 14/21 ngày trở lên (theo brief mục VI).
@@ -350,10 +350,13 @@ export function createMockApi(): Api {
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
       return delay(ADMIN_SEED.filter((c) => c.flag).map((c) => ({ ...c, kind: vi.missions[c.day - 1]?.kind })));
     },
-    async setCheckinStatus(_id, _status: CheckinStatus, _reason) {
+    async setCheckinStatus(id, status: CheckinStatus, _reason) {
       requireSession();
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
-      await delay(null, 200); // mock: không lưu; bản thật gọi admin_set_checkin_status
+      // Mock: cập nhật tại chỗ để hàng đợi duyệt phản ánh ngay (bản thật gọi admin_set_checkin_status).
+      const c = ADMIN_SEED.find((x) => x.id === id);
+      if (c) { c.status = status; delete c.flag; } // đã xử lý → rời hàng đợi duyệt tay
+      await delay(null, 200);
     },
     async photoUrl() { return null; }, // mock dùng emoji, không có ảnh thật
   };

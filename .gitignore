@@ -12,3 +12,6 @@ shots-prod/
 coverage/
 supabase/.temp/
 supabase/.branches/
+
+# Ảnh chụp từ luồng tester (scripts/verify-ui.mjs)
+verify-shots/

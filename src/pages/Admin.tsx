@@ -2,30 +2,97 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
+import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
-import type { AdminPlayer, AdminStats } from '../api/types';
+import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
 
 const TABS: AdminTab[] = [
   { id: 'overview', label: 'Tổng quan', icon: 'medal' },
+  { id: 'review', label: 'Duyệt ảnh', icon: 'flag' },
   { id: 'players', label: 'Người chơi', icon: 'paw' },
 ];
 
 const st = vi.admin.stats;
 const TOTAL = vi.journey.total;
 
-/** S13 — Admin = DASHBOARD THỐNG KÊ thuần (tách hẳn thế giới game): KPI + biểu đồ + bảng người chơi. */
+/** S13 — Admin = DASHBOARD THỐNG KÊ thuần (tách hẳn thế giới game): KPI + biểu đồ + bảng người chơi + duyệt ảnh. */
 export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
+  if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
   return (
     <AdminShell tabs={TABS} active={tab} onSelect={setTab}>
       <AsyncView state={stats}>
         {(s) => (tab === 'overview' ? <Overview s={s} /> : <PlayersPanel s={s} />)}
       </AsyncView>
     </AdminShell>
+  );
+}
+
+/* ============================ DUYỆT ẢNH (gửi admin duyệt tay) ============================ */
+/** Hàng đợi ảnh check-in AI chưa xác nhận được → người chơi gửi admin duyệt tay. Duyệt / Từ chối. */
+function ReviewPanel() {
+  const queue = useAsync(() => api.admin.listFlags(), []);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const act = async (id: string, status: 'approved' | 'rejected') => {
+    setBusyId(id); setErr(null);
+    try { await api.admin.setCheckinStatus(id, status); queue.reload(); }
+    catch { setErr('Không cập nhật được, thử lại.'); }
+    finally { setBusyId(null); }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-title font-bold">Duyệt ảnh check-in</h2>
+        <p className="mt-0.5 text-small text-muted">Ảnh AI chưa chắc chắn, người chơi gửi để ban tổ chức duyệt tay. Ảnh giả → Từ chối (trừ điểm).</p>
+      </div>
+      {err && <Banner kind="error">{err}</Banner>}
+      <AsyncView state={queue} empty={<Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>}>
+        {(items) => {
+          const pending = items.filter((c) => c.status === 'pending');
+          if (pending.length === 0) return <Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>;
+          return (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {pending.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} onAct={act} />)}
+            </div>
+          );
+        }}
+      </AsyncView>
+    </div>
+  );
+}
+
+function ReviewCard({ c, busy, onAct }: { c: AdminCheckin; busy: boolean; onAct: (id: string, s: 'approved' | 'rejected') => void }) {
+  const isUrl = /^https?:\/\//.test(c.emoji);
+  const mission = vi.missions[c.day - 1];
+  return (
+    <Card className="flex flex-col gap-3 p-4">
+      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-control border border-border bg-bg">
+        {isUrl ? <img src={c.emoji} alt={`Ảnh check-in ngày ${c.day}`} className="h-full w-full object-contain" />
+          : <span className="text-[64px]" aria-hidden="true">{c.emoji}</span>}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate font-bold">{c.user}</p>
+        <p className="text-caption text-muted">Ngày {c.day}{mission ? ` · ${mission.kind}` : ''}{c.level != null ? ` · AI đọc ${c.level}%` : ''}</p>
+        {c.flag && <p className="mt-1 inline-block rounded-pill bg-accent/15 px-2 py-0.5 text-caption font-semibold text-accent">⚑ {c.flag}</p>}
+      </div>
+      <div className="mt-auto grid grid-cols-2 gap-2">
+        <button onClick={() => onAct(c.id, 'rejected')} disabled={busy}
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control border border-danger/40 bg-danger/10 text-small font-bold text-danger transition-colors hover:bg-danger/15 active:scale-95 disabled:opacity-50">
+          <Icon name="x" size={16} /> Từ chối
+        </button>
+        <button onClick={() => onAct(c.id, 'approved')} disabled={busy}
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control bg-success text-small font-bold text-white shadow-pop transition-all hover:brightness-105 active:scale-95 disabled:opacity-50">
+          <Icon name="check" size={16} /> Duyệt
+        </button>
+      </div>
+    </Card>
   );
 }
 

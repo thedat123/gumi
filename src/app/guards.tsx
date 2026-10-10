@@ -14,11 +14,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Đã đăng nhập nhưng chưa tạo hồ sơ → đưa về onboarding. */
+/** Đã đăng nhập nhưng chưa tạo hồ sơ → onboarding. Admin → vào thẳng dashboard, KHÔNG thấy màn chơi. */
 export function RequireProfile({ children }: { children: ReactNode }) {
   const { session, profile, loading } = useSession();
   if (loading) return <Loading />;
   if (!session) return <Navigate to="/welcome" replace />;
+  if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
   if (!profile) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }

@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "verify:ui": "node scripts/verify-ui.mjs",
     "gen:narration": "tsx scripts/gen-narration.ts",
     "tokens": "node scripts/gen-theme.mjs",
     "icons": "node scripts/gen-icons.mjs",
