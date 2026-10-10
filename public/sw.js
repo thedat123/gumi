@@ -36,6 +36,7 @@ self.addEventListener('push', (event) => {
       body: data.body || '',
       tag: data.tag || 'gumi-reminder',   // trùng tag → thay thế, không chồng thông báo
       renotify: true,
+      requireInteraction: data.requireInteraction !== false, // bám lại đến khi người dùng tắt → dễ thấy, không tự ẩn sau ~5s
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       data: { url: data.url || '/' },
