@@ -49,7 +49,11 @@ function toBase64(blob: Blob): Promise<{ mime: string; data: string }> {
 const PROMPT = `Bạn là giám khảo check-in cho thử thách giảm đường. Xem ảnh và đánh giá NGHIÊM TÚC để chống gian lận.
 Hỏi:
 1) Đây có phải ảnh MỘT LY/CỐC/CHAI ĐỒ UỐNG thật, hoặc TEM/NHÃN/HOÁ ĐƠN của một ly nước không? (ảnh phong cảnh, người, đồ ăn, ảnh chụp màn hình... => không hợp lệ)
-2) Nếu có: tên đồ uống là gì? Trên tem/nhãn có ghi mức đường bao nhiêu phần trăm không? Không suy đoán % từ vẻ ngoài.
+2) Nếu có: tên đồ uống là gì? ĐỌC mức đường/độ ngọt GHI TRÊN tem/nhãn/hoá đơn và quy về SỐ phần trăm 0-100.
+   Tem quán VN ghi nhiều kiểu, hãy hiểu HẾT: "50% đường", "đường 50", "ngọt 50%", ô tích/khoanh tròn mức đường;
+   hoặc định tính theo thang: "không đường/không ngọt/sugar free"=0, "ít đường/ít ngọt/less"=30, "nửa đường/nửa ngọt/half"=50,
+   "ngọt vừa"=70, "bình thường/nguyên vị/full/100%"=100. CHỈ để sugarPercent=null khi trên ảnh HOÀN TOÀN không có chữ nào về mức ngọt.
+   Chỉ đọc CHỮ ghi trên tem — tuyệt đối không suy đoán % từ màu sắc hay vẻ ngoài.
 3) Đây có rõ là bình nước tự chuẩn bị (nước lọc, nước thả lát trái cây hoặc trà túi lọc không đường) không?
 4) Chỉ đánh dấu không đường khi thấy rõ nước lọc nguyên bản hoặc nhãn ghi 0%/không đường. Đừng suy ra trà, cà phê hay nước trái cây không đường chỉ từ màu sắc.
 Chỉ trả về DUY NHẤT một JSON, không kèm chữ nào khác:

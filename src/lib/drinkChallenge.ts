@@ -3,12 +3,28 @@ import type { VlmResult } from './vlm';
 
 const STEPS: SugarLevel[] = [0, 30, 50, 70, 100];
 
+// Từ khoá chỉ MỨC NGỌT trên tem/hoá đơn: quán VN ghi cả "đường" lẫn "ngọt" (và tiếng Anh sugar/sweet).
+const SWEET_KW = '(?:đường|duong|ngọt|ngot|sugar|sweet)';
+
+/**
+ * Đọc mức đường (%) KHAI TRÊN TEM/HOÁ ĐƠN. Chấp nhận nhiều cách ghi thật của quán VN:
+ *  • "70% đường", "đường 70%", "70 đường", "Đường: 70", "ngọt 50", "50% ngọt"  (có/không dấu %)
+ *  • "không đường/không ngọt/sugar free/0% đường" → 0
+ *  • định tính theo thang quán: "ít đường/ít ngọt" → 30, "nửa đường/half sugar" → 50
+ * Vẫn chỉ đọc con số GHI SẴN nên không nới lỏng chống gian lận; bỏ qua % lạc ("giảm giá 50%").
+ */
 export function readSugarPercent(text: string): number | null {
-  const normalized = text.toLowerCase().replace(/\s+/g, ' ');
-  if (/(không đường|khong duong|no sugar|sugar free|unsweetened)/.test(normalized)) return 0;
-  const near = normalized.match(/(\d{1,3})\s?%\s*(?:đường|duong|sugar)|(?:đường|duong|sugar)[^\d]{0,8}(\d{1,3})\s?%/);
-  const value = near ? Number(near[1] ?? near[2]) : null;
-  return value !== null && value <= 100 ? value : null;
+  const t = text.toLowerCase().replace(/\s+/g, ' ');
+  // Con số gắn LIỀN với từ khoá đường/ngọt (hai chiều), có hoặc KHÔNG có dấu %. Bắt số TRƯỚC để
+  // "70% ngọt" ra 70 (không nhầm số 0 cuối thành "0% ngọt"); "0% đường" vẫn ra 0.
+  const near = t.match(new RegExp(`(?<!\\d)(\\d{1,3})\\s?%?\\s*${SWEET_KW}|${SWEET_KW}[\\s:()\\-]{0,4}(\\d{1,3})\\s?%?`));
+  if (near) { const n = Number(near[1] ?? near[2]); if (n >= 0 && n <= 100) return n; }
+  // Cụm chữ chỉ 0% (không kèm số): nước/không đường/không ngọt/sugar free.
+  if (new RegExp(`(?:không|khong|no|zero)\\s*${SWEET_KW}|sugar[\\s-]?free|unsweetened`).test(t)) return 0;
+  // Mức ngọt định tính theo thang phổ biến của quán trà sữa VN.
+  if (/ít\s*(?:đường|ngọt)|it\s*(?:duong|ngot)|less\s*sugar/.test(t)) return 30;
+  if (/nửa\s*(?:đường|ngọt)|nua\s*(?:duong|ngot)|half\s*sugar/.test(t)) return 50;
+  return null;
 }
 
 export function drinkTarget(day: number, baseline: SugarLevel): number | null {

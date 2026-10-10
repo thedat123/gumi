@@ -37,4 +37,17 @@ describe('DRINK challenge validation', () => {
     expect(readSugarPercent('Giảm giá 50%')).toBeNull();
     expect(readSugarPercent('không đường')).toBe(0);
   });
+
+  it('reads sweetness written the way VN shops actually print it', () => {
+    expect(readSugarPercent('70% ngọt')).toBe(70);        // tem ghi "ngọt" thay vì "đường"
+    expect(readSugarPercent('Ngọt 50')).toBe(50);
+    expect(readSugarPercent('Đường: 30')).toBe(30);        // dấu hai chấm, không có %
+    expect(readSugarPercent('Đường 70')).toBe(70);         // không có dấu %
+    expect(readSugarPercent('ít đường')).toBe(30);         // định tính
+    expect(readSugarPercent('nửa ngọt')).toBe(50);
+    expect(readSugarPercent('không ngọt')).toBe(0);
+    expect(readSugarPercent('sugar free')).toBe(0);
+    expect(readSugarPercent('Size L, trà sữa 500ml')).toBeNull(); // không có mức đường thật
+    expect(judgeDrink(1, 100, evidence(readSugarPercent('70% ngọt'))).kind).toBe('pass');
+  });
 });

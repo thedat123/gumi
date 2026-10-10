@@ -97,8 +97,18 @@ export function CheckIn() {
     // 1) GOOGLE CLOUD VISION (ưu tiên cao nhất): nhanh <1s, rẻ, scale — nhận đồ uống + đọc % đường trên tem.
     const gcv = await import('../lib/gcv');
     if (gcv.gcvAvailable && day !== 10 && day !== 20) {
-      const r = await gcv.verifyDrink(f);
+      let r = await gcv.verifyDrink(f);
       if (request !== pickRequest.current) return;
+      // GCV nhận ra đồ uống nhưng OCR CHƯA bắt được mức đường (tem ghi kiểu lạ) → nhờ Gemini VLM
+      // ĐỌC HIỂU tem để quy ra %. Nhờ vậy mọi loại tem đều có cơ hội đọc, GCV vẫn lo phần nhanh/rẻ cho đa số.
+      if (r.ok && r.sugarPercent === null && needsLevel) {
+        const { vlmAvailable, verifyDrink } = await import('../lib/vlm');
+        if (vlmAvailable) {
+          const v = await verifyDrink(f);
+          if (request !== pickRequest.current) return;
+          if (v.ran && v.sugarPercent !== null) r = { ...r, sugarPercent: v.sugarPercent, isUnsweetened: v.isUnsweetened };
+        }
+      }
       applyEvidence(r);
       return;
     }

@@ -21,21 +21,9 @@ const DRINK_HINTS = [
   'bottle', 'water bottle', 'plastic bottle', 'tumbler', 'highball glass', 'pint glass', 'cocktail', 'straw',
 ];
 // Chữ trên ảnh (OCR) cho thấy đây là TEM/NHÃN/HOÁ ĐƠN của một ly nước — nhiệm vụ DRINK cho phép chụp tem/hoá đơn.
-const TEXT_DRINK_RE = /(đường|duong|sugar|trà|tra\b|cà phê|ca phe|coffee|tea|size\s?[sml]|\bml\b|topping|trân châu|tran chau|latte|matcha|milk|smoothie|juice)/i;
+const TEXT_DRINK_RE = /(đường|duong|ngọt|ngot|sugar|trà|tra\b|cà phê|ca phe|coffee|tea|size\s?[sml]|\bml\b|topping|trân châu|tran chau|latte|matcha|milk|smoothie|juice|highlands|phúc long|phuc long|gong cha|mixue|katinat|phê la|the coffee)/i;
 
 interface Ann { description?: string; name?: string; score?: number }
-
-/** Tìm mức đường trong text OCR khi số gắn với từ "đường/sugar". */
-function findSugar(raw: string): number | null {
-  const explicit = readSugarPercent(raw);
-  if (explicit !== null) return explicit;
-  const t = raw.toLowerCase().replace(/\s+/g, ' ');
-  if (/(không đường|khong duong|no sugar|sugar free|unsweetened|0\s?%\s*(?:đường|duong|sugar))/.test(t)) return 0;
-  // Menu VN hay ghi số TRƯỚC chữ ("70% đường"); cũng bắt kiểu "đường 70%". Ưu tiên số cạnh từ khoá đường.
-  const near = t.match(/(\d{1,3})\s?%?\s*(?:đường|duong|sugar)|(?:đường|duong|sugar)[^\d]{0,8}(\d{1,3})\s?%?/);
-  if (near) { const n = +(near[1] ?? near[2]!); if (n <= 100) return n; }
-  return null;
-}
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => { const s = String(r.result); res(s.slice(s.indexOf(',') + 1)); }; r.onerror = rej; r.readAsDataURL(blob); });
@@ -75,7 +63,7 @@ export async function verifyDrink(file: Blob): Promise<VlmResult> {
       const d = (a.description ?? a.name ?? '').toLowerCase();
       if (DRINK_HINTS.some((k) => d.includes(k))) { const sc = a.score ?? 0; if (sc > best) { best = sc; name = a.description ?? a.name ?? ''; } }
     }
-    const sugarPercent = findSugar(text);
+    const sugarPercent = readSugarPercent(text);
     const textDrinkSignal = TEXT_DRINK_RE.test(text);
     // Chấp nhận khi:
     //  • thấy rõ ly/cốc/chai (nhãn đồ uống ≥ 0.5), HOẶC
