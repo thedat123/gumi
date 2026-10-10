@@ -5,6 +5,7 @@ import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { ReminderSettings } from '../components/ReminderSettings';
 import { vi } from '../content/vi';
 import { errorCode } from '../lib/errors';
 import { useSession } from '../app/session';
@@ -61,7 +62,10 @@ export function Profile() {
           <Button variant="secondary" onClick={async () => { await signOut(); nav('/welcome'); }} block>{vi.profile.logout}</Button>
         </div>
 
-        <ChangePassword />
+        <div className="flex flex-col gap-4">
+          <ChangePassword />
+          <ReminderSettings />
+        </div>
       </div>
     </div>
   );

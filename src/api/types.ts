@@ -208,9 +208,23 @@ export interface AdminApi {
   photoUrl(path: string): Promise<string | null>;
 }
 
+/** Một thông báo trong trung tâm thông báo (chuông) — nguồn: bảng public.notifications. */
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  url: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 export interface Api {
   readonly source: 'mock' | 'supabase';
   auth: AuthApi;
+  /** Danh sách thông báo mới nhất của tôi (cho chuông). */
+  listNotifications(): Promise<AppNotification[]>;
+  /** Đánh dấu tất cả thông báo đã đọc. */
+  markNotificationsRead(): Promise<void>;
   getProfile(): Promise<Profile | null>;
   createProfile(input: CreateProfileInput): Promise<Profile>;
   updateProfile(patch: Partial<CreateProfileInput>): Promise<Profile>;

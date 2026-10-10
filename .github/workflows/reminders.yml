@@ -1,0 +1,47 @@
+name: Push reminders
+
+# Gửi lời nhắc Web Push TỪ GITHUB (không cần deploy Supabase Edge Function / pg_cron).
+# KIỂU "EventBridge": KHÔNG polling mỗi phút — mỗi mốc nhắc là MỘT lịch riêng chạy đúng giờ đó.
+# GitHub chạy theo UTC, giờ VN = UTC+7 → quy đổi bên dưới. Lịch GitHub có thể trễ vài phút;
+# script tự chọn mốc nhắc "muộn nhất <= bây giờ" + claim_push_slot chống gửi trùng nên vẫn đúng.
+# Tách bạch: KHI NÀO (lịch dưới) · GỬI GÌ (scripts/send-reminders.mjs) · CHO AI (RPC Supabase).
+on:
+  schedule:
+    - cron: '0 17 * * *'   # VN 00:00 — nhắc đã lỡ hôm trước
+    - cron: '0 1 * * *'    # VN 08:00
+    - cron: '0 8 * * *'    # VN 15:00
+    - cron: '0 9 * * *'    # VN 16:00
+    - cron: '0 10 * * *'   # VN 17:00
+    - cron: '0 13 * * *'   # VN 20:00
+    - cron: '0 14 * * *'   # VN 21:00
+    - cron: '30 16 * * *'  # VN 23:30
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Gửi NGAY một noti thử cho mọi subscription (bỏ qua lịch)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: push-reminders
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Gửi nhắc nhở
+        run: node scripts/send-reminders.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          FORCE_SEND: ${{ (github.event_name == 'workflow_dispatch' && inputs.test) && '1' || '' }}

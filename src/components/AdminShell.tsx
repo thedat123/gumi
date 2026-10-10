@@ -57,8 +57,9 @@ export function AdminShell({ tabs, active, onSelect, children }: {
         </div>
       </aside>
 
-      {/* ===== Khu nội dung ===== */}
-      <div className="flex min-h-dvh flex-col">
+      {/* ===== Khu nội dung ===== (h-dvh + overflow-hidden → chỉ <main> cuộn, topbar luôn đứng yên,
+           nội dung KHÔNG trượt ra sau thanh tiêu đề mờ gây chồng chữ) */}
+      <div className="flex h-dvh flex-col overflow-hidden">
         <header className="admin-topbar sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3.5 lg:px-8">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[.2em] text-primary/70">Bảng điều khiển</p>

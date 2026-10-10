@@ -39,7 +39,14 @@ async function login(page, email, pass) {
   await Promise.all([page.waitForLoadState('networkidle'), page.click('button[type="submit"]')]);
   await page.waitForTimeout(1200);
 }
-async function shot(page, name) { await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}${name}.png`, fullPage: true }); log.push(`✓ ${name} — ${page.url()}`); }
+async function shot(page, name) {
+  await page.waitForLoadState('networkidle').catch(() => {});
+  // Chờ spinner "Đang tải…" (lazy chunk / guard async / warm model) biến mất rồi mới chụp.
+  await page.locator('text=Đang tải').first().waitFor({ state: 'hidden', timeout: 9000 }).catch(() => {});
+  await page.waitForTimeout(1100);
+  await page.screenshot({ path: `${OUT}${name}.png`, fullPage: true });
+  log.push(`✓ ${name} — ${page.url()}`);
+}
 
 // Seed 1 hồ sơ "đã tốt nghiệp" để xem được màn Tổng kết.
 const SEED_DONE = () => {
@@ -59,11 +66,43 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
   const p = await cP.newPage();
   p.on('pageerror', (e) => log.push(`✗ [${vp}] player JS error: ${e.message}`));
   await login(p, 'test5@gumi.vn', 'test1234');
-  await p.goto(`${BASE}/me`, { waitUntil: 'networkidle' }); await shot(p, `${vp}-profile`);
-  await p.goto(`${BASE}/leaderboard`, { waitUntil: 'networkidle' }); await shot(p, `${vp}-leaderboard`);
+  // Tài khoản test được mở hết chặng → đi qua mọi loại màn.
+  const SCREENS = [
+    ['home', '/'], ['journey', '/journey'], ['chapter1', '/chapter/1'],
+    ['mission1-drink', '/mission/1'], ['mission2-quiz', '/mission/2'], ['mission3-game', '/mission/3'],
+    ['mission4-share', '/mission/4'], ['mission21-final', '/mission/21'],
+    ['profile', '/me'], ['leaderboard', '/leaderboard'],
+  ];
+  for (const [name, path] of SCREENS) {
+    await p.goto(`${BASE}${path}`, { waitUntil: 'networkidle' }).catch(() => {});
+    await shot(p, `${vp}-${name}`);
+  }
+  // Chuông thông báo: badge chưa đọc + mở dropdown.
+  await p.goto(`${BASE}/journey`, { waitUntil: 'networkidle' });
+  const bell = p.locator('button[aria-label^="Thông báo"]');
+  if (await bell.count()) {
+    await bell.first().click().catch(() => {});
+    await p.waitForTimeout(600);
+    await shot(p, `${vp}-bell-open`);
+    log.push(`✓ [${vp}] chuông mở được`);
+  } else log.push(`✗ [${vp}] KHÔNG thấy chuông thông báo`);
   await p.evaluate(SEED_DONE);
   await p.goto(`${BASE}/summary`, { waitUntil: 'networkidle' }); await shot(p, `${vp}-summary`);
   await cP.close();
+
+  // Onboarding (tài khoản MỚI chưa có hồ sơ)
+  const cN = await browser.newContext({ viewport: size });
+  const n = await cN.newPage();
+  n.on('pageerror', (e) => log.push(`✗ [${vp}] onboarding JS error: ${e.message}`));
+  await n.goto(`${BASE}/signup`, { waitUntil: 'networkidle' });
+  await shot(n, `${vp}-signup`);
+  await n.fill('input[type="email"]', `new_${vp}_${Date.now()}@gumi.vn`);
+  await n.locator('input[type="password"]').first().fill('gumi12345');
+  const pwds = n.locator('input[type="password"]'); if (await pwds.count() > 1) await pwds.nth(1).fill('gumi12345');
+  await n.click('button[type="submit"]').catch(() => {});
+  await n.waitForTimeout(1500);
+  await shot(n, `${vp}-onboarding`);
+  await cN.close();
   // Admin
   const cA = await browser.newContext({ viewport: size });
   const a = await cA.newPage();

@@ -53,6 +53,13 @@ export async function subscribePush(): Promise<boolean> {
   }
 }
 
+/** Trình duyệt hiện đã có push subscription chưa (để hiện đúng trạng thái nút bật/tắt). */
+export async function isPushSubscribed(): Promise<boolean> {
+  if (!pushSupported()) return false;
+  try { const reg = await navigator.serviceWorker.ready; return !!(await reg.pushManager.getSubscription()); }
+  catch { return false; }
+}
+
 /** Huỷ đăng ký push ở trình duyệt và xoá subscription trên server. */
 export async function unsubscribePush(): Promise<void> {
   if (!pushSupported()) return;

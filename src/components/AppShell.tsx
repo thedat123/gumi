@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
 import { InstallButton } from './InstallButton';
+import { NotificationBell } from './NotificationBell';
 import { ReminderNotifier } from './ReminderNotifier';
 import { Loading } from './Loading';
 import { useSession } from '../app/session';
@@ -57,6 +58,7 @@ export function AppShell() {
             </span>
           </NavLink>
           <div className="flex items-center gap-2">
+            {session && <NotificationBell />}
             <InstallButton />
             {isAdmin && (
               <NavLink to="/admin" aria-label="Trang quản trị"

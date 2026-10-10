@@ -12,6 +12,7 @@ import {
   type AdminPlayer,
   type AdminStats,
   type Api,
+  type AppNotification,
   type AuthApi,
   type CampaignState,
   type CheckinResult,
@@ -87,6 +88,13 @@ const ADMIN_SEED: AdminCheckin[] = [
   { id: 'c4', user: 'Thanh Tùng', day: 4, status: 'rejected', emoji: '🧃' },
   { id: 'c5', user: 'Phương Linh', day: 4, status: 'pending', emoji: '☕️', flag: 'ảnh trùng ngày khác' },
   { id: 'c6', user: 'Đức Minh', day: 1, status: 'pending', emoji: '🥛', flag: 'nghi ngờ chỉnh sửa' },
+];
+
+// Thông báo giả cho chuông (demo). Bản thật đọc từ bảng public.notifications do sender ghi.
+const NOTIF_SEED: AppNotification[] = [
+  { id: 'n1', title: 'Level Down Challenge', body: 'Thử thách hôm nay đang chờ bạn chinh phục đấy!', url: '/journey', read: false, created_at: new Date(Date.now() - 36e5).toISOString() },
+  { id: 'n2', title: 'Level Down Challenge', body: 'Gumi nhớ bạn rồi đấy, vào thăm Gumi một xíu được hong', url: '/', read: false, created_at: new Date(Date.now() - 9e6).toISOString() },
+  { id: 'n3', title: 'Level Down Challenge', body: 'Hoàn thành ngay trước khi quá muộn!', url: '/journey', read: true, created_at: new Date(Date.now() - 9e7).toISOString() },
 ];
 
 // Ngưỡng đạt chỉ tiêu nhận quà: hoàn thành từ 14/21 ngày trở lên (theo brief mục VI).
@@ -365,6 +373,9 @@ export function createMockApi(): Api {
     source: 'mock',
     auth,
     admin,
+
+    async listNotifications() { requireSession(); return delay([...NOTIF_SEED]); },
+    async markNotificationsRead() { requireSession(); NOTIF_SEED.forEach((n) => { n.read = true; }); await delay(null, 120); },
 
     async getProfile() {
       requireSession();

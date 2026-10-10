@@ -10,6 +10,7 @@ import {
   type AdminCheckin,
   type AdminStats,
   type Api,
+  type AppNotification,
   type AuthApi,
   type CampaignState,
   type CheckinResult,
@@ -121,6 +122,8 @@ export function createSupabaseApi(): Api {
     source: 'supabase',
     auth,
     admin,
+    listNotifications: () => rpc<AppNotification[]>('list_notifications'),
+    markNotificationsRead: () => rpc<void>('mark_notifications_read'),
     getProfile: () => rpc<Profile | null>('get_profile'),
     createProfile: (input: CreateProfileInput) =>
       rpc<Profile>('create_profile', { p_name: input.name, p_avatar: input.avatar, p_level: input.level, p_drinks: input.drinksPerWeek }),
