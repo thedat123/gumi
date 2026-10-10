@@ -475,7 +475,7 @@ export function createMockApi(): Api {
       });
     },
 
-    async submitCheckin(day, level, file, needsReview = false): Promise<CheckinResult> {
+    async submitCheckin(day, level, file, needsReview = false, sugarPercent = null): Promise<CheckinResult> {
       requireSession();
       await delay(null, 700);
       const testing = isUnlocked();
@@ -495,8 +495,16 @@ export function createMockApi(): Api {
       }
 
       if (LEVEL_DAYS.includes(day) && ![70, 50, 30, 0].includes(level)) throw new ApiError('level_not_allowed');
-      const maxLevel = drinkTarget(day, state.profile?.level ?? 100);
-      if (maxLevel !== null && level > maxLevel) throw new ApiError('level_not_allowed');
+      const base = state.profile?.level ?? 100;
+      if (sugarPercent != null) {
+        // So bằng % THÔ để khớp y hệt AI (vd 69% vẫn hợp lệ). Ngày 1: chỉ cần thấp hơn thói quen.
+        const over = (day === 1 && sugarPercent >= base) || (day === 5 && sugarPercent > 50)
+          || (day === 15 && sugarPercent > 30) || (day === 20 && sugarPercent > 0);
+        if (over) throw new ApiError('level_not_allowed');
+      } else {
+        const maxLevel = drinkTarget(day, base); // fallback (không có %): dùng nấc rời rạc như cũ
+        if (maxLevel !== null && level > maxLevel) throw new ApiError('level_not_allowed');
+      }
       if (LEVEL_DAYS.includes(day)) state.levels[day] = level;
       advance(day);
       save();

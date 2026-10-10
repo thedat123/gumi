@@ -224,8 +224,12 @@ export interface Api {
   /** Đánh dấu "bắt đầu chơi" hôm nay → cập nhật & trả về streak ngày liên tiếp. */
   markPlayed(): Promise<number>;
   getLeaderboard(): Promise<Leaderboard>;
-  /** needsReview=true → AI không nhận diện được, gửi ảnh cho admin duyệt tay (ghi nhận tạm thời, chờ duyệt). */
-  submitCheckin(day: number, level: SugarLevel, file: File | string, needsReview?: boolean): Promise<CheckinResult>;
+  /**
+   * needsReview=true → AI không nhận diện được, gửi ảnh cho admin duyệt tay (ghi nhận tạm thời, chờ duyệt).
+   * sugarPercent = % đường THÔ AI đọc (0-100). Backend validate bằng số thật này (vd 69% vẫn đọc đúng,
+   * không bị làm tròn lên nấc 70 rồi chặn oan). `level` vẫn là nấc rời rạc dùng để tính điểm.
+   */
+  submitCheckin(day: number, level: SugarLevel, file: File | string, needsReview?: boolean, sugarPercent?: number | null): Promise<CheckinResult>;
   /** Tiêu 1 Bùa để CỨU chuỗi khi lỡ đúng 1 ngày (không bỏ qua chặng); trả về chuỗi được giữ. */
   useStreakFreeze(): Promise<number>;
   getQuizQuestions(): Promise<QuizQuestion[]>;

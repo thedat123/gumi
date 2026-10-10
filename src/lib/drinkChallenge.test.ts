@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drinkTarget, judgeDrink, readSugarPercent } from './drinkChallenge';
+import { judgeDrink, readSugarPercent } from './drinkChallenge';
 import type { VlmResult } from './vlm';
 
 const evidence = (sugarPercent: number | null, extras: Partial<VlmResult> = {}): VlmResult => ({
@@ -8,11 +8,13 @@ const evidence = (sugarPercent: number | null, extras: Partial<VlmResult> = {}):
 });
 
 describe('DRINK challenge validation', () => {
-  it('requires one step below each player baseline on day 1', () => {
-    expect(drinkTarget(1, 100)).toBe(70);
-    expect(drinkTarget(1, 70)).toBe(50);
-    expect(drinkTarget(1, 50)).toBe(30);
-    expect(judgeDrink(1, 70, evidence(60)).kind).toBe('fail');
+  it('day 1 passes any reduction below the registered baseline', () => {
+    // Chỉ cần THẤP HƠN thói quen đăng ký là đạt (giảm bất kỳ, không bắt đúng 1 nấc).
+    expect(judgeDrink(1, 100, evidence(70)).kind).toBe('pass'); // 100 → 70 là hạ
+    expect(judgeDrink(1, 100, evidence(80)).kind).toBe('pass'); // 80 vẫn thấp hơn 100 → đạt
+    expect(judgeDrink(1, 100, evidence(100)).kind).toBe('fail'); // bằng thói quen → chưa hạ
+    expect(judgeDrink(1, 70, evidence(60)).kind).toBe('pass');  // 60 < 70 → đạt
+    expect(judgeDrink(1, 70, evidence(70)).kind).toBe('fail');  // bằng thói quen → trượt
     expect(judgeDrink(1, 70, evidence(50)).kind).toBe('pass');
   });
 

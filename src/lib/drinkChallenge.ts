@@ -58,6 +58,18 @@ export function judgeDrink(day: number, baseline: SugarLevel, evidence: VlmResul
     kind: 'unknown', title: 'AI chưa đọc được mức đường',
     detail: 'Hãy chụp rõ mức đường trên tem/hoá đơn. Với nước lọc nguyên bản, chụp rõ ly hoặc chai nước.', percent: null,
   };
+  // Ngày 1 "Bước nhỏ đầu tiên": chỉ cần THẤP HƠN thói quen đăng ký là đạt (giảm đường BẤT KỲ, không bắt đúng 1 nấc).
+  // VD thói quen 100% → uống 90/80/70%… đều là hạ; chỉ ly bằng/cao hơn thói quen mới trượt.
+  if (day === 1) {
+    if (percent >= baseline) return {
+      kind: 'fail', title: 'Chưa hạ so với thói quen',
+      detail: `AI đọc được ${percent}% đường — chưa thấp hơn thói quen ${baseline}%. Hôm nay chỉ cần chọn ly ít đường hơn ${baseline}% là đạt.`, percent,
+    };
+    return {
+      kind: 'pass', title: 'Đạt mục tiêu hôm nay!',
+      detail: `AI đọc được ${percent}% đường, đã thấp hơn thói quen ${baseline}%. Bạn có thể gửi check-in.`, percent,
+    };
+  }
   if (percent > target) return {
     kind: 'fail', title: 'Chưa đạt mục tiêu hôm nay',
     detail: `AI đọc được ${percent}% đường, trong khi thử thách yêu cầu tối đa ${target}%. Hãy chọn mức thấp hơn và chụp lại nhé.`, percent,

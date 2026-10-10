@@ -67,6 +67,21 @@ describe('mock API — luồng chơi', () => {
     expect((await api.getJourney()).days[0]).toBe('open');
   });
 
+  it('ngày 1 so bằng % THÔ: thấp hơn thói quen là đạt (69% < thói quen 70%)', async () => {
+    const api = createMockApi();
+    await api.auth.signUp('min@gumi.vn', 'gumi1234');
+    await api.createProfile({ name: 'Min', avatar: '🐱', level: 70, drinksPerWeek: 7 });
+    const r = await api.submitCheckin(1, 70, 'ly.jpg', false, 69); // 69 làm tròn nấc = 70 nhưng % thô 69 < 70 → đạt
+    expect(r.points).toBe(15);
+  });
+
+  it('ngày 1 bằng/cao hơn thói quen bị chặn (70% trên thói quen 70%)', async () => {
+    const api = createMockApi();
+    await api.auth.signUp('max@gumi.vn', 'gumi1234');
+    await api.createProfile({ name: 'Max', avatar: '🐱', level: 70, drinksPerWeek: 7 });
+    await expect(api.submitCheckin(1, 70, 'ly.jpg', false, 70)).rejects.toMatchObject({ code: 'level_not_allowed' } as ApiError);
+  });
+
   it('quiz chặng 2 chấm điểm và mở ngay chặng 3', async () => {
     const api = await ready();
     await api.submitCheckin(1, 70, 'a.jpg');

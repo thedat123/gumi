@@ -26,7 +26,9 @@ export function CheckIn() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 1;
   const m = vi.missions[day - 1];
-  const { profile } = useSession();
+  const { profile, refreshProfile } = useSession();
+  // Baseline PHẢI là giá trị thật từ hồ sơ. Ngày 1 có mục tiêu phụ thuộc baseline (vd 70% → tối đa 50%);
+  // nếu profile chưa load mà đoán đại 100 thì AI báo "đạt" nhưng backend dùng baseline thật → từ chối (level_not_allowed).
   const baseline = profile?.level ?? 100;
   const needsStamp = m?.kind === 'DRINK'; // ngày uống → bắt buộc thấy tem ly nước
   const [fileName, setFileName] = useState<string | null>(null);
@@ -79,6 +81,9 @@ export function CheckIn() {
     })();
     return () => { cancel = true; };
   }, [needsStamp]);
+
+  // Hồ sơ chưa load (vào thẳng link / mạng chập chờn) → nạp lại, để baseline luôn là giá trị THẬT, không đoán 100.
+  useEffect(() => { if (!profile) refreshProfile(); }, [profile, refreshProfile]);
 
   const pick = async (e: ChangeEvent<HTMLInputElement>) => {
     const request = ++pickRequest.current;
@@ -141,7 +146,7 @@ export function CheckIn() {
     try {
       if (needsStamp && verdict?.kind !== 'pass') { setPhase('idle'); setShowVerdict(true); return; }
       const level: SugarLevel = needsLevel ? storedSugarLevel(verdict!.percent!) : 0;
-      await api.submitCheckin(day, level, file ?? '');
+      await api.submitCheckin(day, level, file ?? '', false, verdict?.percent ?? null);
       playSfx('win');
       setPending(false);
       setPhase('success');
@@ -160,7 +165,7 @@ export function CheckIn() {
     setError(null);
     try {
       const level: SugarLevel = needsLevel && verdict?.percent != null ? storedSugarLevel(verdict.percent) : 0;
-      const r = await api.submitCheckin(day, level, file, true);
+      const r = await api.submitCheckin(day, level, file, true, verdict?.percent ?? null);
       playSfx('win');
       setPending(r.pending !== false);
       setPhase('success');
@@ -178,6 +183,10 @@ export function CheckIn() {
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
 
+  // Ngày 1 có mục tiêu phụ thuộc baseline — chưa có hồ sơ thì CHỜ, không chạy với baseline đoán 100
+  // (tránh AI báo "đạt" rồi backend từ chối vì baseline thật thấp hơn).
+  if (day === 1 && !profile) return <Banner kind="info">Đang tải hồ sơ của bạn…</Banner>;
+
   if (phase === 'success') {
     return <CompletionPanel day={day} points={m.points} note={pending ? vi.checkin.review.pendingNote : 'Ảnh check-in của bạn đã được ghi nhận.'} />;
   }
@@ -194,7 +203,7 @@ export function CheckIn() {
       <Card className="flex flex-col gap-3">
         {needsStamp && <div className="rounded-card border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-3">
           <p className="text-xs font-black uppercase tracking-widest text-primary">MỤC TIÊU NGÀY {day}</p>
-          <p className="mt-1 text-small font-bold">{day === 10 ? 'Bình nước tự chuẩn bị, không thêm đường' : `Tối đa ${target}% đường${day === 1 ? ` · từ thói quen ${baseline}%` : ''}`}</p>
+          <p className="mt-1 text-small font-bold">{day === 10 ? 'Bình nước tự chuẩn bị, không thêm đường' : day === 1 ? `Thấp hơn thói quen ${baseline}% đường` : `Tối đa ${target}% đường`}</p>
           <p className="mt-1 text-caption text-muted">AI sẽ đọc ảnh và đối chiếu trước khi bạn gửi check-in.</p>
         </div>}
         {/* Ngày SHARE: chia sẻ Story kèm caption (Web Share / copy), rồi upload ảnh chụp làm bằng chứng */}
