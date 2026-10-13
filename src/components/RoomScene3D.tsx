@@ -9,10 +9,23 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { playSfx } from '../lib/sfx';
 import { getQuality } from '../lib/quality';
 import type { RoomVariant } from './RoomScene';
+import { FURNITURE_3D, disposeDecor, type Pal3 } from './furniture3d';
+import { useRoomDecor } from '../app/room-decor';
+import { itemById } from '../lib/furniture';
+import { Icon } from './Icon';
 import catGirlPearl from '../assets/cat-girl-pearl.webp';
 import gumaWin from '../assets/gumayusi-win.webp'
 
 const lerp = THREE.MathUtils.lerp;
+
+// Map toạ độ sàn CHUẨN HOÁ (x,y ∈ [0,1]) ↔ world cho nội thất người chơi đặt (dùng chung state với phòng 2D).
+const FLOOR_W = 11;                                  // bề ngang vùng đặt (mét)
+const DECOR_BACK_Z = -2.3, DECOR_FRONT_Z = 2.9;      // y=0 → sát tường sau · y=1 → gần camera
+const nx2wx = (x: number) => (x - 0.5) * FLOOR_W;
+const ny2wz = (y: number) => DECOR_BACK_Z + y * (DECOR_FRONT_Z - DECOR_BACK_Z);
+const wx2nx = (wx: number) => wx / FLOOR_W + 0.5;
+const wz2ny = (wz: number) => (wz - DECOR_BACK_Z) / (DECOR_FRONT_Z - DECOR_BACK_Z);
+const clampN = (n: number) => Math.min(1, Math.max(0, n));
 
 // Nạp & cache model glTF (dùng lại giữa các lần dựng phòng). Trả bản CLONE để đặt nhiều nơi.
 const gltfLoader = new GLTFLoader();
@@ -371,12 +384,24 @@ function loadWebPainting(kind: Painting): Promise<THREE.Texture> {
 }
 
 /** Bối cảnh phòng 3D — dựng MỘT LẦN, mood (ngày/đêm/thời tiết) đổi MƯỢT bằng nội suy trong vòng lặp. */
-export function RoomScene3D({ act = 1, variant = 'living', weather, lights = true }: { act?: 1 | 2 | 3; variant?: RoomVariant; weather?: Weather; lights?: boolean }) {
+export function RoomScene3D({ act = 1, variant = 'living', weather, lights = true, edit = false }: { act?: 1 | 2 | 3; variant?: RoomVariant; weather?: Weather; lights?: boolean; edit?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const weatherRef = useRef<Weather>(weather ?? autoWeather());
   useEffect(() => { weatherRef.current = weather ?? autoWeather(); }, [weather]);
   const lightsRef = useRef(lights);
   useEffect(() => { lightsRef.current = lights; }, [lights]);
+
+  // ===== Nội thất người chơi tự bày (dùng CHUNG state với phòng 2D). Sắp xếp NGAY trong 3D (kéo bằng chuột). =====
+  const { decor, move, patch, remove } = useRoomDecor();
+  const placements = decor[variant];
+  const [selected, setSelected] = useState<string | null>(null);
+  // Qua ref để vòng lặp/handler trong effect luôn đọc giá trị mới nhất mà KHÔNG phải dựng lại scene.
+  const decorRef = useRef(placements); decorRef.current = placements;
+  const editRef = useRef(edit); editRef.current = edit;
+  const moveRef = useRef(move); moveRef.current = move;
+  const selectedRef = useRef(selected); selectedRef.current = selected;
+  const setSelectedRef = useRef(setSelected); setSelectedRef.current = setSelected;
+  useEffect(() => { if (!edit) setSelected(null); }, [edit]);
 
   // Màn hẹp (điện thoại dọc) → cửa sổ hai bên bị khung hình cắt mất; dùng bố cục cửa sổ RIÊNG cho mobile.
   // Theo dõi bằng media-query để xoay ngang/dọc là dựng lại đúng bố cục.
@@ -397,6 +422,9 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     let raf = 0; let disposed = false;
     const q = getQuality();
     const reduce = q.reduce;
+    // Phòng 3D VÀO LÀ TRỐNG: người chơi tự bày nội thất (kéo-thả). Giữ nguyên code dựng sẵn (tham chiếu để
+    // không "unused") nhưng TẮT qua cờ này → chỉ còn vỏ phòng + ánh sáng + tầm nhìn (ban công), vào nhẹ & mượt.
+    const PRESET_FURNITURE = false;
 
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: q.antialias, alpha: true, powerPreference: q.tier === 'low' ? 'low-power' : 'high-performance' }); }
@@ -493,8 +521,10 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       box(18, 0.28, 0.2, trimMat, 0, 8.86, -2.9, false);
     }
 
-    cyl(2.35, 2.35, 0.04, 56, mat(p.rugRim, 1), 0, 0.02, 1.1, false).receiveShadow = true;
-    cyl(2.05, 2.05, 0.06, 56, mat(p.rug, 1), 0, 0.035, 1.1, false).receiveShadow = true;
+    if (PRESET_FURNITURE) {
+      cyl(2.35, 2.35, 0.04, 56, mat(p.rugRim, 1), 0, 0.02, 1.1, false).receiveShadow = true;
+      cyl(2.05, 2.05, 0.06, 56, mat(p.rug, 1), 0, 0.035, 1.1, false).receiveShadow = true;
+    }
 
     // ===== Cửa sổ + RÈM VẢI. Kính dùng chung một material để nội suy màu theo mood. =====
     const clothBump = track(fabricBump());
@@ -672,6 +702,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       featureWall(0xE4DBCC);                                    // tường greige ấm, phẳng sang trọng
       // Ánh sáng tổng dịu, CÂN ĐỐI hai bên (villa: đều, không đốm)
       const ceilGlow = new THREE.PointLight(0xFFF4E6, 1.35, 18, 2); ceilGlow.position.set(0, 7.4, 0.4); scene.add(ceilGlow);
+     if (PRESET_FURNITURE) {
       const ceilL = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilL.position.set(-3.2, 7.0, -0.4); scene.add(ceilL);
       const ceilR = new THREE.PointLight(0xFFF1DC, 0.7, 15, 2); ceilR.position.set(3.2, 7.0, -0.4); scene.add(ceilR);
       fairyLights();                                            // đèn dây vắt ngang đỉnh tường
@@ -707,8 +738,10 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       const plR = new THREE.PointLight(p.lamp, 3.0, 7.0, 2); plR.position.set(4.4, 1.9, 0.5); scene.add(plR);
       pendant(0, -0.5);                                         // đèn thả trần CHÍNH GIỮA trên bàn trà
       contact(-2.7, -0.5, 3.4); contact(2.7, -0.5, 3.4); contact(-4.0, -2.5, 1.7); contact(4.0, -2.5, 1.7); // (bỏ bóng sàn giữa của bàn trà cũ)
+     }
     } else if (variant === 'kitchen') {
       featureWall(0xEDE6D8);                                          // tường kem sang, phẳng
+     if (PRESET_FURNITURE) {
       // TẤM ĐÁ MARBLE ĐẬM liền sau bếp (feature slab từ mặt quầy lên hút mùi) — kiểu 5 sao, KHÔNG phủ hết tường
       const marbleTex = track(marbleTexture('#262D33', '#8C97A2')); marbleTex.repeat.set(1.4, 1.4);
       const splash = new THREE.Mesh(track(new THREE.PlaneGeometry(2.7, 2.75)), track(new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.24, metalness: 0.2 })));
@@ -762,13 +795,16 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       const kGlow = new THREE.PointLight(0xFFF1D6, 2.4, 15, 2); kGlow.position.set(0, 6.7, 0.6); scene.add(kGlow);
       lamp = tableLamp(5.2, -1.2, false);                           // đèn đứng góc phải (BẤM bật/tắt)
       contact(-5.2, 0.6, 1.6); contact(5.2, 0.6, 1.6);
+     }
     } else {
       floorMat.map!.repeat.set(3, 3);
+      if (PRESET_FURNITURE) {
       // LAN CAN gỗ + tay vịn
       const railMat = mat(0xE8D3A8, 0.8);
       for (let x = -5; x <= 5; x += 0.6) box(0.12, 1.2, 0.12, railMat, x, 0.6, -2.62);
       box(11, 0.2, 0.3, mat(0xD9B87E, 0.8), 0, 1.26, -2.62);
       box(11, 0.2, 0.3, mat(0xC49A63, 0.8), 0, 0.1, -2.62, false);
+      }
       // ===== TẦM NHÌN XUỐNG THÀNH PHỐ — skyline nhiều lớp, cửa sổ sáng đèn (chill buổi tối) =====
       const cityBase = track(cityTexture());
       const rnd = (a: number, b: number) => a + Math.random() * (b - a);
@@ -792,16 +828,19 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
         for (const [dx, dy, r] of puffs) { const puff = new THREE.Mesh(track(new THREE.SphereGeometry(r * cs, 14, 10)), cloudMat); puff.position.set(dx * cs, dy * cs, 0); cl.add(puff); }
         scene.add(cl);
       }
+      if (PRESET_FURNITURE) {
       // BỒN CÂY đều nhau dọc lan can (bụi xanh + hoa) — đối xứng
       for (const px of [-4.5, -1.5, 1.5, 4.5]) {
         box(1.3, 0.34, 0.34, mat(0xA9764E, 0.7), px, 1.5, -2.55);
         for (const dx of [-0.42, -0.14, 0.14, 0.42]) { const bush = new THREE.Mesh(track(new THREE.SphereGeometry(0.19, 12, 10)), mat(p.leaf[(Math.abs(dx * 10) | 0) % 3]!, 0.72)); bush.position.set(px + dx, 1.78, -2.55); bush.castShadow = true; scene.add(bush); }
         for (const [dx, fc] of [[-0.3, 0xF2A0B8], [0.28, 0xFFD27A]] as const) { const f = new THREE.Mesh(track(new THREE.SphereGeometry(0.07, 8, 8)), mat(fc, 0.6)); f.position.set(px + dx, 1.93, -2.5); scene.add(f); }
       }
+      }
       // ĐÈN DÂY festoon vắt ngang ban công (bóng ấm) + 2 đèn điểm
       for (let i = 0; i <= 14; i++) { const t = i / 14, bx = -5 + t * 10, byy = 3.2 - Math.sin(t * Math.PI) * 0.6; const bulb = new THREE.Mesh(track(new THREE.SphereGeometry(0.07, 8, 6)), track(new THREE.MeshBasicMaterial({ color: i % 2 ? 0xFFE29A : 0xFFF3D6 }))); bulb.position.set(bx, byy, -1.2); scene.add(bulb); }
       const fl1 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl1.position.set(-2.4, 3, -0.8); scene.add(fl1);
       const fl2 = new THREE.PointLight(0xFFE29A, 1.3, 11, 2); fl2.position.set(2.4, 3, -0.8); scene.add(fl2);
+      if (PRESET_FURNITURE) {
       // Thảm ngoài trời CHÍNH GIỮA — chừa trống cho Gumi ĐỨNG TRÊN THẢM (đã BỎ bàn bistro + nến giữa)
       place('rugRounded', 0, 0.02, 0.6, 3.8, 0, 0xDBCBB2);
       // Nệm ngồi bệt (pouf) — góc thư giãn ngắm phố
@@ -822,6 +861,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       trailingPlant(-2.5, 3.1, -1.0); trailingPlant(2.5, 3.1, -1.0);
       lamp = tableLamp(-4.7, -1.2, false);
       contact(-4.7, -1.2, 1.6);
+      }
     }
 
     // Gom mọi ĐÈN ĐIỂM của phòng (trừ đèn bàn `lamp` xử lý riêng ở vòng lặp) để công tắc đèn giảm/tắt được.
@@ -880,7 +920,7 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     const raycaster = new THREE.Raycaster();
     const ptr = new THREE.Vector2();
     const onCanvasClick = (e: MouseEvent) => {
-      if (!lampModel) return;
+      if (editRef.current || !lampModel) return;
       const rect = renderer.domElement.getBoundingClientRect();
       ptr.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       ptr.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -888,6 +928,77 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
       if (raycaster.intersectObject(lampModel, true).length > 0) { lampOn = !lampOn; playSfx('pop'); }
     };
     renderer.domElement.addEventListener('click', onCanvasClick);
+
+    // ===== NỘI THẤT NGƯỜI CHƠI — dựng từ decorRef, KÉO-THẢ bằng raycast xuống sàn (sắp xếp NGAY trong 3D) =====
+    const pal3: Pal3 = { leaf: p.leaf, wood: p.wood, lamp: p.lamp, rug: p.rug, rugRim: p.rugRim };
+    const decorGroup = new THREE.Group(); scene.add(decorGroup);
+    const built = new Map<string, THREE.Object3D>();
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xB83556, transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false });
+    const selRing = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 36), ringMat);
+    selRing.rotation.x = -Math.PI / 2; selRing.position.y = 0.05; selRing.visible = false; decorGroup.add(selRing);
+
+    let dragging: { pointerId: number; uid: string; obj: THREE.Object3D; offX: number; offZ: number; moved: boolean } | null = null;
+    const syncDecor = () => {
+      const list = decorRef.current;
+      const seen = new Set<string>();
+      for (const pl of list) {
+        const b = FURNITURE_3D[pl.itemId];
+        if (!b) continue;                               // cửa sổ = kiến trúc → không có bản 3D, bỏ qua
+        seen.add(pl.uid);
+        let obj = built.get(pl.uid);
+        if (!obj) { obj = b(pal3); obj.userData.uid = pl.uid; decorGroup.add(obj); built.set(pl.uid, obj); }
+        obj.scale.setScalar(pl.scale);
+        obj.rotation.y = THREE.MathUtils.degToRad(pl.rotation ?? 0) + (pl.flip ? Math.PI : 0);
+        if (!dragging || dragging.uid !== pl.uid) { obj.position.x = nx2wx(pl.x); obj.position.z = ny2wz(pl.y); }
+      }
+      for (const [uid, obj] of built) if (!seen.has(uid)) { decorGroup.remove(obj); disposeDecor(obj); built.delete(uid); }
+      const sel = selectedRef.current ? built.get(selectedRef.current) : null;
+      if (sel && editRef.current) { selRing.visible = true; selRing.position.x = sel.position.x; selRing.position.z = sel.position.z; }
+      else selRing.visible = false;
+    };
+
+    const decorRay = new THREE.Raycaster();
+    const dptr = new THREE.Vector2();
+    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const hitPt = new THREE.Vector3();
+    const toNDC = (e: PointerEvent) => { const r = renderer.domElement.getBoundingClientRect(); dptr.x = ((e.clientX - r.left) / r.width) * 2 - 1; dptr.y = -((e.clientY - r.top) / r.height) * 2 + 1; };
+    const onDown = (e: PointerEvent) => {
+      if (!editRef.current || !e.isPrimary || e.button !== 0) return;
+      toNDC(e); decorRay.setFromCamera(dptr, camera);
+      const hits = decorRay.intersectObjects(decorGroup.children.filter((c) => c !== selRing), true);
+      if (!hits.length) { setSelectedRef.current(null); return; }
+      let o: THREE.Object3D = hits[0]!.object;
+      while (o.parent && o.userData.uid === undefined) o = o.parent;
+      const uid = o.userData.uid as string | undefined;
+      if (!uid) return;
+      if (!decorRay.ray.intersectPlane(floorPlane, hitPt)) return;
+      renderer.domElement.setPointerCapture(e.pointerId);
+      dragging = { pointerId: e.pointerId, uid, obj: o, offX: o.position.x - hitPt.x, offZ: o.position.z - hitPt.z, moved: false };
+      setSelectedRef.current(uid);
+      e.preventDefault();
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== dragging.pointerId) return;
+      toNDC(e); decorRay.setFromCamera(dptr, camera);
+      if (decorRay.ray.intersectPlane(floorPlane, hitPt)) {
+        dragging.obj.position.x = Math.max(-FLOOR_W / 2, Math.min(FLOOR_W / 2, hitPt.x + dragging.offX));
+        dragging.obj.position.z = Math.max(DECOR_BACK_Z, Math.min(DECOR_FRONT_Z, hitPt.z + dragging.offZ));
+        dragging.moved = true;
+        selRing.visible = true; selRing.position.x = dragging.obj.position.x; selRing.position.z = dragging.obj.position.z;
+        if (reduce) render();
+      }
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== dragging.pointerId) return;
+      const d = dragging; dragging = null;
+      if (renderer.domElement.hasPointerCapture(d.pointerId)) renderer.domElement.releasePointerCapture(d.pointerId);
+      if (d.moved && e.type !== 'pointercancel') moveRef.current(variant, d.uid, clampN(wx2nx(d.obj.position.x)), clampN(wz2ny(d.obj.position.z)));
+    };
+    renderer.domElement.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    syncDecor();
 
     let lastWeather: Weather = mood; // để đổi bầu trời cửa sổ NGAY khi bấm
 
@@ -945,15 +1056,17 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     const loop = () => {
       if (disposed) return;
       raf = requestAnimationFrame(loop);
+      if (document.hidden) { clock.getDelta(); return; }
       acc += clock.getDelta();
       if (frameMin && acc < frameMin) return; // chưa tới nhịp khung kế → bỏ qua, GIỮ thời gian dồn cho lần render sau
       const t = clock.getElapsedTime();
       const dt = Math.min(0.05, acc); acc = 0; // dt = thời gian DỒN từ khung vẽ trước → hoạt ảnh không bị chậm khi giới hạn FPS
+      syncDecor();                                     // đồng bộ nội thất người chơi (thêm/bớt/di chuyển) — rất nhẹ
       applyMood(1 - Math.pow(1e-8, dt)); // chuyển gần như TỨC THÌ (~0.15s) khi đổi thời tiết/đèn
       // Bầu trời NGOÀI cửa sổ đổi NGAY khi đổi thời tiết (ánh sáng phòng thì fade mượt)
       if (weatherRef.current !== lastWeather) { lastWeather = weatherRef.current; glassMat.map = skyTexes[lastWeather]; glassMat.needsUpdate = true; }
 
-      camera.position.x = Math.sin(t * 0.16) * 0.2; camera.position.y = 2.1 + Math.sin(t * 0.22) * 0.05; camera.lookAt(0, 1.5, -0.4);
+      if (!editRef.current) { camera.position.x = Math.sin(t * 0.16) * 0.2; camera.position.y = 2.1 + Math.sin(t * 0.22) * 0.05; } camera.lookAt(0, 1.5, -0.4);
       const a = dustGeo.getAttribute('position') as THREE.BufferAttribute;
       for (let i = 0; i < ND; i++) { let y = a.getY(i) + dvel[i]! * 0.01; if (y > 7) y = 0; a.setY(i, y); a.setX(i, a.getX(i) + Math.sin(t + i) * 0.0006); }
       a.needsUpdate = true;
@@ -982,6 +1095,12 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     return () => {
       disposed = true; cancelAnimationFrame(raf); ro.disconnect();
       renderer.domElement.removeEventListener('click', onCanvasClick);
+      renderer.domElement.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      for (const [, obj] of built) disposeDecor(obj);
+      selRing.geometry.dispose(); ringMat.dispose();
       for (const o of placed) scene.remove(o); // model dùng chung geometry ở cache → chỉ gỡ khỏi scene
       for (const d of disposables) d.dispose();
       composer?.dispose(); bloom?.dispose(); envRT.dispose(); pmrem.dispose();
@@ -990,5 +1109,21 @@ export function RoomScene3D({ act = 1, variant = 'living', weather, lights = tru
     };
   }, [act, variant, narrow]);
 
-  return <div ref={host} aria-hidden="true" className="absolute inset-0" />;
+  const selPl = selected ? placements.find((pl) => pl.uid === selected) : null;
+  const clampScale = (n: number) => Math.min(2.2, Math.max(0.5, n));
+  return (
+    <>
+      <div ref={host} aria-hidden="true" className="absolute inset-0" />
+      {edit && selPl && (
+        <div className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-border bg-surface/95 p-1.5 shadow-pop backdrop-blur">
+          <span className="px-2 text-caption font-semibold text-muted">{itemById(selPl.itemId)?.name}</span>
+          <button type="button" aria-label="Thu nhỏ" onClick={() => patch(variant, selPl.uid, { scale: clampScale(selPl.scale - 0.15) })} className="flex h-11 w-11 items-center justify-center rounded-pill bg-bg text-muted transition-transform active:scale-90"><Icon name="minus" size={16} /></button>
+          <button type="button" aria-label="Phóng to" onClick={() => patch(variant, selPl.uid, { scale: clampScale(selPl.scale + 0.15) })} className="flex h-11 w-11 items-center justify-center rounded-pill bg-bg text-muted transition-transform active:scale-90"><Icon name="plus" size={16} /></button>
+          <button type="button" aria-label="Xoay 15°" onClick={() => patch(variant, selPl.uid, { rotation: ((selPl.rotation ?? 0) + 15) % 360 })} className="flex h-11 w-11 items-center justify-center rounded-pill bg-bg text-muted">↻</button>
+          <button type="button" aria-label="Lật ngang" onClick={() => patch(variant, selPl.uid, { flip: !selPl.flip })} className="flex h-11 w-11 items-center justify-center rounded-pill bg-bg text-muted transition-transform active:scale-90"><Icon name="flip" size={16} /></button>
+          <button type="button" aria-label="Xoá" onClick={() => { remove(variant, selPl.uid); setSelected(null); }} className="flex h-11 w-11 items-center justify-center rounded-pill bg-danger/10 text-danger transition-transform active:scale-90"><Icon name="trash" size={16} /></button>
+        </div>
+      )}
+    </>
+  );
 }

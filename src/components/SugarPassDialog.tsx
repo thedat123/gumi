@@ -20,7 +20,7 @@ export function SugarPassDialog({ hoursLeft, passesLeft, canUse = true, onConfir
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={onCancel}>
+    <div className="fixed inset-0 z-[3000] flex items-end justify-center bg-text/50 p-4 sm:items-center" onClick={onCancel}>
       <div role="dialog" aria-modal="true" aria-labelledby="pass-title" className="safe-bottom w-full max-w-sm rounded-card bg-surface p-5" onClick={(e) => e.stopPropagation()}>
         <h2 id="pass-title" className="text-title font-bold">{vi.pass.title}</h2>
         <p className="mt-2 text-small text-muted">{vi.pass.body}</p>

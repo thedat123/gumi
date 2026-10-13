@@ -49,10 +49,17 @@ export function Summary() {
         const onShare = async () => {
           setBusy(true); setNote(null);
           try {
-            const { renderCard, shareImage } = await import('../lib/shareCard');
+            const { renderCard, shareImageToSocial } = await import('../lib/shareCard');
             const blob = await renderCard(card);
-            const r = await shareImage(blob, { title: vi.summary.title, text: `${vi.summary.graduated} #LevelDown #BớtNgọt`, filename: 'sugar-journey.png' });
-            setNote(r === 'shared' ? vi.summary.shared : vi.summary.downloaded);
+            const r = await shareImageToSocial(blob, {
+              caption: `${vi.summary.graduated} #LevelDown #BớtNgọt`,
+              filename: 'sugar-journey.png',
+              title: vi.summary.graduated,
+              desc: vi.summary.evolveCaption,
+              appUrl: window.location.origin,
+              upload: api.uploadShareCard,
+            });
+            setNote(r === 'downloaded' ? vi.summary.downloaded : r === 'uploaded' ? vi.summary.opened : vi.summary.shared);
           } catch { setNote(vi.summary.shareError); } finally { setBusy(false); }
         };
         const onDownload = async () => {
@@ -63,7 +70,8 @@ export function Summary() {
             setNote(vi.summary.downloaded);
           } catch { setNote(vi.summary.shareError); } finally { setBusy(false); }
         };
-        const onFacebook = async () => { const { shareFacebook } = await import('../lib/shareCard'); shareFacebook(window.location.origin); };
+        // Nút Facebook: cùng đường với "Chia sẻ" — mobile mở khay, desktop mở FB kèm ảnh card.
+        const onFacebook = onShare;
 
         return (
           /* Desktop: 2 cột (trái = thẻ story 9:16, phải = chia sẻ + hạng); mobile: xếp dọc, canh giữa. */

@@ -25,8 +25,8 @@ export function FoodTray({ onFeed }: { onFeed: (food: string) => void }) {
 
   return (
     <>
-      <div className="mx-auto flex items-center gap-2 rounded-pill border-2 border-surface bg-surface/90 px-3 py-1.5 shadow-soft backdrop-blur">
-        <span className="shrink-0 text-caption font-bold text-muted">🍽️ Kéo cho ăn</span>
+      <div className="food-tray mx-auto flex max-w-full flex-wrap justify-center items-center gap-1.5 rounded-pill border-2 border-surface bg-surface/90 px-3 py-1.5 shadow-soft backdrop-blur">
+        <span className="food-tray-label shrink-0 text-caption font-bold text-muted">🍽️ Kéo cho ăn</span>
         {FOODS.map((f) => (
           <button key={f} type="button" onPointerDown={start(f)} aria-label={`Kéo ${f} cho Gumi ăn`}
             className="flex h-9 w-9 shrink-0 touch-none items-center justify-center rounded-pill bg-bg text-title shadow-soft transition-transform active:scale-90">

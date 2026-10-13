@@ -12,7 +12,7 @@ import { actOfDay } from '../lib/scoring';
 import { playSfx } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { errorCode, messageFor } from '../lib/errors';
-import { copyText, shareStory } from '../lib/shareCard';
+import { copyText } from '../lib/shareCard';
 import type { VisionResult } from '../lib/vision';
 import type { VlmResult } from '../lib/vlm';
 import type { SugarLevel } from '../lib/sugar';
@@ -51,9 +51,36 @@ export function CheckIn() {
   const needsLevel = target !== null;
   const isShare = m?.kind === 'SHARE';
 
+  // Ngày SHARE: app TỰ TẠO ảnh poster 9:16 để chia sẻ → mobile mở khay OS có "Thêm vào Story"
+  // (không có ảnh thì IG/FB không cho đăng Story); desktop upload + mở FB kèm ảnh.
   const doShare = async () => {
-    const r = await shareStory({ caption: vi.checkin.share.caption, url: window.location.origin, file });
-    if (r === 'copied') setCopied(true);
+    try {
+      const { renderSharePoster, shareImageToSocial } = await import('../lib/shareCard');
+      // Số liệu THẬT từ hành trình (chạy được giữa chừng); chỉ hiện ô có giá trị > 0.
+      const stats = await api.getSummary()
+        .then((s) => [
+          { label: 'thìa đường đã giảm', value: s.sugarCutSpoons },
+          { label: 'ly nước lành mạnh', value: s.healthyCount },
+          { label: 'ngày giữ chuỗi', value: s.streak },
+        ].filter((r) => r.value > 0).map((r) => ({ label: r.label, value: `${r.value}` })))
+        .catch(() => [] as { label: string; value: string }[]);
+      const blob = await renderSharePoster({
+        heading: 'THỬ THÁCH 21 NGÀY BỚT NGỌT',
+        big: `Ngày ${day}/21`,
+        subtitle: 'Mình đang bớt ngọt cùng Gumi 🐱 — bạn thử cùng mình nhé?',
+        brand: vi.app.name,
+        stats,
+      });
+      const r = await shareImageToSocial(blob, {
+        caption: vi.checkin.share.caption,
+        filename: `gumi-day-${day}.png`,
+        title: 'Thử thách 21 ngày bớt ngọt',
+        desc: 'Mình đang bớt ngọt cùng Gumi 🐱',
+        appUrl: window.location.origin,
+        upload: api.uploadShareCard,
+      });
+      if (r !== 'shared') setCopied(true); // desktop: đã copy caption (uploaded/downloaded)
+    } catch { /* huỷ / lỗi tạo ảnh → bỏ qua, người dùng vẫn copy caption thủ công được */ }
   };
   const doCopy = async () => { if (await copyText(vi.checkin.share.caption)) setCopied(true); };
 
@@ -146,9 +173,9 @@ export function CheckIn() {
     try {
       if (needsStamp && verdict?.kind !== 'pass') { setPhase('idle'); setShowVerdict(true); return; }
       const level: SugarLevel = needsLevel ? storedSugarLevel(verdict!.percent!) : 0;
-      await api.submitCheckin(day, level, file ?? '', false, verdict?.percent ?? null);
+      const res = await api.submitCheckin(day, level, file ?? '', false, verdict?.percent ?? null);
       playSfx('win');
-      setPending(false);
+      setPending(res.pending === true); // ngày SHARE (đăng MXH) → backend trả pending, chờ admin duyệt
       setPhase('success');
     } catch (err) {
       setPhase('idle');

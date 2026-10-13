@@ -352,8 +352,7 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
           <linearGradient id="accPurpleCloth" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#ad80db" /><stop offset=".5" stopColor="#7a4db3" /><stop offset="1" stopColor="#4d2d75" /></linearGradient>
         </defs>
         {outfit.background !== 'none' && <Backdrop id={outfit.background} />}
-        <ellipse cx="100" cy="210" rx={fit ? 58 : 80} ry="11" fill="rgba(0,0,0,0.06)" />
-        <ellipse className="g-shadow" cx="100" cy="208" rx={fit ? 46 : 64} ry="8" />
+        <ellipse className="g-shadow" cx="100" cy="199" rx={fit ? 34 : 42} ry="5" />
         <g className="g-actor" key={`${poke}-${eventKey}`}>
           <g className="g-breath">
             {/* Áo choàng phải nằm sau cơ thể; các phụ kiện khác nằm trên sprite. */}

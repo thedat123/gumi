@@ -40,8 +40,15 @@ function ReviewPanel() {
   const [err, setErr] = useState<string | null>(null);
 
   const act = async (id: string, status: 'approved' | 'rejected') => {
+    let reason: string | undefined;
+    if (status === 'rejected') {
+      // Lý do sẽ được gửi vào thông báo cho người chơi (xem admin_set_checkin_status).
+      const r = window.prompt('Lý do từ chối (gửi cho người chơi):', 'Ảnh không hợp lệ.');
+      if (r === null) return; // huỷ
+      reason = r.trim() || undefined;
+    }
     setBusyId(id); setErr(null);
-    try { await api.admin.setCheckinStatus(id, status); queue.reload(); }
+    try { await api.admin.setCheckinStatus(id, status, reason); queue.reload(); }
     catch { setErr('Không cập nhật được, thử lại.'); }
     finally { setBusyId(null); }
   };

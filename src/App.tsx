@@ -5,6 +5,7 @@ import { Loading } from './components/Loading';
 import { RequireAdmin, RequireAuth, RequireProfile, RequireToday } from './app/guards';
 import { SessionProvider } from './app/session';
 import { SkinProvider } from './app/skin';
+import { RoomDecorProvider } from './app/room-decor';
 import { SystemState } from './pages/SystemState'; // nhẹ + guards đã import sẵn → giữ tĩnh, không tách chunk
 
 // Mỗi trang thành một chunk riêng: màn đầu (login/landing) không còn kéo theo toàn bộ app.
@@ -29,6 +30,7 @@ export function App() {
   return (
     <SessionProvider>
       <SkinProvider>
+      <RoomDecorProvider>
       <Routes>
         {/* Admin: shell riêng (dashboard), KHÔNG dùng AppShell game của người chơi. */}
         <Route path="admin" element={<RequireAdmin><Suspense fallback={<Loading />}><Admin /></Suspense></RequireAdmin>} />
@@ -54,6 +56,7 @@ export function App() {
           <Route path="*" element={<SystemState fixed="not_found" />} />
         </Route>
       </Routes>
+      </RoomDecorProvider>
       </SkinProvider>
     </SessionProvider>
   );

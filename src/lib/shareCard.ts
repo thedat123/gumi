@@ -126,16 +126,75 @@ export async function renderCard(d: CardData): Promise<Blob> {
   return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }
 
-/** Chia sẻ ảnh: ưu tiên Web Share API kèm FILE (mở được Instagram/Facebook/Messenger trên mobile); PC thì tải về. */
-export async function shareImage(blob: Blob, opts: { title: string; text: string; filename?: string }): Promise<'shared' | 'downloaded'> {
-  const file = new File([blob], opts.filename ?? 'sugar-journey.png', { type: 'image/png' });
-  const nav = navigator as Navigator & { canShare?: (d?: unknown) => boolean };
-  if (nav.canShare?.({ files: [file] }) && typeof navigator.share === 'function') {
-    try { await navigator.share({ files: [file], title: opts.title, text: opts.text }); return 'shared'; }
-    catch (e) { if ((e as DOMException)?.name === 'AbortError') return 'shared'; /* huỷ share → coi như xong */ }
+/**
+ * Poster 9:16 cho ngày SHARE ("rủ bạn bớt ngọt") — để có SẴN một tấm ảnh đăng thẳng lên Story.
+ * (Mobile không thể đăng Story nếu không có ảnh; chia sẻ ảnh đơn này → app hiện "Thêm vào Story".)
+ * Kèm số liệu thật (thìa đường đã giảm, ly healthy, chuỗi ngày) để khoe tiến độ.
+ */
+export async function renderSharePoster(d: {
+  heading: string; big: string; subtitle: string; brand: string;
+  stats?: { label: string; value: string }[];
+}): Promise<Blob> {
+  const W = 1080, H = 1920;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d')!;
+  try { await (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready; } catch { /* bỏ qua */ }
+  const font = "'Be Vietnam Pro', system-ui, sans-serif";
+  const primary = cssVar('--color-primary', '#B83556');
+  const dark = cssVar('--color-gumi-dark', '#8A3A2A');
+  const onP = cssVar('--color-on-primary', '#FFFFFF');
+  const gold = '#FFE08A'; // tông vàng mèo Gumi — làm điểm nhấn nổi trên nền đỏ hồng
+
+  // Nền gradient + quầng sáng vàng ấm cho sinh động hơn.
+  const bg = g.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#C23A5E'); bg.addColorStop(0.55, primary); bg.addColorStop(1, dark);
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W / 2, 760, 60, W / 2, 760, 560);
+  glow.addColorStop(0, 'rgba(255,224,138,0.22)'); glow.addColorStop(1, 'rgba(255,224,138,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,0.05)';
+  g.beginPath(); g.arc(160, 300, 240, 0, 7); g.fill();
+  g.beginPath(); g.arc(940, 1600, 300, 0, 7); g.fill();
+
+  g.textAlign = 'center';
+
+  // Eyebrow trong "pill" bo tròn.
+  g.font = `800 40px ${font}`;
+  const ew = Math.min(W - 120, g.measureText(d.heading).width + 72);
+  g.fillStyle = 'rgba(255,255,255,0.16)'; roundRect(g, (W - ew) / 2, 236, ew, 78, 39); g.fill();
+  g.fillStyle = gold; g.fillText(d.heading, W / 2, 288);
+
+  drawGumi(g, W / 2, 640, 300);
+
+  // Dòng lớn (ngày X/21) — vàng nổi bật.
+  g.fillStyle = gold; g.font = `900 112px ${font}`;
+  g.fillText(d.big, W / 2, 980);
+
+  // Số liệu thật dạng 3 ô.
+  const stats = (d.stats ?? []).slice(0, 3);
+  let subY = 1180;
+  if (stats.length) {
+    const pad = 70, gap = 24, n = stats.length;
+    const cw = (W - pad * 2 - gap * (n - 1)) / n, ch = 210, cy = 1060;
+    stats.forEach((st, i) => {
+      const x = pad + i * (cw + gap);
+      g.fillStyle = 'rgba(255,255,255,0.14)'; roundRect(g, x, cy, cw, ch, 30); g.fill();
+      g.fillStyle = gold; g.font = `900 76px ${font}`; g.fillText(st.value, x + cw / 2, cy + 104);
+      g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `600 26px ${font}`;
+      wrap(g, st.label, cw - 28).slice(0, 2).forEach((ln, j) => g.fillText(ln, x + cw / 2, cy + 150 + j * 32));
+      g.globalAlpha = 1;
+    });
+    subY = cy + ch + 90;
   }
-  downloadBlob(blob, file.name);
-  return 'downloaded';
+
+  // CTA phụ đề.
+  g.fillStyle = onP; g.font = `600 42px ${font}`; g.globalAlpha = 0.95;
+  for (const ln of wrap(g, d.subtitle, W - 200)) { g.fillText(ln, W / 2, subY); subY += 58; }
+  g.globalAlpha = 1;
+
+  g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `700 34px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 80); g.globalAlpha = 1;
+
+  return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
@@ -144,33 +203,76 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-/** Mở hộp thoại chia sẻ Facebook cho một URL (đăng link chiến dịch). */
-export function shareFacebook(url: string): void {
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer,width=640,height=560');
-}
-
 export async function copyText(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
-/**
- * Chia sẻ Story kèm caption cho ngày SHARE.
- * - Mobile: Web Share API mở khay hệ điều hành → chọn Facebook/Instagram/Messenger; kèm ảnh nếu có.
- * - PC / không hỗ trợ: copy caption vào clipboard rồi mở hộp chia sẻ Facebook (kèm quote).
- * Lưu ý nền tảng: Instagram Story KHÔNG nhận sẵn caption qua web → app tự copy để người dùng dán.
- */
-export async function shareStory(opts: { caption: string; url: string; file?: File | null }): Promise<'shared' | 'copied'> {
-  const nav = navigator as Navigator & { canShare?: (d?: unknown) => boolean };
-  const data: ShareData & { files?: File[] } = { text: opts.caption, url: opts.url };
-  if (opts.file && nav.canShare?.({ files: [opts.file] })) data.files = [opts.file];
-  if (typeof navigator.share === 'function') {
-    try { await navigator.share(data); return 'shared'; }
-    catch (e) { if ((e as DOMException)?.name === 'AbortError') return 'shared'; /* huỷ → thôi, không rơi xuống FB */ }
-  }
-  await copyText(opts.caption);
+// ——— Chia sẻ Facebook/Messenger (desktop) qua trang og:image ———
+// Desktop KHÔNG gửi được file ảnh lên FB; sharer.php chỉ đọc og:image của URL.
+// Nên upload ảnh lên bucket công khai (uploadShareCard) rồi share URL của Edge Function 'share-card'
+// — trang này trả HTML có og:image trỏ tới ảnh vừa upload → FB hiện ĐÚNG ảnh card.
+const SUPABASE_URL = ((import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '').replace(/\/$/, '');
+const CARDS_MARKER = '/storage/v1/object/public/cards/';
+
+/** Kiểu callback upload lấy từ API (api.uploadShareCard): trả public URL hoặc null nếu không host được. */
+export type UploadCard = (blob: Blob, name: string) => Promise<string | null>;
+
+/** Dựng URL trang share-card (og:image) từ public URL của ảnh đã upload. null nếu không dựng được. */
+function sharePageUrl(publicImageUrl: string, o: { title?: string; desc?: string; appUrl?: string }): string | null {
+  const idx = publicImageUrl.indexOf(CARDS_MARKER);
+  if (!SUPABASE_URL || idx === -1) return null;
+  const p = new URLSearchParams({ i: publicImageUrl.slice(idx + CARDS_MARKER.length) });
+  if (o.title) p.set('t', o.title);
+  if (o.desc) p.set('d', o.desc);
+  if (o.appUrl) p.set('u', o.appUrl);
+  return `${SUPABASE_URL}/functions/v1/share-card?${p.toString()}`;
+}
+
+function openFacebookShare(url: string, quote?: string): void {
+  const q = quote ? `&quote=${encodeURIComponent(quote)}` : '';
   window.open(
-    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(opts.url)}&quote=${encodeURIComponent(opts.caption)}`,
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}${q}`,
     '_blank', 'noopener,noreferrer,width=640,height=560',
   );
-  return 'copied';
+}
+
+export interface SocialShareOpts {
+  caption: string;
+  filename?: string;
+  title?: string;
+  desc?: string;
+  appUrl?: string;
+  /** Hàm upload ảnh công khai (api.uploadShareCard) — cần cho đường desktop. */
+  upload?: UploadCard;
+}
+
+/**
+ * Chia sẻ ẢNH trực tiếp lên Facebook/Messenger (wall & story), cả điện thoại lẫn máy tính.
+ * - 📱 Mobile / hỗ trợ Web Share file: mở khay OS → FB/Messenger đăng THẲNG ảnh lên Feed/Story.
+ * - 💻 Desktop: upload ảnh công khai → mở sharer.php với trang og:image → FB HIỆN ảnh card (copy sẵn caption).
+ * - Không host được (mock / lỗi): tải ảnh về + mở FB để người dùng tự đính ảnh.
+ */
+export async function shareImageToSocial(blob: Blob, opts: SocialShareOpts): Promise<'shared' | 'uploaded' | 'downloaded'> {
+  const name = opts.filename ?? 'gumi-card.png';
+  const file = new File([blob], name, { type: 'image/png' });
+  const nav = navigator as Navigator & { canShare?: (d?: unknown) => boolean };
+
+  if (nav.canShare?.({ files: [file] }) && typeof navigator.share === 'function') {
+    try { await navigator.share({ files: [file], text: opts.caption }); return 'shared'; }
+    catch (e) { if ((e as DOMException)?.name === 'AbortError') return 'shared'; /* huỷ → coi như xong */ }
+  }
+
+  if (opts.upload) {
+    const publicUrl = await opts.upload(blob, name).catch(() => null);
+    const page = publicUrl ? sharePageUrl(publicUrl, opts) : null;
+    if (page) {
+      await copyText(opts.caption); // IG/Story không nhận caption web → copy sẵn để dán
+      openFacebookShare(page, opts.caption);
+      return 'uploaded';
+    }
+  }
+
+  downloadBlob(blob, name);
+  if (opts.appUrl) openFacebookShare(opts.appUrl, opts.caption);
+  return 'downloaded';
 }

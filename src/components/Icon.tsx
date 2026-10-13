@@ -9,7 +9,7 @@ export type IconName =
   | 'map' | 'trophy' | 'shirt' | 'camera' | 'gamepad' | 'sofa' | 'utensils' | 'leaf'
   | 'chevron-left' | 'chevron-right' | 'arrow-right' | 'logout' | 'sparkle' | 'lock'
   | 'check' | 'bowl' | 'drop' | 'x' | 'clock' | 'play' | 'flag' | 'shield' | 'undo'
-  | 'sun' | 'cloud' | 'moon';
+  | 'sun' | 'cloud' | 'moon' | 'plus' | 'minus' | 'trash' | 'flip';
 
 interface Props extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName;
@@ -71,6 +71,14 @@ export function Icon({ name, size = 22, filled = false, strokeWidth = 1.75, ...r
       return <svg {...common}><rect x="5" y="10.5" width="14" height="9" rx="2.2" {...(filled ? { fill: 'currentColor' } : {})} /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
     case 'check':
       return <svg {...common} strokeWidth={2.2}><path d="M5 12.5l4.5 4.5L19 7" /></svg>;
+    case 'plus':
+      return <svg {...common} strokeWidth={2.2}><path d="M12 5v14M5 12h14" /></svg>;
+    case 'minus':
+      return <svg {...common} strokeWidth={2.2}><path d="M5 12h14" /></svg>;
+    case 'trash':
+      return <svg {...common}><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" /></svg>;
+    case 'flip':
+      return <svg {...common}><path d="M12 4v16" strokeDasharray="2 2" /><path d="M9 8l-4 4 4 4zM15 8l4 4-4 4z" {...(filled ? { fill: 'currentColor' } : {})} /></svg>;
     case 'bowl':
       return <svg {...common}><path d="M3.5 11h17a8.5 8.5 0 0 1-17 0z" {...(filled ? { fill: 'currentColor' } : {})} /><path d="M8 7c0-1.2 1-2 2-1.6M12 6.4c0-1.2 1-2 2-1.6" /></svg>;
     case 'drop':

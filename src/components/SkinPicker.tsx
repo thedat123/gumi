@@ -30,8 +30,8 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={vi.wardrobe.title} onClick={onClose}>
-      <div className="wardrobe-modal max-h-[94dvh] w-full max-w-4xl overflow-hidden rounded-[26px] border border-border bg-bg shadow-pop" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[3000] flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={vi.wardrobe.title} onClick={onClose}>
+      <div className="wardrobe-modal max-h-[94dvh] w-full max-w-4xl overflow-y-auto rounded-[26px] border border-border bg-bg shadow-pop" onClick={(e) => e.stopPropagation()}>
         {/* Header gradient + thanh sưu tập */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary via-[#C24C72] to-[#8E3A78] px-4 pt-4 pb-4 text-on-primary">
           <span aria-hidden className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15" />
@@ -62,7 +62,6 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
           ))}
           <div className="relative">
             <Gumi state="bo_pho" size={156} outfit={outfit} />
-            <span aria-hidden className="pointer-events-none absolute -bottom-1 left-1/2 h-3 w-24 -translate-x-1/2 rounded-[100%] bg-black/15 blur-[3px]" />
           </div>
           <span className="wardrobe-placement">{placement.tag}</span>
           <button type="button" onClick={reset} className="absolute right-2 top-2 flex items-center gap-1 rounded-pill border border-border bg-surface/90 px-2.5 py-1 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-transform active:scale-95">

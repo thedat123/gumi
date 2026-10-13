@@ -250,6 +250,12 @@ export interface Api {
   submitQuiz(guesses: Record<number, number>): Promise<QuizResult>;
   submitMinigame(day: number, earnedPoints?: number): Promise<CheckinResult>;
   submitWallPost(text: string, storyProof?: File): Promise<void>;
+  /**
+   * Upload ảnh card (khoe thành tích) lên bucket CÔNG KHAI 'cards' → trả public URL.
+   * Dùng cho chia sẻ Facebook/Messenger trên DESKTOP (FB chỉ hiện ảnh qua og:image của 1 URL).
+   * Trả null khi không hỗ trợ (mock / chưa đăng nhập) → caller fallback tải ảnh về.
+   */
+  uploadShareCard(blob: Blob, name: string): Promise<string | null>;
   getWallPosts(): Promise<WallPost[]>;
   getSummary(): Promise<Summary>;
   admin: AdminApi;

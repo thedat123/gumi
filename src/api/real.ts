@@ -181,6 +181,15 @@ export function createSupabaseApi(): Api {
       }
       await rpc('submit_graduation', { p_text: text, p_story_path: storyPath });
     },
+    async uploadShareCard(blob, name) {
+      const session = await auth.getSession();
+      if (!session) return null;
+      const safe = name.replace(/[^\w.-]/g, '_');
+      const path = `${session.userId}/${safe}`;
+      const { error } = await db().storage.from('cards').upload(path, blob, { upsert: true, contentType: blob.type || 'image/png' });
+      if (error) return null; // lỗi upload → caller fallback tải ảnh về
+      return db().storage.from('cards').getPublicUrl(path).data.publicUrl;
+    },
     getWallPosts: () => rpc<WallPost[]>('get_wall_posts'),
     getSummary: () => rpc<Summary>('get_my_summary'),
   };

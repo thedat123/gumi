@@ -87,6 +87,21 @@ export const vi = {
     close: 'Đóng',
   },
 
+  // Tủ nội thất + chế độ trang trí phòng (kéo-thả từng món)
+  furniture: {
+    dock: 'Nội thất',
+    decorate: 'Trang trí',
+    done: 'Xong',
+    open: 'Mở tủ',
+    title: 'Tủ nội thất',
+    hint: 'Chạm để thêm vào giữa phòng, hoặc kéo thả thẳng vào chỗ bạn thích. Vào phòng chạm đồ để chỉnh.',
+    add: 'Thêm',
+    sample: 'Sắp xếp mẫu',
+    clear: 'Dọn trống',
+    unlocked: (have: number, total: number) => `Đã mở ${have}/${total} món`,
+    emptyHint: 'Chọn nội thất để tạo căn phòng của bạn',
+  },
+
   pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 3 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).', count: (n: number) => `Còn ${n}/3 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
     warnTitle: 'Gumi đang hấp hối! 😿',
     warnBody: (n: number) => `Bạn đang lỡ 1 ngày — vào chơi ngay sẽ MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh để giữ chuỗi nhé!`,
@@ -650,6 +665,7 @@ export const vi = {
     submit: 'Gửi lên bức tường',
     postedTitle: 'Đã gửi! Cảm ơn bạn đã đồng hành.',
     postedSub: 'Lời nhắn của bạn đã lên Bức tường cộng đồng Gumi.',
+    postedSubReview: 'Lời nhắn đã lên Bức tường. Ảnh Story đã gửi ban tổ chức duyệt tay — điểm được ghi nhận trong lúc chờ; nếu ảnh không hợp lệ, điểm sẽ bị gỡ.',
     wallTitle: 'Bức tường cộng đồng',
     empty: 'Chưa có lời nhắn nào. Hãy là người đầu tiên tốt nghiệp!',
     notToday: 'Bức tường tốt nghiệp mở vào Ngày 21.',
@@ -678,9 +694,10 @@ export const vi = {
     facebook: 'Facebook',
     building: 'Đang tạo ảnh…',
     shared: 'Đã mở bảng chia sẻ — chọn Instagram / Facebook để đăng nhé!',
+    opened: 'Đã mở Facebook kèm ảnh — caption đã được sao chép, bạn chỉ cần dán và đăng!',
     downloaded: 'Đã tải ảnh! Đăng lên Story Instagram / Facebook của bạn nhé.',
     shareError: 'Chưa tạo được ảnh, thử lại nhé.',
-    shareNote: 'Trên điện thoại sẽ mở thẳng Instagram / Facebook; trên máy tính ảnh được tải về để bạn đăng.',
+    shareNote: 'Điện thoại: mở thẳng Facebook/Instagram kèm ảnh để đăng Feed/Story. Máy tính: mở Facebook và ảnh card hiện sẵn trên bài.',
     backHome: 'Về hành trình',
   },
   admin: {

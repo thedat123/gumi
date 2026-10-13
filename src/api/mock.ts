@@ -374,6 +374,9 @@ export function createMockApi(): Api {
     auth,
     admin,
 
+    // Mock không có bucket công khai → trả null để desktop fallback tải ảnh về.
+    async uploadShareCard() { requireSession(); return null; },
+
     async listNotifications() { requireSession(); return delay([...NOTIF_SEED]); },
     async markNotificationsRead() { requireSession(); NOTIF_SEED.forEach((n) => { n.read = true; }); await delay(null, 120); },
 
@@ -498,10 +501,14 @@ export function createMockApi(): Api {
       if (!PHOTO_DAYS.includes(day)) throw new ApiError('not_today'); // ngày này không phải nhiệm vụ check-in ảnh
       if (!testing && state.completed.includes(day)) throw new ApiError('already_done');
       const points = vi.missions[day - 1]?.points ?? 0;
+      const isShare = vi.missions[day - 1]?.kind === 'SHARE';
 
-      if (needsReview) {
-        // AI không nhận diện được → gửi admin duyệt tay. Ghi nhận tạm thời, thêm ảnh pending để demo màn Admin.
-        ADMIN_SEED.unshift({ id: `c-rev-${Date.now()}`, user: state.profile?.name ?? 'Bạn', day, status: 'pending', emoji: '🥤', flag: 'AI chưa nhận diện — chờ duyệt tay' });
+      // Ngày SHARE (đăng MXH) LUÔN gửi admin duyệt; hoặc AI không nhận diện được → duyệt tay.
+      if (needsReview || isShare) {
+        ADMIN_SEED.unshift({
+          id: `c-rev-${Date.now()}`, user: state.profile?.name ?? 'Bạn', day, status: 'pending',
+          emoji: isShare ? '📤' : '🥤', flag: isShare ? 'Đăng MXH — chờ duyệt' : 'AI chưa nhận diện — chờ duyệt tay',
+        });
         if (LEVEL_DAYS.includes(day) && [70, 50, 30, 0].includes(level)) state.levels[day] = level;
         advance(day);
         save();
@@ -564,6 +571,8 @@ export function createMockApi(): Api {
       ensurePlayable(TOTAL_DAYS);
       state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date(0).toISOString() }, ...state.wall];
       state.storyBonus = storyProof ? 10 : 0;
+      // Có ảnh Story → đẩy vào hàng chờ admin duyệt tay (từ chối sẽ gỡ điểm ngày 21).
+      if (storyProof) ADMIN_SEED.unshift({ id: `c-grad-${Date.now()}`, user: state.profile?.name ?? s.email, day: TOTAL_DAYS, status: 'pending', emoji: '📤', flag: 'Tốt nghiệp — chờ duyệt' });
       advance(TOTAL_DAYS);
       save();
     },
