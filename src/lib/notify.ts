@@ -31,8 +31,8 @@ export async function showReminderNotification(opts: { tag: string; body: string
     await reg.showNotification('Mật Độ', {
       body: opts.body,
       tag: opts.tag,          // trùng tag → thay thế thay vì chồng thông báo cũ
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/icon-192.png?v=20261014',
+      badge: '/icons/icon-192.png?v=20261014',
       data: { url: opts.url },
       requireInteraction: opts.requireInteraction ?? false, // giữ hiện đến khi tự tắt (hữu ích cho noti thử)
       // @ts-expect-error — renotify chưa có trong lib.dom nhưng được hỗ trợ rộng rãi

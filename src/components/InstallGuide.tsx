@@ -130,7 +130,7 @@ function IosScenes({ step }: { step: number }) {
       <Sheet open={step === 1} from="bottom">
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-gray-300" />
         <div className="flex items-center gap-2 px-3 py-2">
-          <img src="/icons/icon-192.png" alt="" className="h-8 w-8 rounded-lg" />
+          <img src="/icons/icon-192.png?v=20261014" alt="" className="h-8 w-8 rounded-lg" />
           <div className="text-left"><p className="text-[10px] font-bold text-gray-800">Mật Độ</p><p className="text-[8px] text-gray-400">matdo.app</p></div>
         </div>
         <div className="flex flex-col gap-1 px-2.5 pb-3">
@@ -175,7 +175,7 @@ function AndroidScenes({ step }: { step: number }) {
 function PageHero() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2">
-      <img src="/icons/icon-192.png" alt="" className="h-14 w-14 rounded-2xl shadow-soft" />
+      <img src="/icons/icon-192.png?v=20261014" alt="" className="h-14 w-14 rounded-2xl shadow-soft" />
       <span className="text-[11px] font-extrabold text-gray-700">Mật Độ</span>
       <span className="text-[8px] text-gray-400">14 ngày bớt ngọt cùng Gumi</span>
     </div>
@@ -227,13 +227,13 @@ function Home({ open, wallpaper, badge }: { open: boolean; wallpaper: string; ba
       <div className="grid grid-cols-4 gap-x-3 gap-y-3">
         {Array.from({ length: 11 }).map((_, i) => <div key={i} className="h-8 w-8 rounded-xl bg-white/35" />)}
         <div className="relative">
-          <img src="/icons/icon-192.png" alt="" className={`h-8 w-8 rounded-xl shadow-soft ring-2 ring-white/70 ${open ? 'animate-pop-in' : ''}`} />
+          <img src="/icons/icon-192.png?v=20261014" alt="" className={`h-8 w-8 rounded-xl shadow-soft ring-2 ring-white/70 ${open ? 'animate-pop-in' : ''}`} />
           {open && <Sparkles />}
         </div>
       </div>
       <div className="flex flex-col items-center">
         <div className="relative">
-          <img src="/icons/icon-192.png" alt="" className={`h-12 w-12 rounded-2xl shadow-pop ${open ? 'animate-pop-in' : ''}`} />
+          <img src="/icons/icon-192.png?v=20261014" alt="" className={`h-12 w-12 rounded-2xl shadow-pop ${open ? 'animate-pop-in' : ''}`} />
           {badge && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-success text-[8px] font-black text-white shadow-soft">✓</span>}
         </div>
         <span className="mt-1.5 rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-semibold text-white">Mật Độ</span>

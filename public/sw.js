@@ -1,7 +1,7 @@
 /* Service worker tự viết cho Mật Độ (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
    Chiến lược: điều hướng (navigate) network-first + rơi về vỏ app đã cache khi offline;
    tài nguyên tĩnh cùng miền dùng stale-while-revalidate. Không đụng tới request khác miền (Supabase). */
-const VERSION = 'ld-v1';
+const VERSION = 'ld-icons-20261014';
 const OFFLINE_URL = '/offline.html';
 const SHELL = ['/', OFFLINE_URL, '/manifest.webmanifest'];
 
@@ -37,8 +37,8 @@ self.addEventListener('push', (event) => {
       tag: data.tag || 'gumi-reminder',   // trùng tag → thay thế, không chồng thông báo
       renotify: true,
       requireInteraction: data.requireInteraction !== false, // bám lại đến khi người dùng tắt → dễ thấy, không tự ẩn sau ~5s
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/icon-192.png?v=20261014',
+      badge: '/icons/icon-192.png?v=20261014',
       data: { url: data.url || '/' },
       lang: 'vi',
     }),

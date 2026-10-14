@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
  * Sinh icon app (PWA / favicon / Apple) TỪ ẢNH GỐC:
- *   public/icons/icon-source.png  — ảnh mascot Gumi trên nền hồng (360×360, đã crop vuông).
+ *   public/icons/icon-source.png  — ảnh mascot Gumi trên nền hồng (đã crop vuông).
  *
  *   node scripts/gen-app-icon.mjs            (cần: npm i -D sharp)
  *
  * Xuất:
  *   icon-192.png / icon-512.png        — any purpose (bo góc)
- *   icon-maskable-512.png              — maskable (ảnh co vào vùng an toàn 80%, pad hồng tràn viền)
+ *   icon-maskable-512.png              — maskable (ảnh co nhẹ, kéo dài nền hồng tràn viền)
  *   apple-touch-icon.png (180)         — đặc (iOS tự bo góc)
  */
 import path from 'node:path';
+import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -71,4 +72,9 @@ const writes = [
 for (const [file, buf] of writes) {
   await sharp(buf).toFile(path.join(dir, file));
   console.log(`  ✔ ${file}`);
+}
+
+// Giữ các URL SVG cũ đồng bộ với cùng ảnh, tránh hiển thị lại mascot cũ.
+for (const [file, buf] of [['icon.svg', r512], ['icon-maskable.svg', mask]]) {
+  await writeFile(path.join(dir, file), `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><image width="512" height="512" href="data:image/png;base64,${buf.toString('base64')}"/></svg>\n`);
 }

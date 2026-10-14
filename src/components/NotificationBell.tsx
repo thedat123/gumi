@@ -70,7 +70,7 @@ export function NotificationBell() {
             ) : items.map((n) => (
               <button key={n.id} onClick={() => openItem(n)}
                 className={`flex w-full gap-2.5 border-b border-border/50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-primary/5 ${n.read ? '' : 'bg-primary/5'}`}>
-                <img src="/icons/icon-192.png" alt="" aria-hidden="true" className="mt-0.5 h-8 w-8 shrink-0 rounded-[9px] shadow-soft ring-1 ring-border" />
+                <img src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" className="mt-0.5 h-8 w-8 shrink-0 rounded-[9px] shadow-soft ring-1 ring-border" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="min-w-0 flex-1 truncate text-small font-bold text-text">{n.title}</span>
