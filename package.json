@@ -14,7 +14,7 @@
     "verify:ui": "node scripts/verify-ui.mjs",
     "gen:narration": "tsx scripts/gen-narration.ts",
     "tokens": "node scripts/gen-theme.mjs",
-    "icons": "node scripts/gen-icons.mjs",
+    "icons": "node scripts/gen-app-icon.mjs",
     "vapid": "node scripts/gen-vapid.mjs",
     "admin:migration": "node scripts/gen-admin-migration.mjs",
     "db:seed": "bash scripts/seed-all.sh",
