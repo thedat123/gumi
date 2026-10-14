@@ -174,7 +174,7 @@ export function createSupabaseApi(): Api {
     async submitWallPost(text, storyProof) {
       const session = await auth.getSession();
       if (!session) throw new ApiError('forbidden');
-      const storyPath = storyProof ? `${session.userId}/21-story.jpg` : null;
+      const storyPath = storyProof ? `${session.userId}/14-story.jpg` : null;
       if (storyProof && storyPath) {
         const { error } = await db().storage.from('checkins').upload(storyPath, storyProof, { upsert: true, contentType: storyProof.type || 'image/jpeg' });
         if (error) throw mapError(error.message);

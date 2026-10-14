@@ -28,7 +28,7 @@ export async function showReminderNotification(opts: { tag: string; body: string
   if (!notificationsSupported() || Notification.permission !== 'granted') return false;
   try {
     const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification('Level Down Challenge', {
+    await reg.showNotification('Mật Độ', {
       body: opts.body,
       tag: opts.tag,          // trùng tag → thay thế thay vì chồng thông báo cũ
       icon: '/icons/icon-192.png',

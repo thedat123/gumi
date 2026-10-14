@@ -56,22 +56,42 @@ function ReviewPanel() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-title font-bold">Duyệt ảnh check-in</h2>
-        <p className="mt-0.5 text-small text-muted">Ảnh AI chưa chắc chắn, người chơi gửi để ban tổ chức duyệt tay. Ảnh giả → Từ chối (trừ điểm).</p>
+        <h2 className="text-title font-bold">Duyệt ảnh chờ xử lý</h2>
+        <p className="mt-0.5 text-small text-muted">Tách 2 mục: ảnh AI chưa chắc chắn & ảnh người chơi đăng mạng xã hội. Ảnh giả → Từ chối (trừ điểm + báo người chơi).</p>
       </div>
       {err && <Banner kind="error">{err}</Banner>}
       <AsyncView state={queue} empty={<Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>}>
         {(items) => {
           const pending = items.filter((c) => c.status === 'pending');
           if (pending.length === 0) return <Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>;
+          // Ảnh đăng MXH (ngày SHARE + tốt nghiệp) tách khỏi ảnh check-in AI theo cờ (flag).
+          const isSocial = (c: AdminCheckin) => /Đăng MXH|Tốt nghiệp/.test(c.flag ?? '');
+          const social = pending.filter(isSocial);
+          const aiPics = pending.filter((c) => !isSocial(c));
           return (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {pending.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} onAct={act} />)}
+            <div className="flex flex-col gap-6">
+              <ReviewSection title="Duyệt ảnh AI" sub="Check-in đồ uống AI chưa xác nhận chắc chắn — người chơi gửi duyệt tay." items={aiPics} busyId={busyId} onAct={act} />
+              <ReviewSection title="Duyệt ảnh đăng mạng xã hội" sub="Ảnh ngày SHARE & ảnh Story tốt nghiệp người chơi đăng lên MXH." items={social} busyId={busyId} onAct={act} />
             </div>
           );
         }}
       </AsyncView>
     </div>
+  );
+}
+
+/** Một mục duyệt (AI hoặc MXH) — tiêu đề + lưới thẻ; tự hiện "hết ảnh" khi rỗng. */
+function ReviewSection({ title, sub, items, busyId, onAct }: { title: string; sub: string; items: AdminCheckin[]; busyId: string | null; onAct: (id: string, s: 'approved' | 'rejected') => void }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <div>
+        <h3 className="text-body font-bold">{title} <span className="text-caption font-semibold text-muted">· {items.length}</span></h3>
+        <p className="text-caption text-muted">{sub}</p>
+      </div>
+      {items.length === 0
+        ? <Banner kind="info">Không còn ảnh nào chờ duyệt ở mục này.</Banner>
+        : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{items.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} onAct={onAct} />)}</div>}
+    </section>
   );
 }
 
@@ -208,7 +228,7 @@ function DailyTrend({ players }: { players: AdminPlayer[] }) {
       {data.map((d) => (
         <circle key={d.day} cx={x(d.day)} cy={y(d.count)} r={d.day === 1 || d.day === TOTAL || d.day % 7 === 0 ? 3 : 0} fill="#B83556" />
       ))}
-      {[1, 7, 14, 21].map((d) => (
+      {[1, 7, 14].map((d) => (
         <text key={d} x={x(d)} y={H - 6} textAnchor="middle" className="fill-[color:var(--color-muted)]" fontSize="9">Ngày {d}</text>
       ))}
     </svg>

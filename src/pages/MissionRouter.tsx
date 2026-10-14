@@ -1,40 +1,35 @@
 import { useParams } from 'react-router-dom';
 import { CheckIn } from './CheckIn';
-import { Day4 } from './Day4';
 import { Day7 } from './Day7';
 import { Quiz } from './Quiz';
 import { Crossword } from './minigames/Crossword';
-import { Day21Final } from './minigames/Day21Final';
+import { Day14Final } from './minigames/Day14Final';
 import { FlappyBird } from './minigames/FlappyBird';
 import { MemoryMatch } from './minigames/MemoryMatch';
 import { QuickQuiz } from './minigames/QuickQuiz';
 import { SortGame } from './minigames/SortGame';
-import { SpinWheel } from './minigames/SpinWheel';
 import { WordHunt } from './minigames/WordHunt';
-import { BossBattle } from './minigames/BossBattle';
 
-// Điều phối màn chơi theo ngày cho hành trình 21 ngày. Các ngày thường giữ nguyên (quiz/đuổi hình/check-in ảnh);
-// riêng 3 CỬA ẢI cuối Hồi (gặp Boss) là GAME ARCADE full màn:
-//   7  → Flappy Bird "Bay Qua Cơn Thèm" (qua mỗi cột +1, tối đa 50đ)
-//   14 → Boss Battle "Đánh Bại Boss Đường" (hứng nước lành, né đường xấu)
-//   16 → CROSSWORD "Gumi Bắt Chữ" (đồng hồ 3 phút, hết giờ dừng)
-//   21 → "Giải Cứu Mèo Gumi" (sliding) rồi gửi Lời Nhắn Tốt Nghiệp lên bức tường
+// Điều phối màn chơi theo ngày cho hành trình 14 ngày (khớp vi.missions):
+//   2  → Quiz "Đoán Thìa Đoán Muỗng"        8  → QuickQuiz "Trắc Nghiệm Chớp Nhoáng"
+//   3  → Day7 "Đuổi Hình Bắt Chữ"           9  → WordHunt "Truy Tìm Mật Khẩu"
+//   5  → SortGame "Đấu Trường Calo"         11 → Crossword "Gumi Bắt Chữ"
+//   7  → FlappyBird "Bay Qua Cơn Thèm"      12 → MemoryMatch "Lật Thẻ Trí Nhớ"
+//   14 → Day14Final: hứng nước (Boss) → Lời Nhắn Tốt Nghiệp (bức tường)
+//   1,4,6,10,13 (DRINK/SHARE) → CheckIn ảnh
 export function MissionRouter() {
   const { day } = useParams();
   const n = Number(day) || 1;
   switch (n) {
     case 2: return <Quiz />;
     case 3: return <Day7 />;
-    case 6: return <SortGame />;
-    case 7: return <FlappyBird />;                 // CỬA ẢI Hồi 1 — Flappy Bird
-    case 16: return <Crossword />;                  // Ngày 16 — CROSSWORD "Gumi Bắt Chữ" (đồng hồ 3 phút)
-    case 17: return <QuickQuiz />;
-    case 9: return <WordHunt />;
-    case 11: return <Day4 />;
-    case 12: case 18: return <MemoryMatch />;
-    case 14: return <BossBattle />;                 // CỬA ẢI Hồi 2 — hứng nước lành hạ Boss Đường
-    case 21: return <Day21Final />;                 // CỬA ẢI cuối — Giải Cứu Mèo Gumi (sliding) → gửi lời nhắn tốt nghiệp
-    case 19: return <SpinWheel />;
-    default: return <CheckIn />; // DRINK / SHARE → check-in ảnh
+    case 5: return <SortGame />;                    // Đấu Trường Calo
+    case 7: return <FlappyBird />;                  // CỬA ẢI Hồi 1 — Flappy Gumi
+    case 8: return <QuickQuiz />;                   // Trắc nghiệm 3 câu, 10s/câu
+    case 9: return <WordHunt />;                    // Wordsearch
+    case 11: return <Crossword />;                  // CROSSWORD "Gumi Bắt Chữ" (3 phút)
+    case 12: return <MemoryMatch />;                // Lật Thẻ Trí Nhớ
+    case 14: return <Day14Final />;                 // CỬA ẢI cuối — hứng nước → lời nhắn tốt nghiệp
+    default: return <CheckIn />;                    // DRINK / SHARE → check-in ảnh
   }
 }

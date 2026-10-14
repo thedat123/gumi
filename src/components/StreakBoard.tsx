@@ -8,7 +8,7 @@ const BONUS_DAYS = new Set(STREAK_BONUS.map((b) => b.n));
 const isDone = (s: DayState) => s === 'checked' || s === 'passed';
 
 /**
- * Bảng chuỗi ngày — thay cho con số streak: 21 ô chia theo 3 hồi (7 ngày/hồi).
+ * Bảng chuỗi ngày — thay cho con số streak: 14 ô chia theo 3 hồi (5/5/4 ngày).
  * Ô đã hoàn thành sáng màu lửa (chuỗi liền mạch nhìn thấy được), đỉnh chuỗi có ngọn 🔥,
  * ngày mốc thưởng có ngôi sao, hôm nay có viền nhấp nháy.
  */
@@ -51,7 +51,7 @@ export function StreakBoard({ days, today, streak }: { days: DayState[]; today: 
             <div
               key={day}
               title={`Ngày ${day}${bonus ? ' · mốc thưởng chuỗi' : ''}`}
-              className={`relative h-7 flex-1 rounded-[6px] transition-colors ${cls} ${day === 8 || day === 15 ? 'ml-1.5' : ''} ${isToday ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`}
+              className={`relative h-7 flex-1 rounded-[6px] transition-colors ${cls} ${day === 6 || day === 11 ? 'ml-1.5' : ''} ${isToday ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`}
             >
               {bonus && (
                 <span aria-hidden="true" className="absolute -top-2 left-1/2 -translate-x-1/2">

@@ -157,7 +157,7 @@ export function FinalBoss() {
     draw(ctx, w, h, s, act, { pr, py, alpha });
   });
 
-  if (done) return <MissionDone day={day} points={points} note="BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Level Down 🎓" />;
+  if (done) return <MissionDone day={day} points={points} note="BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Mật Độ 🎓" />;
 
   const hud = (
     <div className="flex shrink-0 items-center gap-2">

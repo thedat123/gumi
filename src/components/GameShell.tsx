@@ -37,19 +37,19 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
     <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
       <div className={`relative z-10 mx-auto flex w-full flex-1 flex-col ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}>
-        <header className="game-premium-header mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:p-4">
-          <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface text-muted shadow-soft transition-transform active:scale-90">
+        <header className="game-premium-header mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:p-4 [@media(max-height:520px)]:mb-2 [@media(max-height:520px)]:gap-2 [@media(max-height:520px)]:p-2">
+          <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface text-muted shadow-soft transition-transform active:scale-90 [@media(max-height:520px)]:h-8 [@media(max-height:520px)]:w-8">
             <Icon name="x" size={20} />
           </Link>
           <div className="min-w-0 flex-1">
-            {mission && <p className="mb-0.5 text-[10px] font-black uppercase tracking-[.16em] text-primary/80">CHẶNG {String(day).padStart(2, '0')} / 21 · {mission.kind} · +{mission.points} ĐIỂM</p>}
-            <h1 className="text-title font-extrabold leading-tight text-text">{title}</h1>
-            {intro && <p className="mt-1 line-clamp-2 text-caption font-medium leading-relaxed text-muted">{intro}</p>}
+            {mission && <p className="mb-0.5 text-[10px] font-black uppercase tracking-[.16em] text-primary/80 [@media(max-height:520px)]:hidden">CHẶNG {String(day).padStart(2, '0')} / {vi.journey.total} · {mission.kind} · +{mission.points} ĐIỂM</p>}
+            <h1 className="text-title font-extrabold leading-tight text-text [@media(max-height:520px)]:text-body">{title}</h1>
+            {intro && <p className="mt-1 line-clamp-2 text-caption font-medium leading-relaxed text-muted [@media(max-height:520px)]:hidden">{intro}</p>}
           </div>
-          {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px]">{hud}</div>}
+          {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px] [@media(max-height:520px)]:w-auto [@media(max-height:520px)]:pl-0">{hud}</div>}
         </header>
-        <div className="flex flex-1 flex-col justify-center">{children}</div>
-        {footer && <div className="game-premium-footer sticky bottom-0 z-20 mt-4 rounded-[20px] border border-white/60 bg-surface/90 p-2.5 shadow-[0_-8px_30px_rgba(51,24,55,.12)] backdrop-blur-xl">{footer}</div>}
+        <div className="flex flex-1 flex-col justify-center [@media(max-height:520px)]:justify-start">{children}</div>
+        {footer && <div className="game-premium-footer safe-bottom sticky bottom-0 z-20 mt-4 rounded-[20px] border border-white/60 bg-surface/90 p-2.5 shadow-[0_-8px_30px_rgba(51,24,55,.12)] backdrop-blur-xl [@media(max-height:520px)]:mt-2">{footer}</div>}
       </div>
     </div>
   );

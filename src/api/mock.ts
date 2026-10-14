@@ -52,12 +52,12 @@ const TEST_ACCOUNTS: Record<string, { password: string; admin?: boolean; name: s
   'admin@gumi.vn': { password: 'test1234', admin: true, name: 'Admin Test', avatar: '🦊' },
 };
 const testAccount = (email: string) => TEST_ACCOUNTS[email.trim().toLowerCase()];
-// Ánh xạ ngày → loại nhiệm vụ cho hành trình 21 ngày (khớp vi.missions và MissionRouter).
-const LEVEL_DAYS = [1, 5, 15, 20]; // DRINK có chọn mức đường + dùng tính đường đã cắt
-const DRINK_DAYS = [1, 5, 10, 15, 20]; // ngày DRINK (đếm ly healthy)
-const SHARE_DAYS = [4, 8, 13]; // check-in ảnh, không chọn mức
+// Ánh xạ ngày → loại nhiệm vụ cho hành trình 14 ngày (khớp vi.missions và MissionRouter).
+const LEVEL_DAYS = [1, 10]; // DRINK có ghi mức đường (ngày 1 <baseline, ngày 10 DIY 0%) → tính đường đã cắt
+const DRINK_DAYS = [1, 6, 10]; // ngày DRINK (đếm ly healthy); ngày 6 không gán mức
+const SHARE_DAYS = [4, 13]; // check-in ảnh đăng MXH, không chọn mức
 const PHOTO_DAYS = [...DRINK_DAYS, ...SHARE_DAYS]; // mọi ngày check-in ảnh
-const MINIGAME_DAYS = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19, 21]; // GAME/KNOW/TRACKER + 3 cửa ải boss (7,14,21 hoàn thành bằng submitMinigame). Quiz Day2 tách riêng.
+const MINIGAME_DAYS = [3, 5, 7, 8, 9, 11, 12]; // GAME/KNOW hoàn thành bằng submitMinigame. Quiz Day2 & tốt nghiệp Day14 tách riêng.
 
 interface Persisted {
   session: Session | null;
@@ -92,13 +92,13 @@ const ADMIN_SEED: AdminCheckin[] = [
 
 // Thông báo giả cho chuông (demo). Bản thật đọc từ bảng public.notifications do sender ghi.
 const NOTIF_SEED: AppNotification[] = [
-  { id: 'n1', title: 'Level Down Challenge', body: 'Thử thách hôm nay đang chờ bạn chinh phục đấy!', url: '/journey', read: false, created_at: new Date(Date.now() - 36e5).toISOString() },
-  { id: 'n2', title: 'Level Down Challenge', body: 'Gumi nhớ bạn rồi đấy, vào thăm Gumi một xíu được hong', url: '/', read: false, created_at: new Date(Date.now() - 9e6).toISOString() },
-  { id: 'n3', title: 'Level Down Challenge', body: 'Hoàn thành ngay trước khi quá muộn!', url: '/journey', read: true, created_at: new Date(Date.now() - 9e7).toISOString() },
+  { id: 'n1', title: 'Mật Độ', body: 'Thử thách hôm nay đang chờ bạn chinh phục đấy!', url: '/journey', read: false, created_at: new Date(Date.now() - 36e5).toISOString() },
+  { id: 'n2', title: 'Mật Độ', body: 'Gumi nhớ bạn rồi đấy, vào thăm Gumi một xíu được hong', url: '/', read: false, created_at: new Date(Date.now() - 9e6).toISOString() },
+  { id: 'n3', title: 'Mật Độ', body: 'Hoàn thành ngay trước khi quá muộn!', url: '/journey', read: true, created_at: new Date(Date.now() - 9e7).toISOString() },
 ];
 
-// Ngưỡng đạt chỉ tiêu nhận quà: hoàn thành từ 14/21 ngày trở lên (theo brief mục VI).
-const ELIGIBLE_MIN = 14;
+// Ngưỡng đạt chỉ tiêu nhận quà: hoàn thành từ 10/14 ngày trở lên (theo brief mục VI).
+const ELIGIBLE_MIN = 10;
 
 // Kho tên + avatar để dựng danh sách người chơi giả cho màn quản lý của admin.
 const NAME_POOL = [
@@ -571,7 +571,7 @@ export function createMockApi(): Api {
       ensurePlayable(TOTAL_DAYS);
       state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date(0).toISOString() }, ...state.wall];
       state.storyBonus = storyProof ? 10 : 0;
-      // Có ảnh Story → đẩy vào hàng chờ admin duyệt tay (từ chối sẽ gỡ điểm ngày 21).
+      // Có ảnh Story → đẩy vào hàng chờ admin duyệt tay (từ chối sẽ gỡ điểm ngày 14).
       if (storyProof) ADMIN_SEED.unshift({ id: `c-grad-${Date.now()}`, user: state.profile?.name ?? s.email, day: TOTAL_DAYS, status: 'pending', emoji: '📤', flag: 'Tốt nghiệp — chờ duyệt' });
       advance(TOTAL_DAYS);
       save();

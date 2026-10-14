@@ -64,6 +64,37 @@ function star(g: CanvasRenderingContext2D, x: number, y: number, r: number) {
   g.closePath(); g.fill();
 }
 
+// ——— Mascot Gumi THẬT (ảnh gốc public/gumi-hero.png) để vẽ lên thiệp, thay hình canvas thô ———
+let mascotPromise: Promise<HTMLImageElement | null> | null = null;
+function loadMascot(): Promise<HTMLImageElement | null> {
+  if (mascotPromise) return mascotPromise;
+  mascotPromise = new Promise((res) => {
+    if (typeof Image === 'undefined') { res(null); return; }
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => { mascotPromise = null; res(null); }; // cho thử lại lần sau
+    img.src = '/gumi-hero.png';
+  });
+  return mascotPromise;
+}
+/** Vẽ mascot (ảnh thật) đứng trên bóng đổ mềm; fallback hình canvas nếu ảnh chưa tải được. */
+function drawMascot(g: CanvasRenderingContext2D, img: HTMLImageElement | null, cx: number, bottomY: number, targetH: number) {
+  g.save();
+  g.fillStyle = 'rgba(0,0,0,0.16)';
+  g.beginPath(); g.ellipse(cx, bottomY - 4, targetH * 0.3, targetH * 0.065, 0, 0, 7); g.fill();
+  g.restore();
+  if (img && img.width) {
+    const w = targetH * (img.width / img.height);
+    g.drawImage(img, cx - w / 2, bottomY - targetH, w, targetH);
+  } else {
+    drawGumi(g, cx, bottomY - targetH * 0.5, targetH * 0.55);
+  }
+}
+/** Rắc hạt confetti/lấp lánh trang trí (vàng + trắng) cho thiệp sinh động. */
+function confetti(g: CanvasRenderingContext2D, W: number, seedPts: [number, number, number, string][]) {
+  for (const [x, y, r, col] of seedPts) { g.fillStyle = col; star(g, x * W, y, r); }
+}
+
 /** Vẽ card 1080×1920 và trả PNG blob. */
 export async function renderCard(d: CardData): Promise<Blob> {
   const W = 1080, H = 1920;
@@ -74,14 +105,20 @@ export async function renderCard(d: CardData): Promise<Blob> {
   const primary = cssVar('--color-primary', '#B83556');
   const dark = cssVar('--color-gumi-dark', '#8A3A2A');
   const onP = cssVar('--color-on-primary', '#FFFFFF');
+  const gold = '#FFE08A';
+  const mascot = await loadMascot();
 
-  // nền gradient chéo
+  // nền gradient chéo + quầng sáng
   const bg = g.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, primary); bg.addColorStop(0.5, '#A32C4B'); bg.addColorStop(1, dark);
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W / 2, 720, 60, W / 2, 720, 560);
+  glow.addColorStop(0, 'rgba(255,224,138,0.2)'); glow.addColorStop(1, 'rgba(255,224,138,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(255,255,255,0.06)';
   g.beginPath(); g.arc(180, 260, 240, 0, 7); g.fill();
   g.beginPath(); g.arc(940, 1500, 320, 0, 7); g.fill();
+  confetti(g, W, [[0.12, 360, 9, gold], [0.88, 420, 8, '#FFFFFF'], [0.2, 760, 7, gold], [0.82, 820, 9, gold], [0.1, 560, 6, '#FFFFFF']]);
 
   g.fillStyle = onP; g.textAlign = 'center';
 
@@ -91,8 +128,8 @@ export async function renderCard(d: CardData): Promise<Blob> {
   let y = 210;
   for (const ln of lines) { g.fillText(ln, W / 2, y); y += 74; }
 
-  // mascot
-  drawGumi(g, W / 2, 640, 300);
+  // mascot THẬT
+  drawMascot(g, mascot, W / 2, 840, 460);
 
   // caption
   g.font = `600 34px ${font}`;
@@ -144,27 +181,34 @@ export async function renderSharePoster(d: {
   const dark = cssVar('--color-gumi-dark', '#8A3A2A');
   const onP = cssVar('--color-on-primary', '#FFFFFF');
   const gold = '#FFE08A'; // tông vàng mèo Gumi — làm điểm nhấn nổi trên nền đỏ hồng
+  const mascot = await loadMascot();
 
   // Nền gradient + quầng sáng vàng ấm cho sinh động hơn.
   const bg = g.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, '#C23A5E'); bg.addColorStop(0.55, primary); bg.addColorStop(1, dark);
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   const glow = g.createRadialGradient(W / 2, 760, 60, W / 2, 760, 560);
-  glow.addColorStop(0, 'rgba(255,224,138,0.22)'); glow.addColorStop(1, 'rgba(255,224,138,0)');
+  glow.addColorStop(0, 'rgba(255,224,138,0.24)'); glow.addColorStop(1, 'rgba(255,224,138,0)');
   g.fillStyle = glow; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(255,255,255,0.05)';
   g.beginPath(); g.arc(160, 300, 240, 0, 7); g.fill();
   g.beginPath(); g.arc(940, 1600, 300, 0, 7); g.fill();
+  confetti(g, W, [[0.12, 420, 9, gold], [0.86, 360, 8, '#FFFFFF'], [0.18, 880, 7, gold], [0.84, 920, 9, gold], [0.1, 640, 6, '#FFFFFF'], [0.9, 700, 7, gold]]);
+
+  // Khung viền mảnh bo tròn cho cảm giác "tấm thiệp".
+  g.strokeStyle = 'rgba(255,255,255,0.28)'; g.lineWidth = 3;
+  roundRect(g, 40, 40, W - 80, H - 80, 44); g.stroke();
 
   g.textAlign = 'center';
 
   // Eyebrow trong "pill" bo tròn.
   g.font = `800 40px ${font}`;
-  const ew = Math.min(W - 120, g.measureText(d.heading).width + 72);
+  const ew = Math.min(W - 160, g.measureText(d.heading).width + 72);
   g.fillStyle = 'rgba(255,255,255,0.16)'; roundRect(g, (W - ew) / 2, 236, ew, 78, 39); g.fill();
   g.fillStyle = gold; g.fillText(d.heading, W / 2, 288);
 
-  drawGumi(g, W / 2, 640, 300);
+  // mascot THẬT
+  drawMascot(g, mascot, W / 2, 820, 440);
 
   // Dòng lớn (ngày X/21) — vàng nổi bật.
   g.fillStyle = gold; g.font = `900 112px ${font}`;

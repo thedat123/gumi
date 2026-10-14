@@ -18,7 +18,7 @@ export function CompletionPanel({ day, points, note, children, action }: {
       <div className="relative overflow-hidden rounded-[28px] border border-white/75 bg-gradient-to-br from-white via-[#FFF7F0] to-[#F9E4EB] p-5 text-center shadow-[0_18px_50px_rgba(80,39,59,.2)] sm:p-7">
         <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent/25 blur-3xl" />
         <span className="relative inline-flex items-center gap-1.5 rounded-pill bg-success/12 px-3 py-1 text-xs font-black uppercase tracking-[.14em] text-success"><Icon name="sparkle" size={15} filled /> THỬ THÁCH HOÀN THÀNH</span>
-        <div className="relative mx-auto mt-2 w-fit"><Gumi state={day === 21 ? 'tien_hoa' : 'bo_pho'} size={140} progress={day / vi.journey.total} event="cheer" eventKey={1} /></div>
+        <div className="relative mx-auto mt-2 w-fit"><Gumi state={day === vi.journey.total ? 'tien_hoa' : 'bo_pho'} size={140} progress={day / vi.journey.total} event="cheer" eventKey={1} /></div>
         <p className="relative text-sm font-bold text-muted">{mission?.title}</p>
         <p className="relative mt-1 text-4xl font-black tracking-tight text-primary">+{points} <span className="text-lg">điểm</span></p>
         {note && <p className="relative mx-auto mt-2 max-w-sm text-small leading-relaxed text-muted">{note}</p>}

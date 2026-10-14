@@ -15,15 +15,16 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 /** Cấu hình boss theo ngày (khó tăng dần: HP nhiều hơn, rơi nhanh hơn, nhiều đường xấu hơn). */
 const CFG: Record<number, { title: string; hp: number; every: number; bad: number; fall: number; burst: number; win: string }> = {
   14: { title: 'Đánh Bại Boss Đường', hp: 16, every: 0.62, bad: 0.34, fall: 190, burst: 0, win: 'Boss Hồi 2 tan chảy! Bạn đã pha loãng cơn nghiện ngọt.' },
-  21: { title: 'Đại Chiến Boss Cuối', hp: 26, every: 0.5, bad: 0.44, fall: 235, burst: 3.4, win: 'BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Level Down 🎓' },
+  21: { title: 'Đại Chiến Boss Cuối', hp: 26, every: 0.5, bad: 0.44, fall: 235, burst: 3.4, win: 'BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Mật Độ 🎓' },
 };
 
 type Mode = 'ready' | 'play' | 'dead' | 'won';
 interface Drop { x: number; y: number; vy: number; good: boolean; k: number; sway: number }
 interface State { mode: Mode; px: number; pxT: number; drops: Drop[]; hp: number; lives: number; w: number; h: number; t: number; spawn: number; burst: number; hit: number }
 
-/** Ngày 14 & 21 — Boss cuối Hồi: hứng NƯỚC LÀNH (💧🍵) để hạ độ ngọt của Boss, NÉ đường xấu (🧊🥤🍬). 3 mạng. */
-export function BossBattle() {
+/** Boss cuối: hứng NƯỚC LÀNH (💧🍵) để hạ độ ngọt của Boss, NÉ đường xấu (🧊🥤🍬). 3 mạng.
+ * onWon (chế độ "cổng", dùng cho ngày 14): thắng xong KHÔNG tự submit — gọi onWon để chuyển sang bước tốt nghiệp. */
+export function BossBattle({ onWon }: { onWon?: () => void } = {}) {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 14;
   const cfg = CFG[day] ?? CFG[14]!;
@@ -84,7 +85,7 @@ export function BossBattle() {
       // Bắt / trượt
       s.drops = s.drops.filter((d) => {
         if (d.y >= py - catchR * 0.5 && d.y <= py + catchR && Math.abs(d.x - pxAbs) < catchR) {
-          if (d.good) { s.hp = Math.max(0, s.hp - 1); setHp(s.hp); s.hit = 0.18; playSfx('sip'); if (s.hp <= 0) { to('won'); playSfx('win'); api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 800); } }
+          if (d.good) { s.hp = Math.max(0, s.hp - 1); setHp(s.hp); s.hit = 0.18; playSfx('sip'); if (s.hp <= 0) { to('won'); playSfx('win'); if (onWon) setTimeout(onWon, 600); else { api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 800); } } }
           else { s.lives = Math.max(0, s.lives - 1); setLives(s.lives); playSfx('sleep'); if (s.lives <= 0) { to('dead'); } }
           return false;
         }

@@ -65,8 +65,8 @@ export function CheckIn() {
         ].filter((r) => r.value > 0).map((r) => ({ label: r.label, value: `${r.value}` })))
         .catch(() => [] as { label: string; value: string }[]);
       const blob = await renderSharePoster({
-        heading: 'THỬ THÁCH 21 NGÀY BỚT NGỌT',
-        big: `Ngày ${day}/21`,
+        heading: 'THỬ THÁCH 14 NGÀY BỚT NGỌT',
+        big: `Ngày ${day}/14`,
         subtitle: 'Mình đang bớt ngọt cùng Gumi 🐱 — bạn thử cùng mình nhé?',
         brand: vi.app.name,
         stats,
@@ -74,7 +74,7 @@ export function CheckIn() {
       const r = await shareImageToSocial(blob, {
         caption: vi.checkin.share.caption,
         filename: `gumi-day-${day}.png`,
-        title: 'Thử thách 21 ngày bớt ngọt',
+        title: 'Thử thách 14 ngày bớt ngọt',
         desc: 'Mình đang bớt ngọt cùng Gumi 🐱',
         appUrl: window.location.origin,
         upload: api.uploadShareCard,

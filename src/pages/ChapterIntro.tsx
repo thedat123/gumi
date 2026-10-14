@@ -58,8 +58,8 @@ export function ChapterIntro() {
           </Link>
         </div>
 
-        {/* Mascot ở giữa */}
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center">
+        {/* Mascot ở giữa (co gọn ở màn chiều cao nhỏ để chừa chỗ hội thoại) */}
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center [@media(max-height:560px)]:flex-none [@media(max-height:560px)]:gap-1 [@media(max-height:560px)]:py-1 [@media(max-height:560px)]:[&_svg]:!h-[88px] [@media(max-height:560px)]:[&_svg]:!w-[88px]">
           <Gumi state="bo_pho" size={140} interactive progress={(day - 1) / TOTAL_DAYS} />
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1 text-caption font-bold text-on-primary shadow-pop">
             {big && <Icon name={day === TOTAL_DAYS ? 'trophy' : 'flag'} size={14} filled />}
@@ -82,7 +82,7 @@ export function ChapterIntro() {
               </button>
             </div>
           )}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 [@media(max-height:560px)]:max-h-[38vh] [@media(max-height:560px)]:overflow-y-auto [@media(max-height:560px)]:pr-1">
             {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row-reverse">

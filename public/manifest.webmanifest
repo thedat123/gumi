@@ -1,7 +1,7 @@
 {
-  "name": "Level Down Challenge — 21 ngày bớt ngọt",
-  "short_name": "Level Down",
-  "description": "21 ngày bớt ngọt cùng mèo Gumi: mỗi ngày một nhiệm vụ, tích điểm, giữ chuỗi, leo bảng xếp hạng Sugar Slayer.",
+  "name": "Mật Độ — 14 ngày bớt ngọt",
+  "short_name": "Mật Độ",
+  "description": "14 ngày bớt ngọt cùng mèo Gumi: mỗi ngày một nhiệm vụ, tích điểm, giữ chuỗi, leo bảng xếp hạng Sugar Slayer.",
   "lang": "vi",
   "start_url": "/",
   "scope": "/",
@@ -12,7 +12,6 @@
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

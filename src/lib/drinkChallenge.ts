@@ -29,10 +29,7 @@ export function readSugarPercent(text: string): number | null {
 
 export function drinkTarget(day: number, baseline: SugarLevel): number | null {
   if (day === 1) return STEPS[Math.max(0, STEPS.indexOf(baseline) - 1)]!;
-  if (day === 5) return 50;
-  if (day === 15) return 30;
-  if (day === 20) return 0;
-  return null;
+  return null; // ngày 6: không gán mức (chỉ cần ảnh ly giảm đường); ngày 10 DIY xử lý riêng ở judgeDrink
 }
 
 export type DrinkVerdict = { kind: 'pass' | 'fail' | 'unknown'; title: string; detail: string; percent: number | null };
@@ -54,7 +51,12 @@ export function judgeDrink(day: number, baseline: SugarLevel, evidence: VlmResul
       : { kind: 'unknown', title: 'Chưa xác nhận được bình nước DIY', detail: 'Hãy chụp rõ bình nước cá nhân và nguyên liệu không thêm đường. AI chưa đủ bằng chứng để xác nhận.', percent: evidence.sugarPercent };
   }
   const percent = evidence.sugarPercent ?? (evidence.isUnsweetened ? 0 : null);
-  if (percent === null || target === null) return {
+  // Ngày DRINK không gán mức (vd ngày 6): AI thấy một ly/đồ uống hợp lệ là đạt, không soi %.
+  if (target === null && day !== 1) return {
+    kind: 'pass', title: 'Đã ghi nhận ly giảm đường!',
+    detail: 'Gumi thấy ly giảm đường của bạn rồi. Bạn có thể gửi check-in.', percent,
+  };
+  if (percent === null) return {
     kind: 'unknown', title: 'AI chưa đọc được mức đường',
     detail: 'Hãy chụp rõ mức đường trên tem/hoá đơn. Với nước lọc nguyên bản, chụp rõ ly hoặc chai nước.', percent: null,
   };
@@ -70,7 +72,7 @@ export function judgeDrink(day: number, baseline: SugarLevel, evidence: VlmResul
       detail: `AI đọc được ${percent}% đường, đã thấp hơn thói quen ${baseline}%. Bạn có thể gửi check-in.`, percent,
     };
   }
-  if (percent > target) return {
+  if (target !== null && percent > target) return {
     kind: 'fail', title: 'Chưa đạt mục tiêu hôm nay',
     detail: `AI đọc được ${percent}% đường, trong khi thử thách yêu cầu tối đa ${target}%. Hãy chọn mức thấp hơn và chụp lại nhé.`, percent,
   };

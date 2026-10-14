@@ -3,13 +3,14 @@
 import { vi } from '../content/vi';
 import type { DayState, GumiState } from '../api/types';
 
-export const TOTAL_DAYS = 21;
-export const MILESTONE_DAYS = [7, 14, 21]; // mốc chuyển vùng đất / tiến hoá Gumi
+export const TOTAL_DAYS = 14;
+export const MILESTONE_DAYS = [5, 10, 14]; // ngày cuối mỗi vùng đất / tiến hoá Gumi
+// 3 vùng đất trên 14 ngày: Hồi 1 = 1–5, Hồi 2 = 6–10, Hồi 3 = 11–14.
+export const ACT_STARTS: readonly number[] = [1, 6, 11];
 export const STREAK_BONUS: { n: number; pts: number }[] = [
   { n: 5, pts: 10 },
   { n: 10, pts: 20 },
-  { n: 15, pts: 30 },
-  { n: 21, pts: 50 },
+  { n: 14, pts: 30 },
 ];
 
 export const missionPoints = (day: number): number => vi.missions[day - 1]?.points ?? 0;
@@ -60,10 +61,10 @@ export function missionTotal(p: ProgressInput): number {
     if (p.passed.has(d)) continue;
     total += d === 2 && p.quizScore != null ? p.quizScore : (p.earnedPoints?.[d] ?? missionPoints(d));
   }
-  return total + (p.completed.has(21) ? (p.storyBonus ?? 0) : 0);
+  return total + (p.completed.has(TOTAL_DAYS) ? (p.storyBonus ?? 0) : 0);
 }
 
-/** Thưởng chuỗi theo streak (số ngày liên tiếp mở chơi), mỗi mốc 5/10/15/21 một lần. */
+/** Thưởng chuỗi theo streak (số ngày liên tiếp mở chơi), mỗi mốc 5/10/14 một lần. */
 export function streakBonus(streak: number): number {
   return STREAK_BONUS.filter((b) => streak >= b.n).reduce((sum, b) => sum + b.pts, 0);
 }
@@ -84,17 +85,24 @@ export function approvedCount(days: DayState[]): number {
   return days.filter((d) => d === 'checked').length;
 }
 
-/** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–7), 2 = Rừng Đường Ẩn (8–14), 3 = Đỉnh 0% (15–21). */
-export const actOfDay = (day: number): 1 | 2 | 3 => (day <= 7 ? 1 : day <= 14 ? 2 : 3);
+/** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–5), 2 = Rừng Đường Ẩn (6–10), 3 = Đỉnh 0% (11–14). */
+export const actOfDay = (day: number): 1 | 2 | 3 => (day <= 5 ? 1 : day <= 10 ? 2 : 3);
 export const isMilestone = (day: number): boolean => MILESTONE_DAYS.includes(day);
 
+/** Danh sách ngày thuộc một hồi (độ dài không đều: 5/5/4 ngày). */
+export function actDays(act: 1 | 2 | 3): number[] {
+  const start = ACT_STARTS[act - 1]!;
+  const end = act < 3 ? ACT_STARTS[act]! - 1 : TOTAL_DAYS;
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+}
+
 export type GumiStage = 'crash' | 'sleepy' | 'balanced' | 'charged' | 'master';
-/** 4 nấc tiến hoá theo số ngày đã đi (0 / 1–7 / 8–14 / 15–21), riêng đang hấp hối = crash. */
+/** 4 nấc tiến hoá theo số ngày đã đi (0 / 1–7 / 8–13 / 14), riêng đang hấp hối = crash. */
 export function gumiStage(days: DayState[]): GumiStage {
   if (days.includes('dying')) return 'crash';
   const done = days.filter((d) => d === 'checked' || d === 'passed').length;
   if (done === 0) return 'sleepy';
   if (done <= 7) return 'balanced';
-  if (done <= 14) return 'charged';
+  if (done < TOTAL_DAYS) return 'charged';
   return 'master';
 }

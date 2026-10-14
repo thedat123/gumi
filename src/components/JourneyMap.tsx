@@ -1,30 +1,36 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
-import { isMilestone } from '../lib/scoring';
+import { isMilestone, TOTAL_DAYS, ACT_STARTS } from '../lib/scoring';
 import { Gumi } from './Gumi';
 import { Icon } from './Icon';
-import { RegionScene } from './RegionScene';
 import type { DayState } from '../api/types';
 
-/* ---- Con đường leo núi: Ngày 1 ở DƯỚI (xuất phát) → Ngày 21 ở TRÊN (đích). Một con đường liền mạch. ---- */
+/* ---- Con đường leo núi: Ngày 1 ở DƯỚI (xuất phát) → Ngày cuối ở TRÊN (đích). Một con đường liền mạch. ---- */
 const W = 420;
 const RH = 104;        // khoảng cách dọc giữa 2 chặng
 const TOP = 116;       // chừa chỗ cho cờ ĐÍCH
-const N = 21;
+const N = TOTAL_DAYS;
 const H = TOP + (N - 1) * RH + 128;
 const yOf = (day: number) => TOP + (N - day) * RH;
 const xOf = (day: number) => (isMilestone(day) ? 210 : 210 + 128 * Math.sin(day * 0.8 + 0.4));
 const reached = (s: DayState) => s === 'checked' || s === 'passed' || s === 'open' || s === 'dying';
 
 // Ranh giới 3 vùng đất (theo y): trên cùng là Đỉnh 0% (Hồi 3), dưới cùng là Đầm Lầy (Hồi 1).
-const B23 = (yOf(14) + yOf(15)) / 2;
-const B12 = (yOf(7) + yOf(8)) / 2;
+const B23 = (yOf(ACT_STARTS[2]! - 1) + yOf(ACT_STARTS[2]!)) / 2; // giữa Hồi 2 (ngày 10) và Hồi 3 (ngày 11)
+const B12 = (yOf(ACT_STARTS[1]! - 1) + yOf(ACT_STARTS[1]!)) / 2; // giữa Hồi 1 (ngày 5) và Hồi 2 (ngày 6)
 const BANDS = [
   { act: 3 as const, top: 0, height: B23 },
   { act: 2 as const, top: B23, height: B12 - B23 },
   { act: 1 as const, top: B12, height: H - B12 },
 ];
+
+// Nền 3 vùng đất — GRADIENT PHẲNG TĨNH (không hạt/sương/parallax) cho nhẹ trên mọi máy.
+const BAND_BG: Record<1 | 2 | 3, string> = {
+  1: 'linear-gradient(180deg, #4FB08C 0%, #1E8069 55%, #0E4F41 100%)', // Đầm Lầy Ngọt (xanh lá)
+  2: 'linear-gradient(180deg, #8B6FB0 0%, #5B4E90 55%, #2C2456 100%)', // Rừng Đường Ẩn (tím)
+  3: 'linear-gradient(180deg, #CFE6F6 0%, #AFCFEC 55%, #8FB6E0 100%)', // Đỉnh 0% (xanh dương)
+};
 
 const NODE: Record<DayState, { face: string; text: string }> = {
   checked: { face: 'border-white bg-gradient-to-b from-[#33A96B] to-[#1F7A4D] text-white', text: vi.day.checked },
@@ -40,7 +46,7 @@ const NODE: Record<DayState, { face: string; text: string }> = {
 function Glyph({ day, state, mile }: { day: number; state: DayState; mile: boolean }) {
   if (mile) {
     if (state === 'future') return <Icon name="lock" size={22} />;
-    return day === 21 ? <Icon name="trophy" size={26} filled /> : <Icon name="star" size={24} filled />;
+    return day === TOTAL_DAYS ? <Icon name="trophy" size={26} filled /> : <Icon name="star" size={24} filled />;
   }
   switch (state) {
     case 'checked': return <Icon name="check" size={22} strokeWidth={2.4} />;
@@ -65,7 +71,7 @@ function pathThrough(pts: { x: number; y: number }[]): string {
 
 function Node({ day, state, isToday, replayAll }: { day: number; state: DayState; isToday: boolean; replayAll?: boolean }) {
   const mile = isMilestone(day);
-  const m = vi.missions[day - 1]!;
+  const m = vi.missions[day - 1] ?? { title: `Ngày ${day}`, kind: 'GAME' as const }; // guard: không bao giờ crash nếu lệch ngày
   const look = NODE[state];
   const locked = state === 'future';
   // Tester/QA: bấm vào lại được MỌI chặng đã mở (kể cả chặng đã xong); người thường chỉ vào chặng đang mở.
@@ -81,7 +87,7 @@ function Node({ day, state, isToday, replayAll }: { day: number; state: DayState
   );
   const label = (
     <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+5px)] flex w-36 -translate-x-1/2 flex-col items-center rounded-pill px-2 py-1 text-center backdrop-blur-sm ${isToday ? 'bg-primary text-on-primary shadow-pop' : 'bg-surface/85 text-text shadow-soft'}`}>
-      <span className={`text-caption font-bold ${isToday ? 'text-on-primary' : 'text-muted'}`}>{isToday ? 'HÔM NAY' : `Ngày ${day}`}{mile && !isToday ? (day === 21 ? ' · Đích' : ' · Cửa ải') : ''}</span>
+      <span className={`text-caption font-bold ${isToday ? 'text-on-primary' : 'text-muted'}`}>{isToday ? 'HÔM NAY' : `Ngày ${day}`}{mile && !isToday ? (day === TOTAL_DAYS ? ' · Đích' : ' · Cửa ải') : ''}</span>
       <span className={`line-clamp-1 text-caption font-semibold ${locked ? 'opacity-70' : ''}`}>{m.title}</span>
     </span>
   );
@@ -91,7 +97,7 @@ function Node({ day, state, isToday, replayAll }: { day: number; state: DayState
   return <Link to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)}>{circle}{label}</Link>;
 }
 
-/** Bản đồ hành trình 21 ngày — MỘT con đường leo dốc liền mạch qua 3 vùng đất; Gumi luôn đứng ở chặng hiện tại. */
+/** Bản đồ hành trình — con đường leo dốc 2D NHẸ: nền gradient PHẲNG TĨNH, không hạt/sương/parallax. */
 export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
   const meRef = useRef<HTMLDivElement>(null);
   useEffect(() => { meRef.current?.scrollIntoView({ block: 'center' }); }, []);
@@ -104,19 +110,15 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
 
   return (
     <div className="journey-world relative w-full overflow-hidden border border-white/50 shadow-soft" style={{ height: H }}>
-      {/* Bối cảnh 3 vùng đất xếp chồng thành một sườn núi */}
+      {/* Nền 3 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax) */}
       {BANDS.map((b) => (
-        <div key={b.act} className="absolute inset-x-0 overflow-hidden" style={{ top: b.top, height: b.height }}>
-          <RegionScene act={b.act} />
-        </div>
+        <div key={b.act} aria-hidden="true" className="absolute inset-x-0" style={{ top: b.top, height: b.height, background: BAND_BG[b.act] }} />
       ))}
-
-      <div className="jrays" />
-      <div className="jmotes">{Array.from({ length: 15 }, (_, i) => <i key={i} className="jmote" style={{ left: `${(i * 37) % 100}%`, '--s': `${4 + (i % 4) * 2}px`, '--d': `${13 + (i % 6) * 2}s`, '--delay': `${-i * 1.4}s`, '--dx': `${(i % 2 ? 1 : -1) * (8 + i)}px` } as CSSProperties} />)}</div>
 
       {/* Nhãn vùng đất */}
       {BANDS.map((b) => {
-        const a = vi.story.acts[b.act - 1]!;
+        const a = vi.story.acts[b.act - 1];
+        if (!a) return null;
         return (
           <div key={`lbl-${b.act}`} className="absolute left-3 z-10 flex items-center gap-2 rounded-pill bg-surface/85 px-3 py-1 shadow-soft backdrop-blur" style={{ top: b.top + 12 }}>
             <span aria-hidden="true" className="text-body">{a.icon}</span>
@@ -138,8 +140,6 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
         {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
       </svg>
 
-      {charState !== 'future' && <div className="jbeacon" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px` }}><i className="jbeacon-glow" /><i className="jbeacon-ring" /></div>}
-
       {/* Cờ ĐÍCH ở đỉnh */}
       <div className="absolute left-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-pill bg-primary px-4 py-1.5 text-on-primary shadow-pop" style={{ top: 34 }}>
         <Icon name="trophy" size={16} filled /><span className="text-small font-extrabold">ĐÍCH · Chiến Thần 0%</span>
@@ -158,7 +158,6 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
       <div className="absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-pill bg-surface/90 px-4 py-1 shadow-soft backdrop-blur" style={{ top: H - 40 }}>
         <Icon name="flag" size={15} className="text-primary" /><span className="text-small font-bold text-text">Xuất phát</span>
       </div>
-      <div className="jcinema" />
     </div>
   );
 }

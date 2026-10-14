@@ -1,13 +1,13 @@
 // Toàn bộ chữ hiển thị nằm ở đây (không rải trong component) để team duyệt và sửa một chỗ.
 // Nội dung sức khoẻ dùng giọng vui, gần gũi; số liệu đường/calo nên được người có chuyên môn dinh dưỡng rà lại trước khi launch.
-// Bản 21 NGÀY — cốt truyện phiêu lưu 3 vùng đất, Gumi tiến hoá 4 nấc.
+// Bản 14 NGÀY — cốt truyện phiêu lưu 3 vùng đất, Gumi tiến hoá 4 nấc.
 
 export type Speaker = 'gumi' | 'boss' | 'narrator';
 export interface Line { who: Speaker; text: string }
 export interface Chapter { day: number; intro: Line[]; win: Line[]; tease: string }
 
 export const vi = {
-  app: { name: 'Level Down Challenge', shortName: 'Level Down', tagline: 'Đường bớt một nấc, chất thêm một bậc' },
+  app: { name: 'Mật Độ', shortName: 'Mật Độ', tagline: 'Đường bớt một nấc, chất thêm một bậc' },
   nav: { home: 'Phòng Gumi', journey: 'Bản đồ', leaderboard: 'Xếp hạng', admin: 'Quản trị' },
   common: {
     loading: 'Đang tải…', retry: 'Thử lại', back: 'Quay lại', logout: 'Đăng xuất',
@@ -36,11 +36,11 @@ export const vi = {
     },
   },
   install: {
-    hint: 'Mẹo: bấm "Chia sẻ → Thêm vào MH chính" để cài Level Down như một app.',
+    hint: 'Mẹo: bấm "Chia sẻ → Thêm vào MH chính" để cài Mật Độ như một app.',
     dismiss: 'Đã hiểu',
   },
   journey: {
-    title: 'HÀNH TRÌNH CỦA BẠN', unit: 'NGÀY', total: 21, progress: (n: number) => `${n} / 21 NGÀY`,
+    title: 'HÀNH TRÌNH CỦA BẠN', unit: 'NGÀY', total: 14, progress: (n: number) => `${n} / 14 NGÀY`,
     streakLabel: 'Chuỗi ngày', doneOf: (a: number, b: number) => `${a}/${b} ngày`,
     streakAria: (n: number) => `Bảng chuỗi ngày: đã giữ ${n} ngày`,
     nextBonus: (n: number, pts: number) => `Mốc ${n} ngày +${pts}đ`,
@@ -61,7 +61,7 @@ export const vi = {
     dying: (hours: number) => `Cơn Thèm vừa quật ngã Gumi — Sugar Crash! Bạn còn ${hours} giờ để dùng Bùa Hồi Sinh cứu chuỗi.`,
     missedNoPass: 'Chuỗi đã đứt và bạn đã dùng hết 3 Bùa Hồi Sinh. Vẫn còn nhiều ngày để ghi điểm!',
     rejected: (reason: string) => `Ảnh của bạn bị gỡ: ${reason}. Bạn vẫn có thể dùng Bùa Hồi Sinh nếu còn thời hạn.`,
-    finished: 'Bạn đã tốt nghiệp 21 ngày bớt ngọt! Gumi tiến hoá thành Chiến Thần 0% Đường. Tải card khoe nào!',
+    finished: 'Bạn đã tốt nghiệp 14 ngày bớt ngọt! Gumi tiến hoá thành Chiến Thần 0% Đường. Tải card khoe nào!',
     ended: 'Hành trình đã khép lại. Cảm ơn bạn đã đồng hành cùng Gumi!',
   },
 
@@ -113,7 +113,7 @@ export const vi = {
   story: {
     villain: { name: 'Boss Đường', alias: 'Cơn Thèm' },
     ui: {
-      chapterOf: (day: number) => `CHƯƠNG ${day} / 21`,
+      chapterOf: (day: number) => `CHƯƠNG ${day} / 14`,
       skip: 'Bỏ qua truyện',
       narrate: 'Nghe kể chuyện',
       narrateStop: 'Dừng đọc',
@@ -125,9 +125,9 @@ export const vi = {
     },
     // 3 vùng đất = 3 hồi, cũng là 3 nấc tiến hoá của Gumi.
     acts: [
-      { n: 1, name: 'Đầm Lầy Ngọt', range: 'Ngày 1–7', icon: '🫧', blurb: 'Nơi Gumi chìm trong đường lỏng. Lội ra để tỉnh giấc — hoá Sugar Balanced.' },
-      { n: 2, name: 'Rừng Đường Ẩn', range: 'Ngày 8–14', icon: '🌫️', blurb: 'Đường cải trang khắp lối. Vạch mặt chúng để nạp năng lượng — hoá Sugar Charged.' },
-      { n: 3, name: 'Đỉnh 0%', range: 'Ngày 15–21', icon: '🏔️', blurb: 'Chặng leo cuối. Chạm mốc 0% và thức tỉnh thành Sugar Master — Chiến Thần 0% Đường.' },
+      { n: 1, name: 'Đầm Lầy Ngọt', range: 'Ngày 1–5', icon: '🫧', blurb: 'Nơi Gumi chìm trong đường lỏng. Lội ra để tỉnh giấc — hoá Sugar Balanced.' },
+      { n: 2, name: 'Rừng Đường Ẩn', range: 'Ngày 6–10', icon: '🌫️', blurb: 'Đường cải trang khắp lối. Vạch mặt chúng để nạp năng lượng — hoá Sugar Charged.' },
+      { n: 3, name: 'Đỉnh 0%', range: 'Ngày 11–14', icon: '🏔️', blurb: 'Chặng leo cuối. Chạm mốc 0% và thức tỉnh thành Sugar Master — Chiến Thần 0% Đường.' },
     ],
     chapters: [
       { day: 1, intro: [
@@ -147,28 +147,28 @@ export const vi = {
       { day: 4, intro: [
           { who: 'gumi', text: 'Một mình thì lâu ra khỏi đầm. Mình khoe ly hôm nay lên Story — ai nghe thấy thì cùng đi nào!' },
         ], win: [ { who: 'gumi', text: 'Có người thả tim, có người hỏi cách. Đội quân bớt ngọt đang lớn dần!' } ],
-        tease: 'Thử bản lĩnh: hạ ly xuống mốc 50% đường.' },
-      { day: 5, intro: [
-          { who: 'narrator', text: 'Bùn ngọt đặc quánh níu từng bước.' },
-          { who: 'gumi', text: 'Xuống 50% thôi. Nhạt hơn thật, nhưng đầu mình nhẹ bẫng!' },
-        ], win: [ { who: 'gumi', text: 'Nửa lượng đường — nửa sức nặng. Bờ đầm đã hiện ra phía trước.' } ],
         tease: 'Đấu Trường Calo: xếp 5 ly theo độ ngọt.' },
-      { day: 6, intro: [
+      { day: 5, intro: [
           { who: 'boss', text: 'Ngươi có chắc biết ly nào ngọt hơn ly nào không?' },
           { who: 'gumi', text: 'Xếp từ nhạt tới gắt — để mình cho Boss xem mắt mình tinh cỡ nào.' },
         ], win: [ { who: 'gumi', text: 'Xếp chuẩn! Giờ nhìn thực đơn là mình biết chọn ly nào.' } ],
-        tease: 'Cửa ải Đầm Lầy: một loạt câu hỏi chớp nhoáng chờ Gumi.' },
+        tease: 'Giữ nhịp giảm đường: lại một ly ít ngọt hôm nay.' },
+      { day: 6, intro: [
+          { who: 'narrator', text: 'Bùn ngọt đặc quánh níu từng bước.' },
+          { who: 'gumi', text: 'Thêm một ly ít đường nữa. Giữ nhịp thì bờ đầm sẽ hiện ra!' },
+        ], win: [ { who: 'gumi', text: 'Đều đặn từng ngày — đầu mình nhẹ bẫng, chân bước vững hơn.' } ],
+        tease: 'Cửa ải Đầm Lầy: bay qua cơn thèm cùng Flappy Gumi.' },
       { day: 7, intro: [
           { who: 'boss', text: 'Ải cuối của đầm lầy đây. Qua được thì ta trả tự do — mà ngươi qua không nổi đâu!' },
           { who: 'gumi', text: 'Bảy ngày rồi, mình khác xưa lắm. Xem mình bước qua ải này!' },
         ], win: [ { who: 'narrator', text: 'Ánh sáng bùng lên. Bụng Gumi nhẹ đi, mắt sáng lại — Sugar Sleepy hoá SUGAR BALANCED.' },
           { who: 'gumi', text: 'Mình ra khỏi Đầm Lầy Ngọt rồi! Nấc tiến hoá đầu tiên — cảm giác này đã ghê!' } ],
-        tease: 'Vào Rừng Đường Ẩn — nơi đường cải trang tinh vi hơn.' },
+        tease: 'Vào Rừng Đường Ẩn — trắc nghiệm chớp nhoáng chờ ngươi.' },
 
       { day: 8, intro: [
           { who: 'narrator', text: 'Rừng Đường Ẩn mù sương, mỗi thân cây thì thầm mời gọi ngọt ngào.' },
-          { who: 'gumi', text: 'Rủ thêm một buddy cho vững tâm. Hai đứa cụng ly, cùng tiến vào rừng!' },
-        ], win: [ { who: 'gumi', text: 'Có đồng đội, rừng bớt đáng sợ hẳn. Cheers!' } ],
+          { who: 'gumi', text: '3 câu, mỗi câu 10 giây. Mình trả lời gọn để băng qua rừng!' },
+        ], win: [ { who: 'gumi', text: 'Trả lời chuẩn! Sương mù tan bớt, lối rừng rõ dần.' } ],
         tease: 'Truy tìm mật khẩu: những cái tên đường giấu trong ô chữ.' },
       { day: 9, intro: [
           { who: 'gumi', text: 'Boss giấu tên thật trong đám chữ này. Mình sẽ tìm ra hết!' },
@@ -178,11 +178,11 @@ export const vi = {
           { who: 'boss', text: 'Thêm tí trân châu, tí kem cheese cho vui miệng nào~' },
           { who: 'gumi', text: 'Không topping ngọt hôm nay. Ly trơn mà lòng nhẹ.' },
         ], win: [ { who: 'gumi', text: 'Từ chối xong thấy… chẳng thèm thật. Lạ ghê!' } ],
-        tease: 'Nhìn nhãn thành phần, gọi đúng tên đường ẩn.' },
+        tease: 'Gumi Bắt Chữ: giải ô chữ tên đường trong 3 phút.' },
       { day: 11, intro: [
-          { who: 'narrator', text: 'Trên vỏ chai hiện ra những cái tên lạ hoắc: HFCS, Maltodextrin, Dextrose…' },
-          { who: 'gumi', text: 'Đường à, đổi tên cũng vô ích. Mình gọi đúng mặt từng đứa!' },
-        ], win: [ { who: 'gumi', text: 'Vạch mặt hết đường ẩn! Rừng này hết chỗ cho chúng trốn.' } ],
+          { who: 'narrator', text: 'Trên vách đá hiện ra ô chữ chằng chịt: HFCS, Maltodextrin, Dextrose…' },
+          { who: 'gumi', text: 'Đường à, đổi tên cũng vô ích. Mình đoán đúng từng ô một!' },
+        ], win: [ { who: 'gumi', text: 'Giải hết ô chữ! Rừng này hết chỗ cho đường ẩn trốn.' } ],
         tease: 'Lật thẻ trí nhớ: ghép đường với tên gọi trước khi hết giờ.' },
       { day: 12, intro: [
           { who: 'gumi', text: '30 giây, ghép đủ 5 cặp. Trí nhớ vị giác của mình, thử thách nào!' },
@@ -191,47 +191,12 @@ export const vi = {
       { day: 13, intro: [
           { who: 'gumi', text: 'Điều tốt thì nên chia. Mình kể mẹo giảm đường cho mọi người!' },
         ], win: [ { who: 'gumi', text: 'Thêm vài người bảo "mình cũng thử". Tiếng lành lan trong rừng.' } ],
-        tease: 'Cửa ải Rừng: lắng nghe chính cơ thể mình sau 2 tuần.' },
+        tease: 'Cửa ải cuối: hứng nước lành hạ Boss Đường & viết lời tốt nghiệp.' },
       { day: 14, intro: [
-          { who: 'boss', text: 'Nửa đường rồi đấy… nhưng nửa sau mới là dốc dựng đứng!' },
-          { who: 'gumi', text: 'Để mình xem cơ thể đã đổi tới đâu — rồi vượt ải này.' },
-        ], win: [ { who: 'narrator', text: 'Một luồng năng lượng chạy dọc sống lưng Gumi — SUGAR BALANCED hoá SUGAR CHARGED!' },
-          { who: 'gumi', text: 'Tỉnh táo hơn, nhẹ hơn, khoẻ hơn hẳn! Ra khỏi Rừng Đường Ẩn rồi!' } ],
-        tease: 'Leo lên Đỉnh 0% — chặng cuối lạnh và trong veo.' },
-
-      { day: 15, intro: [
-          { who: 'narrator', text: 'Không khí trên Đỉnh 0% mỏng và mát. Từng hơi thở đều tỉnh táo.' },
-          { who: 'gumi', text: 'Mốc 30% đường. Gần chạm số 0 rồi — cố lên nào!' },
-        ], win: [ { who: 'gumi', text: '30% thôi mà vẫn ngon lành. Đỉnh không còn xa.' } ],
-        tease: 'Vòng đấu chớp nhoáng: đuổi hình bắt chữ nâng cao.' },
-      { day: 16, intro: [
-          { who: 'boss', text: 'Lên cao rồi thì hoa mắt cho xem~' },
-          { who: 'gumi', text: 'Mắt mình tinh hơn bao giờ hết. Ra hình đi Boss!' },
-        ], win: [ { who: 'gumi', text: 'Giải hết! Gió đỉnh núi thổi bay chút cám dỗ cuối cùng.' } ],
-        tease: 'Truy tìm sự thật: đúng hay sai về đường?' },
-      { day: 17, intro: [
-          { who: 'gumi', text: 'Đúng hay sai — giờ mình phân biệt được ngay. Kiểm tra nào!' },
-        ], win: [ { who: 'gumi', text: 'Sự thật về đường, mình nắm rõ trong lòng bàn tay.' } ],
-        tease: 'Ghép đôi những ly healthy — bộ sưu tập của nhà vô địch.' },
-      { day: 18, intro: [
-          { who: 'gumi', text: 'Toàn ly healthy mình từng uống. Ghép đôi hết trong 30 giây!' },
-        ], win: [ { who: 'gumi', text: 'Trọn bộ healthy! Đây là gu mới của mình rồi.' } ],
-        tease: 'Vòng quay may mắn tiếp sức trước ngày về đích.' },
-      { day: 19, intro: [
-          { who: 'narrator', text: 'Đỉnh núi hiện ra một bánh xe phát sáng.' },
-          { who: 'gumi', text: 'Một cú quay lấy đà cho chặng cuối. Xin vía Gumi!' },
-        ], win: [ { who: 'gumi', text: 'Được buff điểm rồi! Nạp năng lượng, tiến tới đỉnh!' } ],
-        tease: 'Trận cuối: ly 0% nguyên bản, thuần khiết.' },
-      { day: 20, intro: [
-          { who: 'boss', text: 'Đừng… đừng chạm tới số 0! Ta van ngươi…' },
-          { who: 'gumi', text: 'Một ly nước thật thà, 0% đường. Đây là đòn kết liễu, Boss.' },
-        ], win: [ { who: 'gumi', text: 'Nước lọc mà mình thấy ngọt nhẹ! Vị giác đã reset hoàn toàn.' } ],
-        tease: 'Đặt bút viết dòng cuối và bước lên đỉnh vinh quang.' },
-      { day: 21, intro: [
           { who: 'boss', text: 'Không thể nào… ngươi đã hết cần tới ta!' },
-          { who: 'gumi', text: 'Cảm ơn vì đã là kẻ thù xứng tầm. Nhưng từ đây, đường ai nấy đi.' },
+          { who: 'gumi', text: 'Hứng nốt những giọt nước lành cuối cùng — pha loãng Boss Đường nào!' },
           { who: 'narrator', text: 'Ánh sáng bùng nổ trên Đỉnh 0%. Kính râm hiện ra, thân hình rắn rỏi…' },
-        ], win: [ { who: 'gumi', text: 'CHIẾN THẦN 0% ĐƯỜNG — Sugar Master đã thức tỉnh! 21 ngày, cảm ơn bạn đã dắt mình đi.' } ],
+        ], win: [ { who: 'gumi', text: 'CHIẾN THẦN 0% ĐƯỜNG — Sugar Master đã thức tỉnh! 14 ngày, cảm ơn bạn đã dắt mình đi.' } ],
         tease: 'Viết một câu cảm nhận gửi lên Bức tường cộng đồng của Gumi nhé!' },
     ] as Chapter[],
   },
@@ -253,7 +218,7 @@ export const vi = {
     share: {
       heading: 'Chia sẻ lên Story',
       hint: 'Đăng ảnh lên Story kèm caption dưới đây (nhớ giữ hashtag & tag), rồi chụp màn hình Story tải lên làm bằng chứng.',
-      caption: 'Mình đang thử thách 21 ngày bớt ngọt cùng Gumi 🐱🥤 Đường bớt một nấc, chất thêm một bậc!\n#LevelDownChallenge #GumiBotNgot #21NgayBotNgot @leveldown.challenge',
+      caption: 'Mình đang thử thách 14 ngày bớt ngọt cùng Gumi 🐱🥤 Đường bớt một nấc, chất thêm một bậc!\n#MatDo #GumiBotNgot #14NgayBotNgot @matdo.challenge',
       shareBtn: '📤 Mở app chia sẻ',
       copyBtn: 'Sao chép caption',
       copied: '✓ Đã sao chép caption — dán vào Story nhé!',
@@ -297,7 +262,7 @@ export const vi = {
     nameHint: '2–30 ký tự', nameError: 'Tên cần từ 2 đến 30 ký tự.', submit: 'Nhận nuôi Gumi',
   },
   auth: {
-    login: 'Đăng nhập', welcome: 'Chào mừng trở lại', tagline: 'Gumi đang đợi bạn cùng vượt thử thách 21 ngày bớt ngọt 🐾', email: 'Email', password: 'Mật khẩu', submit: 'Đăng nhập', wrong: 'Email hoặc mật khẩu chưa đúng.', emailInvalid: 'Email chưa đúng định dạng.',
+    login: 'Đăng nhập', welcome: 'Chào mừng trở lại', tagline: 'Gumi đang đợi bạn cùng vượt thử thách 14 ngày bớt ngọt 🐾', email: 'Email', password: 'Mật khẩu', submit: 'Đăng nhập', wrong: 'Email hoặc mật khẩu chưa đúng.', emailInvalid: 'Email chưa đúng định dạng.',
     google: 'Tiếp tục với Google', or: 'hoặc', googleError: 'Không đăng nhập được bằng Google. Hãy thử lại.',
     forgot: 'Quên mật khẩu?', noAccount: 'Chưa có tài khoản?', haveAccount: 'Đã có tài khoản?',
     inApp: 'Bạn đang mở trong ứng dụng nhúng (Zalo, Facebook…). Hãy mở bằng Chrome hoặc Safari để đăng nhập ổn định hơn.',
@@ -335,44 +300,37 @@ export const vi = {
     { day: 2, kind: 'KNOW', title: 'Đoán Thìa Đoán Muỗng', description: 'Mini-quiz: đoán số thìa đường trong đồ uống quen thuộc.', points: 10 },
     { day: 3, kind: 'GAME', title: 'Đuổi Hình Bắt Chữ', description: 'Ghép 2 hình đoán tên đồ uống (Trà Thái · Cam vắt · Sữa gạo), đúng thì mở khoá sự thật về đường & calo.', points: 15 },
     { day: 4, kind: 'SHARE', title: 'Khoe Ly Cùng Gumi', description: 'Chụp ly giảm đường, đăng Story kèm hashtag và tag fanpage dự án. Tải ảnh chụp màn hình Story lên.', points: 20 },
-    { day: 5, kind: 'DRINK', title: 'Chạm Mốc 50% Đường', description: 'Uống ly tối đa 50% đường (hoặc cà phê ít sữa/ít đường). Check-in ảnh.', points: 20 },
-    { day: 6, kind: 'GAME', title: 'Đấu Trường Calo', description: 'Sắp xếp 5 đồ uống từ ít đường nhất → nhiều đường nhất (2 lượt).', points: 20 },
-    { day: 7, kind: 'GAME', title: 'Bay Qua Cơn Thèm', description: 'CỬA ẢI Hồi 1 — Flappy Bird: lách qua mỗi cột đường +1 điểm, đạt tối đa 50 điểm để hạ Boss Cơn Thèm.', points: 30 },
-    { day: 8, kind: 'SHARE', title: 'Buddy Challenge', description: 'Rủ một người bạn cùng uống ly ít đường. Chụp ảnh hai ly "cheers".', points: 20 },
+    { day: 5, kind: 'GAME', title: 'Đấu Trường Calo', description: 'Sắp xếp 5 đồ uống từ ít đường nhất → nhiều đường nhất (được 2 lượt).', points: 20 },
+    { day: 6, kind: 'DRINK', title: 'Chạm Mốc Giảm Đường', description: 'Duy trì thói quen giảm đường: uống ly ít đường (hoặc cà phê ít sữa/ít đường). Check-in ảnh.', points: 20 },
+    { day: 7, kind: 'GAME', title: 'Bay Qua Cơn Thèm', description: 'CỬA ẢI Hồi 1 — Flappy Gumi: lách qua mỗi cột đường +1 điểm (3 vòng 20/50/100, qua vòng 1 là đạt).', points: 20 },
+    { day: 8, kind: 'KNOW', title: 'Trắc Nghiệm Chớp Nhoáng', description: '3 câu trắc nghiệm nhanh về đường, 10 giây mỗi câu (+10/câu).', points: 30 },
     { day: 9, kind: 'GAME', title: 'Truy Tìm Mật Khẩu', description: 'Wordsearch: tìm 5 cái tên đường ẩn trong ô chữ (+10/key).', points: 50 },
     { day: 10, kind: 'DRINK', title: 'DIY Drink', description: 'Tự chuẩn bị bình nước mang đi học hoặc đi làm: nước lọc thả lát trái cây, bạc hà hoặc trà túi lọc không đường. Tải ảnh bình nước lên.', points: 20 },
-    { day: 11, kind: 'KNOW', title: 'Vạch Mặt Đường Ẩn', description: 'Nhìn bảng thành phần và gọi đúng tên đường trên nhãn.', points: 10 },
+    { day: 11, kind: 'GAME', title: 'Gumi Bắt Chữ', description: 'Crossword: đoán từ khoá mỗi dòng (tên các loại đường ẩn) theo gợi ý, trong 3 phút (+5/câu).', points: 40 },
     { day: 12, kind: 'GAME', title: 'Lật Thẻ Trí Nhớ', description: 'Lật 10 thẻ, ghép 5 cặp đường ↔ tên gọi trong 30 giây (+10/cặp).', points: 50 },
     { day: 13, kind: 'SHARE', title: 'Mẹo Nhỏ Cắt Đường', description: 'Chia sẻ một mẹo giúp bạn vượt qua cơn thèm ngọt lên Story, rồi tải ảnh chụp Story lên.', points: 20 },
-    { day: 14, kind: 'GAME', title: 'Đánh Bại Boss Đường', description: 'CỬA ẢI Hồi 2 — hứng nước lành 💧🍵 để pha loãng độ ngọt của Boss, né đường xấu 🧊🥤🍬. Còn 3 mạng.', points: 10 },
-    { day: 15, kind: 'DRINK', title: 'Chạm Mốc 30% Đường', description: 'Check-in ly giảm đường mức 30% (hoặc nước tự pha không đường). Check-in ảnh.', points: 20 },
-    { day: 16, kind: 'GAME', title: 'Gumi Bắt Chữ', description: 'Crossword: đoán từ khoá mỗi dòng (tên các loại đường ẩn) theo gợi ý, trong 3 phút.', points: 40 },
-    { day: 17, kind: 'KNOW', title: 'Truy Tìm Sự Thật', description: '5 câu đúng/sai nhanh về đường (+5/câu).', points: 25 },
-    { day: 18, kind: 'GAME', title: 'Ghép Đôi Healthy', description: 'Lật 10 thẻ, ghép 5 cặp đồ uống ít đường trong 30 giây (+10/cặp).', points: 50 },
-    { day: 19, kind: 'GAME', title: 'Vòng Quay May Mắn', description: 'Quay vòng nhận buff điểm ngẫu nhiên (+10 đến +30) trước ngày về đích.', points: 20 },
-    { day: 20, kind: 'DRINK', title: 'Thanh Lọc Nguyên Bản', description: 'Ly 0% đường: nước lọc, cold brew, trà mộc hoặc trà trái cây nguyên bản. Check-in ảnh.', points: 20 },
-    { day: 21, kind: 'FINAL', title: 'Giải Cứu Gumi & Lời Nhắn Tốt Nghiệp', description: 'Giải màn Neko Slide, viết lời cảm nhận gửi lên Bức tường Gumi (+15). Có ảnh chia sẻ Story được cộng thêm 10 điểm.', points: 15 },
+    { day: 14, kind: 'FINAL', title: 'Hứng Nước & Lời Nhắn Tốt Nghiệp', description: 'CỬA ẢI cuối — hứng nước lành 💧🍵 hạ Boss Đường, rồi viết lời cảm nhận gửi lên Bức tường Gumi (+15). Có ảnh chia sẻ Story được cộng thêm 10 điểm.', points: 25 },
   ],
   landing: {
-    kicker: 'Hành trình 21 ngày',
-    title: 'Level Down Challenge',
-    subtitle: 'Đường bớt một nấc, chất thêm một bậc — 21 ngày cùng Gumi reset vị giác!',
+    kicker: 'Hành trình 14 ngày',
+    title: 'Mật Độ',
+    subtitle: 'Đường bớt một nấc, chất thêm một bậc — 14 ngày cùng Gumi reset vị giác!',
     bullets: [
       { icon: 'map', text: 'Đi qua 3 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
       { icon: 'flame', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
       { icon: 'sparkle', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
     ],
-    stats: { days: '21 ngày', players: '~100 người chơi', missions: '3 vùng đất' },
+    stats: { days: '14 ngày', players: '~100 người chơi', missions: '3 vùng đất' },
     ctaPrimary: 'Bắt đầu — nhận nuôi Gumi',
     ctaSecondary: 'Mình đã có tài khoản',
     before: (date: string) => `Hành trình khởi động ngày ${date}. Đăng ký trước để không lỡ Ngày 1!`,
-    running: (day: number) => `Hành trình đang ở Ngày ${day}/21. Vào trễ vẫn chơi được các ngày còn lại.`,
-    personal: 'Ngày bạn tham gia chính là Ngày 1 — bắt đầu bất cứ lúc nào, đi hết 21 ngày theo nhịp của riêng bạn!',
+    running: (day: number) => `Hành trình đang ở Ngày ${day}/14. Vào trễ vẫn chơi được các ngày còn lại.`,
+    personal: 'Ngày bạn tham gia chính là Ngày 1 — bắt đầu bất cứ lúc nào, đi hết 14 ngày theo nhịp của riêng bạn!',
     ended: 'Mùa này đã khép lại. Cảm ơn bạn đã đồng hành cùng Gumi — hẹn gặp ở mùa sau!',
   },
   signup: {
     title: 'Tạo tài khoản',
-    subtitle: 'Một tài khoản để lưu hành trình 21 ngày của bạn.',
+    subtitle: 'Một tài khoản để lưu hành trình 14 ngày của bạn.',
     email: 'Email', password: 'Mật khẩu', confirm: 'Nhập lại mật khẩu',
     passwordHint: 'Ít nhất 8 ký tự.',
     submit: 'Đăng ký', haveAccount: 'Đã có tài khoản? Đăng nhập',
@@ -657,8 +615,8 @@ export const vi = {
   },
 
   wall: {
-    title: 'Ngày 21: Lời Nhắn Tốt Nghiệp',
-    formPrompt: 'Viết một câu về việc cơ thể hoặc vị giác của bạn đã thay đổi ra sao sau 21 ngày.',
+    title: 'Ngày 14: Lời Nhắn Tốt Nghiệp',
+    formPrompt: 'Viết một câu về việc cơ thể hoặc vị giác của bạn đã thay đổi ra sao sau 14 ngày.',
     placeholder: 'Ví dụ: Mình thấy nước lọc ngọt hơn và ngủ ngon hơn hẳn…',
     hint: '10–200 ký tự.',
     tooShort: 'Lời nhắn cần ít nhất 10 ký tự.',
@@ -668,13 +626,13 @@ export const vi = {
     postedSubReview: 'Lời nhắn đã lên Bức tường. Ảnh Story đã gửi ban tổ chức duyệt tay — điểm được ghi nhận trong lúc chờ; nếu ảnh không hợp lệ, điểm sẽ bị gỡ.',
     wallTitle: 'Bức tường cộng đồng',
     empty: 'Chưa có lời nhắn nào. Hãy là người đầu tiên tốt nghiệp!',
-    notToday: 'Bức tường tốt nghiệp mở vào Ngày 21.',
+    notToday: 'Bức tường tốt nghiệp mở vào Ngày 14.',
     viewCard: 'Xem card Sugar Journey',
     posts: [] as { name: string; text: string }[],
   },
   summary: {
     title: 'Sugar Journey của bạn',
-    graduated: '🎉 TỐT NGHIỆP 21 NGÀY BỚT NGỌT!',
+    graduated: '🎉 TỐT NGHIỆP 14 NGÀY BỚT NGỌT!',
     evolveCaption: 'Gumi đã tiến hoá: Sugar Master — Chiến thần 0% đường',
     metrics: {
       sugarCut: 'Đường đã cắt giảm',
@@ -688,7 +646,7 @@ export const vi = {
     totalPoints: 'Tổng điểm', rank: 'Hạng chung cuộc',
     provisional: 'Hạng tạm tính — bảng chốt sau khi hết chiến dịch.',
     final: 'Hạng chung cuộc đã chốt.',
-    notEligible: 'Bạn cần hoàn thành đủ Ngày 21 để nhận card Sugar Journey.',
+    notEligible: 'Bạn cần hoàn thành đủ Ngày 14 để nhận card Sugar Journey.',
     share: 'Chia sẻ Story · IG · FB',
     downloadImage: 'Tải ảnh',
     facebook: 'Facebook',
@@ -708,8 +666,8 @@ export const vi = {
       totalPlayers: 'Người tham gia',
       activePlayers: 'Đang chơi',
       eligible: 'Đạt chỉ tiêu',
-      eligibleHint: 'Hoàn thành từ 14/21 ngày',
-      finished: 'Về đích 21 ngày',
+      eligibleHint: 'Hoàn thành từ 10/14 ngày',
+      finished: 'Về đích 14 ngày',
       avgPoints: 'Điểm trung bình',
       avgDays: 'Ngày TB đã làm',
       pending: 'Ảnh chờ duyệt',
@@ -745,17 +703,17 @@ export const vi = {
   toast: { success: 'Thành công', error: 'Có lỗi', info: 'Thông tin' },
   pwa: {
     install: 'Cài app',
-    title: 'Cài Level Down lên điện thoại',
+    title: 'Cài Mật Độ lên điện thoại',
     tabIos: 'iPhone',
     tabAndroid: 'Android',
-    iosTitle: 'Cài Level Down lên iPhone',
+    iosTitle: 'Cài Mật Độ lên iPhone',
     iosNote: 'iPhone không cho cài tự động — làm 3 bước sau (phải mở bằng Safari; Chrome/Cốc Cốc không cài được):',
     iosSteps: [
       'Bấm nút Chia sẻ ⬆️ ở thanh Safari.',
       'Kéo xuống, chọn "Thêm vào Màn hình chính".',
       'Bấm "Thêm" — xong, icon hiện ở màn hình chính!',
     ],
-    androidTitle: 'Cài Level Down lên Android',
+    androidTitle: 'Cài Mật Độ lên Android',
     androidNote: 'Mở bằng Chrome rồi làm 3 bước sau (thường chỉ mất 5 giây):',
     androidSteps: [
       'Bấm nút menu ⋮ ở góc trên bên phải Chrome.',

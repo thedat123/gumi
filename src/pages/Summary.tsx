@@ -52,7 +52,7 @@ export function Summary() {
             const { renderCard, shareImageToSocial } = await import('../lib/shareCard');
             const blob = await renderCard(card);
             const r = await shareImageToSocial(blob, {
-              caption: `${vi.summary.graduated} #LevelDown #BớtNgọt`,
+              caption: `${vi.summary.graduated} #MatDo #BớtNgọt`,
               filename: 'sugar-journey.png',
               title: vi.summary.graduated,
               desc: vi.summary.evolveCaption,

@@ -58,7 +58,7 @@ notes.push(`showNotification (qua nút, cần subscribe): ${JSON.stringify(fired
 const direct = await page.evaluate(async () => {
   try {
     const r = await navigator.serviceWorker.ready;
-    await r.showNotification('Level Down Challenge', { body: 'Thử thách hôm nay đang chờ bạn 🐱', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: 'direct' });
+    await r.showNotification('Mật Độ', { body: 'Thử thách hôm nay đang chờ bạn 🐱', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: 'direct' });
     const list = await r.getNotifications();
     return { ok: true, shown: list.map((n) => ({ title: n.title, icon: n.icon })) };
   } catch (e) { return { ok: false, err: String(e) }; }

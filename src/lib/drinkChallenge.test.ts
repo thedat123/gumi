@@ -18,16 +18,16 @@ describe('DRINK challenge validation', () => {
     expect(judgeDrink(1, 70, evidence(50)).kind).toBe('pass');
   });
 
-  it('uses the actual percentage rather than a rounded level to decide pass or fail', () => {
-    expect(judgeDrink(5, 100, evidence(51)).kind).toBe('fail');
-    expect(judgeDrink(15, 100, evidence(29)).kind).toBe('pass');
-    expect(judgeDrink(20, 100, evidence(5)).kind).toBe('fail');
+  it('day 6 không soi mức đường — thấy ly hợp lệ là đạt', () => {
+    // Ngày 6 (DRINK) không gán mức %: chỉ cần AI thấy một đồ uống hợp lệ.
+    expect(judgeDrink(6, 100, evidence(51)).kind).toBe('pass');
+    expect(judgeDrink(6, 100, evidence(90)).kind).toBe('pass');
+    expect(judgeDrink(6, 100, evidence(null)).kind).toBe('pass');
   });
 
   it('does not invent a percentage when the label cannot be read', () => {
-    expect(judgeDrink(5, 100, evidence(null)).kind).toBe('unknown');
-    expect(judgeDrink(20, 100, evidence(null, { isUnsweetened: true })).kind).toBe('pass');
-    expect(judgeDrink(10, 100, evidence(null, { isHomemade: true, isUnsweetened: true })).kind).toBe('pass');
+    expect(judgeDrink(1, 100, evidence(null)).kind).toBe('unknown'); // ngày 1 cần đọc được mức để so baseline
+    expect(judgeDrink(10, 100, evidence(null, { isHomemade: true, isUnsweetened: true })).kind).toBe('pass'); // DIY không đường
     expect(judgeDrink(10, 100, evidence(50, { isHomemade: true })).kind).toBe('fail');
     expect(judgeDrink(10, 100, evidence(50, { isHomemade: true, isUnsweetened: true })).kind).toBe('fail');
     expect(judgeDrink(10, 100, evidence(null)).kind).toBe('unknown');

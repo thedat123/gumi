@@ -1,4 +1,4 @@
-/* Service worker tự viết cho Level Down (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
+/* Service worker tự viết cho Mật Độ (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
    Chiến lược: điều hướng (navigate) network-first + rơi về vỏ app đã cache khi offline;
    tài nguyên tĩnh cùng miền dùng stale-while-revalidate. Không đụng tới request khác miền (Supabase). */
 const VERSION = 'ld-v1';
@@ -30,7 +30,7 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; }
   catch { data = { body: event.data ? event.data.text() : '' }; }
-  const title = data.title || 'Level Down Challenge';
+  const title = data.title || 'Mật Độ';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

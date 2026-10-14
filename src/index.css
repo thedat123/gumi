@@ -12,7 +12,7 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: 1.5;
-  /* Nền Lumber + vầng sáng ấm phía trên cho có chiều sâu (production, không loè loẹt). */
+  /* Nền kem ấm + vầng sáng phía trên cho có chiều sâu (dịu mắt, không chói). */
   background: radial-gradient(130% 90% at 50% -20%, #FFF1E9 0%, var(--color-bg) 55%) fixed;
 }
 #root { min-height: 100dvh; }

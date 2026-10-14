@@ -98,24 +98,24 @@ describe('mock API — luồng chơi', () => {
     await expect(api.getJourney()).rejects.toMatchObject({ code: 'forbidden' } as ApiError);
   });
 
-  it('chơi hết 21 chặng (mỗi ngày một chặng) → Gumi tiến hoá, summary đủ điều kiện', async () => {
+  it('chơi hết 14 chặng (mỗi ngày một chặng) → Gumi tiến hoá, summary đủ điều kiện', async () => {
     const api = await ready();
-    const minigameDays = [3, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19];
-    for (let d = 1; d <= 21; d++) {
+    const minigameDays = [3, 5, 7, 8, 9, 11, 12];
+    for (let d = 1; d <= 14; d++) {
       if (d > 1) advanceMockDay(); // mỗi chặng là một ngày mới
       await api.markPlayed(); // bắt đầu chơi hôm nay → nuôi streak
       if (d === 2) await api.submitQuiz({ 0: 10, 1: 12, 2: 6, 3: 9, 4: 5 });
       else if (minigameDays.includes(d)) await api.submitMinigame(d);
-      else if (d === 21) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 21 ngày.');
-      else await api.submitCheckin(d, d === 20 ? 0 : 30, `d${d}.jpg`);
+      else if (d === 14) await api.submitWallPost('Mình thấy khoẻ hơn nhiều sau 14 ngày.');
+      else await api.submitCheckin(d, d === 10 ? 0 : 30, `d${d}.jpg`); // DRINK 1/6/10, SHARE 4/13
     }
     const j = await api.getJourney();
     expect(j.gumi).toBe('tien_hoa');
-    expect(j.days[20]).toBe('checked');
+    expect(j.days[13]).toBe('checked');
     const sum = await api.getSummary();
     expect(sum.eligible).toBe(true);
-    expect(sum.streak).toBe(21);
-    expect(sum.healthyCount).toBe(5); // 5 ngày DRINK
+    expect(sum.streak).toBe(14);
+    expect(sum.healthyCount).toBe(3); // 3 ngày DRINK (1/6/10)
   });
 
   it('Bùa CHỈ cứu chuỗi (không bỏ qua chặng): lỡ 1 ngày → hấp hối → nối lại streak', async () => {

@@ -50,7 +50,7 @@ export function AppShell() {
       <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
           <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
-            <img src="/icons/icon.svg" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-[11px] shadow-pop ring-2 ring-surface" />
+            <img src="/icons/icon-192.png" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-[11px] object-cover shadow-pop ring-2 ring-surface" />
             {/* Mobile: tên ngắn gọn 1 dòng; từ sm trở lên: tên đầy đủ. Không xuống dòng. */}
             <span className="text-gradient truncate whitespace-nowrap text-body font-extrabold tracking-tight sm:text-title">
               <span className="sm:hidden">{vi.app.shortName}</span>

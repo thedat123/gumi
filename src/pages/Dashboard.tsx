@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
@@ -19,18 +19,18 @@ export function Dashboard() {
   const [dialog, setDialog] = useState(false);
   const [passError, setPassError] = useState(false);
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
-  const mapScrollRef = useRef<HTMLDivElement>(null);
-  // Ghi scrollTop vào biến CSS --sy để lớp nền xa trôi chậm (parallax); viết thẳng DOM, không re-render.
-  const onMapScroll = () => { const el = mapScrollRef.current; if (el) el.style.setProperty('--sy', String(el.scrollTop)); };
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
 
   return (
     <AsyncView state={state}>
       {(s) => {
-        const finished = s.days[vi.journey.total - 1] === 'checked';
+        // Phòng thủ: chỉ lấy đúng số ngày của hành trình (bỏ ngày thừa nếu backend trả > total).
+        const days = s.days.slice(0, vi.journey.total);
+        const today = Math.min(s.day, vi.journey.total);
+        const finished = days[vi.journey.total - 1] === 'checked';
         const dying = s.streakFreezeAvailable;
-        const rejected = s.days.includes('rejected');
-        const done = approvedCount(s.days);
+        const rejected = days.includes('rejected');
+        const done = approvedCount(days);
         const progress = Math.min(1, done / vi.journey.total);
 
         const usePass = async () => {
@@ -52,7 +52,7 @@ export function Dashboard() {
                 <div className="flex items-center gap-2.5">
                   <Gumi state={s.gumi} size={46} progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-body font-extrabold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(s.days)]}</p>
+                    <p className="truncate text-body font-extrabold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(days)]}</p>
                     <p className="truncate text-caption font-semibold text-muted">
                       <span className="tabular-nums" data-testid="journey-progress">{done}/{vi.journey.total}</span> ngày hoàn thành
                     </p>
@@ -63,7 +63,7 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <div className="mt-2.5"><StreakBoard days={s.days} today={s.day} streak={s.streak} /></div>
+                <div className="mt-2.5"><StreakBoard days={days} today={today} streak={s.streak} /></div>
 
                 {anyBanner && (
                   <div className="mt-2 flex flex-col gap-2">
@@ -78,8 +78,8 @@ export function Dashboard() {
               </div>
 
               {/* ===== Bản đồ liền mạch 21 ngày — nền tràn full-width, lối đi ở lane giữa ===== */}
-              <div ref={mapScrollRef} onScroll={onMapScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
-                <JourneyMap days={s.days} today={s.day} replayAll={s.replayAll} />
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
+                <JourneyMap days={days} today={today} replayAll={s.replayAll} />
               </div>
             </div>
 

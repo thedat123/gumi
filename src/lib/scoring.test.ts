@@ -42,14 +42,14 @@ describe('điểm', () => {
     expect(missionTotal(p)).toBe(15 + 8 + 15);
   });
   it('dùng điểm thực của game và cộng thưởng Story tốt nghiệp một lần', () => {
-    const p = P({ completed: new Set([6, 19, 21]), earnedPoints: { 6: 10, 19: 30 }, storyBonus: 10 });
-    expect(missionTotal(p)).toBe(10 + 30 + 15 + 10);
+    // Day5 game=10 (earned), Day12 game=30 (earned), Day14 FINAL=25 (bảng) + storyBonus 10
+    const p = P({ completed: new Set([5, 12, 14]), earnedPoints: { 5: 10, 12: 30 }, storyBonus: 10 });
+    expect(missionTotal(p)).toBe(10 + 30 + 25 + 10);
   });
-  it('streakBonus theo mốc 5/10/15/21 cộng dồn', () => {
+  it('streakBonus theo mốc 5/10/14 cộng dồn', () => {
     expect(streakBonus(5)).toBe(10);
     expect(streakBonus(10)).toBe(10 + 20);
-    expect(streakBonus(15)).toBe(10 + 20 + 30);
-    expect(streakBonus(21)).toBe(10 + 20 + 30 + 50);
+    expect(streakBonus(14)).toBe(10 + 20 + 30);
   });
   it('chuỗi dưới mốc 5 thì chưa có thưởng', () => {
     const p = P({ campaignDay: 11, completed: new Set([1, 2, 3]), quizScore: 10 });
@@ -58,15 +58,15 @@ describe('điểm', () => {
 });
 
 describe('Gumi', () => {
-  it('gumiStateOf: hấp hối khi dying; tiến hoá khi Day 21 checked; còn lại bơ phờ', () => {
+  it('gumiStateOf: hấp hối khi dying; tiến hoá khi Day cuối checked; còn lại bơ phờ', () => {
     expect(gumiStateOf(computeDays(P({ campaignDay: 2 })))).toBe('bo_pho');
-    expect(gumiStateOf(all(21))).toBe('tien_hoa');
+    expect(gumiStateOf(all(TOTAL_DAYS))).toBe('tien_hoa');
   });
   it('gumiStage 4 nấc theo số ngày đã đi + crash khi gục ngã', () => {
     expect(gumiStage(computeDays(P({ campaignDay: 2 })))).toBe('sleepy');
     expect(gumiStage(all(1))).toBe('balanced');
     expect(gumiStage(all(8))).toBe('charged');
-    expect(gumiStage(all(15))).toBe('master');
+    expect(gumiStage(all(TOTAL_DAYS))).toBe('master');
     const dying = computeDays(P({ campaignDay: 5, completed: new Set([1, 2]) }));
     dying[3] = 'dying';
     expect(gumiStage(dying)).toBe('crash');

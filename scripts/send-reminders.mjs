@@ -45,7 +45,7 @@ function dueReminder(now, lastPlayDate, campaignDay, lastCompletedDate) {
 }
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY } = process.env;
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@leveldown.app';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@matdo.app';
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
   console.error('Thiếu env: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY');
   process.exit(1);
@@ -65,14 +65,14 @@ const notifiedUsers = new Set(); // 1 dòng noti / user / lần chạy (dù user
 for (const t of targets ?? []) {
   let payload;
   if (FORCE) {
-    payload = { title: 'Level Down Challenge', body: 'Thông báo thử trọn vòng — bạn vừa nhận push từ GitHub! 🎉', url: '/', tag: 'gumi-test-now' };
+    payload = { title: 'Mật Độ', body: 'Thông báo thử trọn vòng — bạn vừa nhận push từ GitHub! 🎉', url: '/', tag: 'gumi-test-now' };
   } else {
     if (t.phase !== 'running') { skipped++; continue; }
     const due = dueReminder(now, t.last_play_date, t.campaign_day, t.last_completed_date);
     if (!due) { skipped++; continue; }
     const { data: claimed } = await supabase.rpc('claim_push_slot', { p_user: t.user_id, p_date: due.date, p_minute: due.minute });
     if (!claimed) { skipped++; continue; }
-    payload = { title: 'Level Down Challenge', body: due.text, url: `/chapter/${t.campaign_day}`, tag: `gumi-reminder-${due.date}` };
+    payload = { title: 'Mật Độ', body: due.text, url: `/chapter/${t.campaign_day}`, tag: `gumi-reminder-${due.date}` };
   }
 
   // GHI vào trung tâm thông báo (nguồn sự thật cho chuông) — 1 lần/user, dù push OS có hiện hay không.

@@ -1,16 +1,15 @@
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
-import { isMilestone } from '../lib/scoring';
+import { isMilestone, actDays, TOTAL_DAYS } from '../lib/scoring';
 import { Gumi } from './Gumi';
 import { Icon } from './Icon';
 import { RegionScene } from './RegionScene';
 import type { DayState } from '../api/types';
 
-/* ---- Bản đồ MỘT HỒI (7 ngày) lấp đầy màn hình như world-map game ---- */
-const N = 7;                                   // 7 ngày / hồi
+/* ---- Bản đồ MỘT HỒI (4–5 ngày) lấp đầy màn hình như world-map game ---- */
 const reached = (s: DayState) => s === 'checked' || s === 'passed' || s === 'open' || s === 'dying';
 // Vị trí theo % khung → luôn lấp đầy chiều cao dù màn to/nhỏ. Ngày đầu dưới, cửa ải trên.
-const yPct = (i: number) => 90 - i * (76 / (N - 1));
+const yPct = (i: number, n: number) => 90 - i * (76 / Math.max(1, n - 1));
 const xPct = (i: number, mile: boolean) => (mile ? 50 : 50 + 27 * Math.sin(i * 1.15 + 0.5));
 
 const NODE: Record<DayState, { face: string; ring?: string }> = {
@@ -32,7 +31,7 @@ const DECOR: Record<1 | 2 | 3, [string, number, number, number][]> = {
 function Glyph({ day, state, mile }: { day: number; state: DayState; mile: boolean }) {
   if (mile) {
     if (state === 'future') return <Icon name="lock" size={24} />;
-    return day === 21 ? <Icon name="trophy" size={30} filled /> : <Icon name="star" size={28} filled />;
+    return day === TOTAL_DAYS ? <Icon name="trophy" size={30} filled /> : <Icon name="star" size={28} filled />;
   }
   switch (state) {
     case 'checked': return <Icon name="check" size={24} strokeWidth={2.6} />;
@@ -57,16 +56,16 @@ function pathThrough(pts: { x: number; y: number }[]): string {
 
 /** Bản đồ một Hồi: cảnh nền lấp đầy + con đường 7 chặng leo dốc + Gumi ở chặng hiện tại. */
 export function ActMap({ days, today, act }: { days: DayState[]; today: number; act: 1 | 2 | 3 }) {
-  const start = (act - 1) * 7;                               // index ngày đầu của hồi
   const acts = vi.story.acts[act - 1]!;
-  const dayNums = Array.from({ length: N }, (_, i) => start + i + 1);
+  const dayNums = actDays(act);                              // ngày thuộc hồi (độ dài 4–5)
+  const n = dayNums.length;
   const states = dayNums.map((d) => days[d - 1] ?? 'future');
-  const pts = dayNums.map((d, i) => ({ x: xPct(i, isMilestone(d)), y: yPct(i) }));
+  const pts = dayNums.map((d, i) => ({ x: xPct(i, isMilestone(d)), y: yPct(i, n) }));
   let frontier = -1;
   states.forEach((s, i) => { if (reached(s)) frontier = i; });
   const doneInAct = states.filter((s) => s === 'checked' || s === 'passed').length;
-  const todayI = today - start - 1;                          // vị trí HÔM NAY trong hồi (nếu thuộc hồi này)
-  const inThisAct = todayI >= 0 && todayI < N;
+  const todayI = dayNums.indexOf(today);                     // vị trí HÔM NAY trong hồi (-1 nếu không thuộc)
+  const inThisAct = todayI >= 0;
 
   return (
     <div className="act-map relative h-full w-full overflow-hidden rounded-[26px] shadow-pop ring-1 ring-white/40">
@@ -98,7 +97,7 @@ export function ActMap({ days, today, act }: { days: DayState[]; today: number; 
           <span className="block text-caption font-extrabold leading-none text-primary">HỒI {act} · {acts.range}</span>
           <span className="block text-small font-black leading-tight">{acts.name}</span>
         </span>
-        <span className="ml-1 rounded-pill bg-primary px-2 py-0.5 text-caption font-black text-on-primary">{doneInAct}/{N}</span>
+        <span className="ml-1 rounded-pill bg-primary px-2 py-0.5 text-caption font-black text-on-primary">{doneInAct}/{n}</span>
       </div>
 
       {/* Các chặng */}
@@ -119,7 +118,7 @@ export function ActMap({ days, today, act }: { days: DayState[]; today: number; 
         );
         const label = (
           <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+4px)] flex w-32 -translate-x-1/2 flex-col items-center rounded-pill px-2 py-0.5 text-center ${isToday ? 'bg-primary text-on-primary shadow-pop' : 'bg-surface/90 text-text shadow-soft backdrop-blur'}`}>
-            <span className={`text-caption font-black leading-none ${isToday ? '' : 'text-muted'}`}>{isToday ? 'HÔM NAY' : `Ngày ${day}`}{mile && !isToday ? (day === 21 ? ' · Đích' : ' · Cửa ải') : ''}</span>
+            <span className={`text-caption font-black leading-none ${isToday ? '' : 'text-muted'}`}>{isToday ? 'HÔM NAY' : `Ngày ${day}`}{mile && !isToday ? (day === TOTAL_DAYS ? ' · Đích' : ' · Cửa ải') : ''}</span>
             <span className={`line-clamp-1 text-caption font-bold leading-tight ${locked ? 'opacity-70' : ''}`}>{m.title}</span>
           </span>
         );

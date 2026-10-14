@@ -13,7 +13,7 @@ import { playSfx } from '../lib/sfx';
 import { useAsync } from '../app/useAsync';
 import { messageFor } from '../lib/errors';
 
-/** S10 — Day 21: lời nhắn tốt nghiệp + bức tường cộng đồng. */
+/** S10 — Day 14: lời nhắn tốt nghiệp + bức tường cộng đồng. */
 export function Wall() {
   const posts = useAsync(() => api.getWallPosts(), []);
   const [text, setText] = useState('');
@@ -34,7 +34,7 @@ export function Wall() {
   };
 
   if (posted) {
-    return <CompletionPanel day={21} points={storyProof ? 25 : 15} note={storyProof ? vi.wall.postedSubReview : vi.wall.postedSub}
+    return <CompletionPanel day={14} points={storyProof ? 35 : 25} note={storyProof ? vi.wall.postedSubReview : vi.wall.postedSub}
       action={<Link to="/summary" className="inline-flex min-h-12 w-full items-center justify-center rounded-control border border-black/15 bg-primary px-5 font-bold text-on-primary shadow-pop">{vi.wall.viewCard}</Link>} />;
   }
 

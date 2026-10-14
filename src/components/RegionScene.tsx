@@ -1,13 +1,11 @@
-import { lazy, Suspense, type CSSProperties } from 'react';
-
-// Tách Pixi thành chunk riêng: chỉ tải khi có cảnh cần vẽ (không nặng trang đăng nhập).
-const PixiScene = lazy(() => import('./PixiScene').then((m) => ({ default: m.PixiScene })));
+import { type CSSProperties } from 'react';
 
 /**
- * Bối cảnh vùng đất: nền gradient + hình bóng (CSS/SVG tĩnh) + lớp hạt động WebGL (PixiScene).
- *  1 Đầm Lầy Ngọt — bọt ngọt nổi, lau sậy, sương.
- *  2 Rừng Đường Ẩn — hàng thông mờ sương, phấn bay.
- *  3 Đỉnh 0% — núi tuyết, tuyết rơi, ánh sáng trong.
+ * Bối cảnh vùng đất — 2D THUẦN (gradient + mây + hình bóng CSS/SVG vector), đồng tông với
+ * phòng Gumi (RoomScene 2D). Đã bỏ lớp hạt động WebGL (PixiScene) để không chỏi tông & nhẹ máy.
+ *  1 Đầm Lầy Ngọt — ridge mềm, lau sậy, sương.
+ *  2 Rừng Đường Ẩn — hàng thông mờ sương.
+ *  3 Đỉnh 0% — núi tuyết, ánh sáng trong.
  */
 export function RegionScene({ act }: { act: 1 | 2 | 3 }) {
   return (
@@ -18,7 +16,6 @@ export function RegionScene({ act }: { act: 1 | 2 | 3 }) {
       <span className="scene-cloud" style={{ '--cy': '10%', '--cw': '170px', '--ch': '52px', '--cd': '52s', '--co': '0.6' } as CSSProperties} />
       <span className="scene-cloud" style={{ '--cy': '22%', '--cw': '120px', '--ch': '38px', '--cd': '38s', '--cdelay': '-14s', '--co': '0.45' } as CSSProperties} />
       <Silhouette act={act} />
-      <Suspense fallback={null}><PixiScene act={act} /></Suspense>
       <div className="scene-scrim" />
     </div>
   );
