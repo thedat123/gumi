@@ -16,7 +16,7 @@ export function ChapterIntro() {
   const day = Number(dayParam);
   const chapter = vi.story.chapters[day - 1];
   const m = vi.missions[day - 1];
-  const { speak, stop, speaking, supported } = useNarration();
+  const { stop } = useNarration();
 
   // "Bắt đầu chơi": vào màn hôm nay là điểm danh streak (idempotent — chỉ tính 1 lần/ngày).
   useEffect(() => { void api.markPlayed().catch(() => {}); }, []);
