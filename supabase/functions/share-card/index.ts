@@ -24,7 +24,7 @@ Deno.serve((req) => {
   const base = Deno.env.get('SUPABASE_URL') ?? '';
   const q = new URL(req.url).searchParams;
   const img = (q.get('i') ?? '').trim();
-  const title = esc((q.get('t') ?? 'Level Down — Thử thách 21 ngày bớt ngọt').slice(0, 120));
+  const title = esc((q.get('t') ?? 'Level Down — Thử thách 14 ngày bớt ngọt').slice(0, 120));
   const desc = esc((q.get('d') ?? 'Mình vừa hoàn thành hành trình bớt ngọt cùng Gumi 🐱').slice(0, 200));
   // Chỉ cho redirect về đúng app (http/https), tránh open-redirect.
   const appRaw = (q.get('u') ?? '').trim();

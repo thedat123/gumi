@@ -59,7 +59,7 @@ export const vi = {
   banners: {
     before: (date: string) => `Hành trình bắt đầu ngày ${date}. Hãy chuẩn bị hồ sơ nhé!`,
     dying: (hours: number) => `Cơn Thèm vừa quật ngã Gumi — Sugar Crash! Bạn còn ${hours} giờ để dùng Bùa Hồi Sinh cứu chuỗi.`,
-    missedNoPass: 'Chuỗi đã đứt và bạn đã dùng hết 3 Bùa Hồi Sinh. Vẫn còn nhiều ngày để ghi điểm!',
+    missedNoPass: 'Chuỗi đã đứt và bạn đã dùng hết 2 Bùa Hồi Sinh. Vẫn còn nhiều ngày để ghi điểm!',
     rejected: (reason: string) => `Ảnh của bạn bị gỡ: ${reason}. Bạn vẫn có thể dùng Bùa Hồi Sinh nếu còn thời hạn.`,
     finished: 'Bạn đã tốt nghiệp 14 ngày bớt ngọt! Gumi tiến hoá thành Chiến Thần 0% Đường. Tải card khoe nào!',
     ended: 'Hành trình đã khép lại. Cảm ơn bạn đã đồng hành cùng Gumi!',
@@ -102,7 +102,7 @@ export const vi = {
     emptyHint: 'Chọn nội thất để tạo căn phòng của bạn',
   },
 
-  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 3 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).', count: (n: number) => `Còn ${n}/3 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
+  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 2 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).', count: (n: number) => `Còn ${n}/2 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
     warnTitle: 'Gumi đang hấp hối! 😿',
     warnBody: (n: number) => `Bạn đang lỡ 1 ngày — vào chơi ngay sẽ MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh để giữ chuỗi nhé!`,
     warnBodyNoPass: 'Bạn đang lỡ 1 ngày và đã hết Bùa. Vào chơi sẽ bắt đầu lại chuỗi từ đầu.',
@@ -319,7 +319,7 @@ export const vi = {
       { icon: 'flame', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
       { icon: 'sparkle', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
     ],
-    stats: { days: '14 ngày', players: '~100 người chơi', missions: '2 vùng đất' },
+    stats: { days: '14 ngày', missions: '2 vùng đất' },
     ctaPrimary: 'Bắt đầu — nhận nuôi Gumi',
     ctaSecondary: 'Mình đã có tài khoản',
     before: (date: string) => `Hành trình khởi động ngày ${date}. Đăng ký trước để không lỡ Ngày 1!`,
@@ -473,7 +473,7 @@ export const vi = {
     // Ngày 9 — Truy Tìm Mật Khẩu (word search): giải 5 gợi ý, bắt đúng 5 "mật khẩu" ẩn giữa đám chữ.
     wordHunt: {
       title: 'Ngày 9: Truy Tìm Mật Khẩu',
-      intro: 'Boss giấu 5 mật khẩu trong lưới chữ (ngang · dọc · chéo). Chạm ô ĐẦU rồi ô CUỐI của từ để bắt. Đọc gợi ý bên dưới nhé!',
+      intro: 'Boss giấu 5 mật khẩu trong lưới chữ (ngang · dọc · chéo). Giữ & KÉO từ ô đầu tới ô cuối của từ để bắt. Đọc gợi ý bên dưới nhé!',
       cluesTitle: '5 gợi ý',
       found: (n: number, total: number) => `Đã bắt: ${n}/${total}`,
       wrong: 'Chưa đúng — đọc lại gợi ý rồi thử tiếp nhé!',
@@ -544,7 +544,7 @@ export const vi = {
     crossword: {
       title: 'Ngày 11: Gumi Bắt Chữ',
       subtitle: 'Xoá Xổ Đường Dư',
-      intro: 'Bấm vào ô rồi gõ thẳng chữ (bàn phím máy tính hoặc điện thoại) — gõ xong tự nhảy ô kế. Bấm gợi ý để tới nhanh. Bạn có 3 phút!',
+      intro: 'Bấm vào ô rồi gõ thẳng chữ — gõ xong tự nhảy ô kế. Bấm gợi ý để tới nhanh. Bạn có 3 phút!',
       tapDir: 'Bấm lại ô để đổi hướng ngang ↔ dọc.',
       acrossLabel: 'Hàng ngang',
       downLabel: 'Hàng dọc',

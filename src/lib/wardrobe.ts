@@ -33,15 +33,15 @@ export const WARDROBE: Record<Slot, Item[]> = {
     N('party', 'Mũ tiệc', 5, '#F5C542'),
     N('headband', 'Băng đô ninja', 7, '#B3261E'),
     N('helmet', 'Mũ phi hành', 12, '#7EC9E0'),
-    N('crown', 'Vương miện', 15, '#F5C542'),
-    N('halo', 'Hào quang', 21, '#F2C879'),
+    N('crown', 'Vương miện', 13, '#F5C542'),
+    N('halo', 'Hào quang', 14, '#F2C879'),
   ],
   glasses: [
     N('none', 'Không', 0, 'transparent'),
     N('round', 'Kính tròn', 1, '#C79A3E'),
     N('sunglasses', 'Kính râm', 4, '#2A2320'),
     N('star', 'Kính sao', 10, '#F5C542'),
-    N('monocle', 'Kính một mắt', 15, '#C79A3E'),
+    N('monocle', 'Kính một mắt', 14, '#C79A3E'),
   ],
   neck: [
     N('none', 'Không', 0, 'transparent'),
@@ -56,7 +56,7 @@ export const WARDROBE: Record<Slot, Item[]> = {
     N('rose', 'Hồng Phấn', 3, '#DC97A5'),
     N('blue', 'Xanh Lam', 6, '#3966A4'),
     N('burgundy', 'Đỏ Mận', 12, '#B83556'),
-    N('brown', 'Nâu Ca Cao', 18, '#845747'),
+    N('brown', 'Nâu Ca Cao', 14, '#845747'),
   ],
   background: [
     N('none', 'Không', 0, 'transparent'),
@@ -64,7 +64,7 @@ export const WARDROBE: Record<Slot, Item[]> = {
     N('hearts', 'Tim bay', 4, '#F4A6C0'),
     N('stars', 'Sao lấp lánh', 8, '#BFD8F2'),
     N('sunburst', 'Tia nắng', 13, '#FFD27A'),
-    N('confetti', 'Kim tuyến', 20, '#8FD0B0'),
+    N('confetti', 'Kim tuyến', 14, '#8FD0B0'),
   ],
 };
 

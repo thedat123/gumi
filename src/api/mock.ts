@@ -31,7 +31,7 @@ import {
 
 const KEY = 'ld_mock_v3';
 const START_LEVEL: SugarLevel = 100;
-const PASSES = 3;
+const PASSES = 2;
 
 // Allowlist admin: CHỈ các email cấu hình ở VITE_ADMIN_EMAILS (ngăn cách dấu phẩy) mới được quyền admin.
 // Không đặt biến → không có admin (an toàn mặc định). So khớp chính xác, không phân biệt hoa/thường.
@@ -70,7 +70,7 @@ interface Persisted {
   levels: Record<number, SugarLevel>; // mức đường đã check-in mỗi ngày DRINK
   quiz: QuizResult | null;
   wall: WallPost[];
-  passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 3)
+  passesLeft: number; // số Bùa Hồi Sinh còn lại (bắt đầu 2)
   lastDoneDate: string | null; // ngày (YYYY-MM-DD) hoàn thành chặng gần nhất → chốt "mỗi ngày 1 chặng"
   lastPlayDate: string | null; // ngày mở chơi gần nhất → tính streak "bắt đầu chơi"
   playStreak: number;          // số ngày liên tiếp bấm bắt đầu chơi
@@ -140,7 +140,10 @@ function load(): Persisted {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return fresh();
-    return { ...fresh(), ...(JSON.parse(raw) as Persisted) };
+    const merged = { ...fresh(), ...(JSON.parse(raw) as Persisted) };
+    // Kẹp lại khi hạ trần Bùa (vd 3 → 2): hồ sơ cũ lưu 3 phải về đúng trần hiện tại.
+    merged.passesLeft = Math.min(merged.passesLeft, PASSES);
+    return merged;
   } catch {
     return fresh();
   }

@@ -12,7 +12,7 @@ const F = (n: number) => Array<string>(n).fill('future');
 const all = (n: number) => computeDays(P({ campaignDay: 22, completed: new Set(Array.from({ length: n }, (_, i) => i + 1)) }));
 
 describe('computeDays', () => {
-  it('phân loại checked/passed/rejected/missed/open/future và đủ 21 ngày', () => {
+  it('phân loại checked/passed/rejected/missed/open/future và đủ 14 ngày', () => {
     const days = computeDays(P({ campaignDay: 4, completed: new Set([1, 3]), passed: new Set([2]) }));
     expect(days).toHaveLength(TOTAL_DAYS);
     expect(days).toEqual(['checked', 'passed', 'checked', 'open', ...F(TOTAL_DAYS - 4)]);

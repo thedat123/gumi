@@ -9,7 +9,7 @@ export interface Palette {
   window: 'meadow' | 'forest' | 'snow'; bulbs: boolean; snow: boolean;
 }
 
-/** Bảng màu + không khí theo 3 vùng đất (phòng "đổi da" theo Hồi hiện tại). */
+/** Bảng màu + không khí theo vùng đất (phòng "đổi da" theo Hồi hiện tại). */
 export const P: Record<1 | 2 | 3, Palette> = {
   1: { wall: ['#FCEFE7', '#F6DBCF'], floor: ['#EBC59C', '#D6A074'], base: '#C98F63', plank: '#B67C48', molding: '#EAC7B7',
        sky: ['#BFE6F5', '#EAF7EA'], curtain: ['#F7CEDA', '#EDA9BB'], pelmet: '#EDA9BB', lampGlow: '#FFE6A8',

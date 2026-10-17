@@ -16,16 +16,16 @@ export const STREAK_BONUS: { n: number; pts: number }[] = [
 export const missionPoints = (day: number): number => vi.missions[day - 1]?.points ?? 0;
 
 export interface ProgressInput {
-  campaignDay: number; // ngày hiện tại của chiến dịch (1..10, >10 = đã hết)
+  campaignDay: number; // ngày hiện tại của chiến dịch (1..14, >14 = đã hết)
   completed: Set<number>; // ngày đã hoàn thành bằng check-in/nhiệm vụ được duyệt
   passed: Set<number>; // ngày được cứu bằng Sugar Pass (0 điểm, vẫn giữ chuỗi)
   rejected: Set<number>; // ngày bị admin gỡ ảnh
   quizScore?: number; // điểm thực của quiz Day 2 (thay cho điểm phẳng)
-  storyBonus?: number; // +10 cho minh chứng chia sẻ Story ngày 21
+  storyBonus?: number; // +10 cho minh chứng chia sẻ Story ngày 14
   earnedPoints?: Record<number, number>; // điểm thực của game có thưởng theo kết quả
 }
 
-/** Trạng thái từng ngày cho hành trình 21 ngày (D1: ngày theo lịch chung). */
+/** Trạng thái từng ngày cho hành trình 14 ngày (D1: ngày theo lịch chung). */
 export function computeDays(p: ProgressInput): DayState[] {
   const days: DayState[] = [];
   for (let d = 1; d <= TOTAL_DAYS; d++) {
@@ -73,7 +73,7 @@ export function totalPoints(p: ProgressInput, streak: number): number {
   return missionTotal(p) + streakBonus(streak);
 }
 
-/** Gumi: hấp hối > tiến hoá (đã xong Day 21) > bơ phờ. */
+/** Gumi: hấp hối > tiến hoá (đã xong Day 14) > bơ phờ. */
 export function gumiStateOf(days: DayState[]): GumiState {
   if (days.includes('dying')) return 'hap_hoi';
   if (days[TOTAL_DAYS - 1] === 'checked') return 'tien_hoa';

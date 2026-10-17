@@ -132,8 +132,7 @@ function Overview({ s }: { s: AdminStats }) {
     const b = [
       { label: 'Chưa bắt đầu', hit: (d: number) => d === 0, color: '#9AA3B2' },
       { label: '1–7 ngày', hit: (d: number) => d >= 1 && d <= 7, color: '#EF9F2A' },
-      { label: '8–14 ngày', hit: (d: number) => d >= 8 && d <= 14, color: '#55768C' },
-      { label: '15–20 ngày', hit: (d: number) => d >= 15 && d <= 20, color: '#B83556' },
+      { label: '8–13 ngày', hit: (d: number) => d >= 8 && d <= 13, color: '#55768C' },
       { label: `Hoàn thành (${TOTAL})`, hit: (d: number) => d >= TOTAL, color: '#1F7A4D' },
     ];
     return b.map((x) => ({ label: x.label, color: x.color, count: s.players.filter((p) => x.hit(p.daysDone)).length }));

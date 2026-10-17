@@ -174,8 +174,8 @@ export function Crossword() {
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro} wide
       hud={<><GameStat icon="clock" value={mmss} tone={timeLeft <= 15 ? 'accent' : 'info'} /><GameStat icon="check" value={`${solvedCount}/${words.length}`} tone="success" /></>}>
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 lg:flex-row lg:items-center lg:gap-10">
-        <div className="flex flex-col items-center gap-3">
+      <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-6 lg:flex-row lg:items-center lg:gap-10">
+        <div className="flex w-full min-w-0 flex-col items-center gap-3 lg:w-auto">
         <div className="mx-auto w-max max-w-full overflow-x-auto">
           <div className="w-max">
             {Array.from({ length: cfg.rows }, (_, ri) => (

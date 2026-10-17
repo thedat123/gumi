@@ -131,7 +131,7 @@ export function GumiRoom() {
                     </div>
                     <button type="button" onClick={() => setDialog(true)} aria-label={`Bùa Hồi Sinh: còn ${s.passesLeft}. Bấm để xem`}
                       className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur transition-transform hover:brightness-95 active:scale-95">
-                      {[0, 1, 2].map((i) => <Icon key={i} name="heart" size={15} filled={i < s.passesLeft} className={i < s.passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
+                      {[0, 1].map((i) => <Icon key={i} name="heart" size={15} filled={i < s.passesLeft} className={i < s.passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
                     </button>
                   </div>
 

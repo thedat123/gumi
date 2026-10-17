@@ -12,7 +12,6 @@ import { useSession } from '../app/session';
 const STATS: { icon: IconName; value: string; tint: string }[] = [
   { icon: 'star', value: vi.landing.stats.days, tint: 'text-primary' },
   { icon: 'map', value: vi.landing.stats.missions, tint: 'text-accent' },
-  { icon: 'trophy', value: vi.landing.stats.players, tint: 'text-info' },
 ];
 
 /** S01 — Trang giới thiệu công khai (trước đăng nhập). Đã đăng nhập thì về hành trình. */
@@ -54,7 +53,7 @@ export function Landing() {
                 ? <Banner kind="info">{vi.landing.ended}</Banner>
                 : <Banner kind="success">{vi.landing.personal}</Banner>}
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {STATS.map((s) => (
                   <Card key={s.value} className="flex flex-col items-center gap-1.5 p-3! text-center">
                     <Icon name={s.icon} size={22} filled className={s.tint} />

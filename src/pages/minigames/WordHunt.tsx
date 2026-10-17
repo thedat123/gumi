@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { Banner } from '../../components/Banner';
 import { Confetti, GameShell, GameStat } from '../../components/GameShell';
@@ -54,7 +54,7 @@ function line(a: { r: number; c: number }, b: { r: number; c: number }) {
 const sameCells = (p: { r: number; c: number }[], q: { r: number; c: number }[]) =>
   p.length === q.length && p.every((cell, i) => cell.r === q[i]!.r && cell.c === q[i]!.c);
 
-/** Ngày 9 — Truy Tìm Mật Khẩu: word search lưới 12×12. Chạm ô ĐẦU rồi ô CUỐI của từ để bắt.
+/** Ngày 9 — Truy Tìm Mật Khẩu: word search lưới 12×12. Giữ & KÉO từ ô đầu tới ô cuối của từ để bắt.
  *  Giải 5 gợi ý (dọc/ngang/chéo) để phá khoá. */
 export function WordHunt() {
   const day = 9;
@@ -62,10 +62,12 @@ export function WordHunt() {
   const cfg = vi.minigames.wordHunt;
 
   const [found, setFound] = useState<boolean[]>(() => LAYOUT.map(() => false));
-  const [start, setStart] = useState<{ r: number; c: number } | null>(null);
+  // Vệt đang kéo: ô bắt đầu (giữ xuống) → ô hiện tại (đầu ngón đang trỏ tới).
+  const [sel, setSel] = useState<{ start: { r: number; c: number }; cur: { r: number; c: number } } | null>(null);
   const [warn, setWarn] = useState(0);
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const foundCells = useMemo(() => {
     const s = new Set<string>();
@@ -77,11 +79,38 @@ export function WordHunt() {
 
   const foundCount = found.filter(Boolean).length;
 
-  const tap = (r: number, c: number) => {
-    if (foundCells.has(key(r, c))) return;
-    if (!start) { playSfx('pop'); setStart({ r, c }); return; }
-    const path = line(start, { r, c });
-    setStart(null);
+  // Ô dưới toạ độ con trỏ/ngón tay (dùng cho cả chuột lẫn cảm ứng khi đã pointer-capture).
+  const cellAt = (x: number, y: number): { r: number; c: number } | null => {
+    const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>('[data-r]');
+    if (!el) return null;
+    return { r: Number(el.dataset.r), c: Number(el.dataset.c) };
+  };
+
+  // Vệt xem trước (đường thẳng từ start → cur); nếu chưa thẳng hàng thì chỉ sáng ô bắt đầu.
+  const previewPath = sel ? line(sel.start, sel.cur) : null;
+  const previewCells = new Set((previewPath ?? (sel ? [sel.start] : [])).map((p) => key(p.r, p.c)));
+
+  const onDown = (e: React.PointerEvent) => {
+    const cell = cellAt(e.clientX, e.clientY);
+    if (!cell || foundCells.has(key(cell.r, cell.c))) return;
+    e.preventDefault();
+    gridRef.current?.setPointerCapture?.(e.pointerId);
+    playSfx('pop');
+    setSel({ start: cell, cur: cell });
+  };
+
+  const onMove = (e: React.PointerEvent) => {
+    if (!sel) return;
+    const cell = cellAt(e.clientX, e.clientY);
+    if (cell && (cell.r !== sel.cur.r || cell.c !== sel.cur.c)) setSel({ start: sel.start, cur: cell });
+  };
+
+  const onUp = () => {
+    if (!sel) return;
+    const { start, cur } = sel;
+    setSel(null);
+    if (start.r === cur.r && start.c === cur.c) return; // chỉ chạm 1 ô → bỏ qua, không báo sai
+    const path = line(start, cur);
     if (!path) { playSfx('wrong'); setWarn((n) => n + 1); return; }
     const hit = LAYOUT.findIndex((l, i) => !found[i] && (sameCells(path, cellsOf(l)) || sameCells([...path].reverse(), cellsOf(l))));
     if (hit < 0) { playSfx('wrong'); setWarn((n) => n + 1); return; }
@@ -98,18 +127,27 @@ export function WordHunt() {
       <div className="flex flex-1 flex-col gap-3">
         {warn > 0 && <div key={warn} className="shake"><Banner kind="error">{cfg.wrong}</Banner></div>}
 
-        {/* Lưới chữ 12×12 — chạm ô đầu rồi ô cuối của một từ. */}
-        <div className="mx-auto w-max rounded-card border border-border bg-white p-1.5 shadow-soft">
+        {/* Lưới chữ 12×12 — giữ & kéo từ ô đầu tới ô cuối của một từ. */}
+        <div
+          ref={gridRef}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={() => setSel(null)}
+          style={{ touchAction: 'none' }}
+          className="mx-auto w-max select-none rounded-card border border-border bg-white p-1.5 shadow-soft"
+        >
           {GRID.map((row, r) => (
             <div key={r} className="flex">
               {row.map((ch, c) => {
                 const isFound = foundCells.has(key(r, c));
-                const isStart = start?.r === r && start?.c === c;
+                const inSel = previewCells.has(key(r, c));
+                const isStart = sel?.start.r === r && sel?.start.c === c;
                 return (
-                  <button key={c} type="button" onClick={() => tap(r, c)} disabled={isFound}
-                    className={`h-6 w-6 text-caption font-bold uppercase sm:h-7 sm:w-7 ${isFound ? 'rounded bg-success text-on-primary' : isStart ? 'rounded bg-primary text-on-primary' : 'text-text active:bg-primary/15'}`}>
+                  <span key={c} data-r={r} data-c={c}
+                    className={`flex h-6 w-6 items-center justify-center text-caption font-bold uppercase sm:h-7 sm:w-7 ${isFound ? 'rounded bg-success text-on-primary' : isStart ? 'rounded bg-primary text-on-primary' : inSel ? 'rounded bg-primary/35 text-text' : 'text-text'}`}>
                     {ch}
-                  </button>
+                  </span>
                 );
               })}
             </div>

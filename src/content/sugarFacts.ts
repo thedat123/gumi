@@ -14,11 +14,4 @@ export const SUGAR_FACTS: Record<number, { title: string; body: string }> = {
   12: { title: 'Nhớ tên để nhận ra nhanh hơn', body: 'Nhận diện nhiều tên của đường giúp bạn đọc bảng thành phần chủ động hơn trong lần mua tiếp theo.' },
   13: { title: 'Mẹo nhỏ tạo thay đổi lớn', body: 'Giảm dần độ ngọt, đổi cỡ ly hoặc bỏ topping là những cách dễ thử khi cơn thèm ngọt xuất hiện.' },
   14: { title: 'Hành trình vẫn tiếp tục', body: 'Sau 14 ngày, hãy giữ lại một thay đổi nhỏ mà bạn làm được đều đặn. Một lựa chọn ít ngọt hôm nay có thể trở thành thói quen ngày mai.' },
-  15: { title: 'Vị giác có thể thích nghi', body: 'Giảm độ ngọt dần dần có thể khiến mức ngọt cũ trở nên đậm hơn với bạn. Hãy chọn mức phù hợp và duy trì đều.' },
-  16: { title: 'Đọc thành phần như giải mật mã', body: 'Nhiều tên đường có thể xuất hiện trong cùng một sản phẩm. Đọc tổng đường trên nhãn giúp bạn có bức tranh đầy đủ hơn.' },
-  17: { title: 'Kiểm tra sự thật trước khi chọn', body: '“Tự nhiên” không đồng nghĩa với không có đường. Nước ép và mật ong vẫn góp phần vào tổng lượng đường bạn dùng.' },
-  18: { title: 'Lựa chọn lành hơn vẫn cần xem nhãn', body: 'Đồ uống có hình trái cây hoặc nhãn “healthy” vẫn có thể được thêm đường. Hãy xem thành phần và khẩu phần.' },
-  19: { title: 'Giữ đà đến chặng cuối', body: 'Điểm thưởng là một niềm vui; thói quen quan sát lượng đường trong đồ uống mới là thành quả bạn có thể mang theo lâu dài.' },
-  20: { title: '0% đường thêm vào', body: 'Nước lọc, trà mộc và cà phê đen không thêm đường là lựa chọn dễ nhận biết. Với trà trái cây, hãy hỏi về siro và mật ngọt.' },
-  21: { title: 'Hành trình vẫn tiếp tục', body: 'Sau 21 ngày, hãy giữ lại một thay đổi nhỏ mà bạn làm được đều đặn. Một lựa chọn ít ngọt hôm nay có thể trở thành thói quen ngày mai.' },
 };

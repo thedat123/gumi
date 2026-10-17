@@ -133,7 +133,7 @@ describe('mock API — luồng chơi', () => {
     await api.markPlayed();                // chơi hôm nay → tiếp tục chuỗi
     j = await api.getJourney();
     expect(j.streak).toBe(2);
-    expect(j.passesLeft).toBe(2);          // đã tiêu 1 Bùa
+    expect(j.passesLeft).toBe(1);          // đã tiêu 1 Bùa (bắt đầu 2)
     expect(j.streakFreezeAvailable).toBe(false);
   });
 

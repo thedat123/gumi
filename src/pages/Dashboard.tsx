@@ -13,7 +13,7 @@ import { approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync } from '../app/useAsync';
 import type { GumiEvent } from '../api/types';
 
-/** S05 — Trang chủ = BẢN ĐỒ HÀNH TRÌNH kiểu game: MỘT con đường liền mạch, Ngày 1 dưới chân → Ngày 21 trên đỉnh, 3 hồi nối đuôi nhau. */
+/** S05 — Trang chủ = BẢN ĐỒ HÀNH TRÌNH kiểu game: MỘT con đường liền mạch, Ngày 1 dưới chân → Ngày 14 trên đỉnh, 2 hồi nối đuôi nhau. */
 export function Dashboard() {
   const state = useAsync(() => api.getJourney(), []);
   const [dialog, setDialog] = useState(false);
@@ -77,7 +77,7 @@ export function Dashboard() {
                </div>
               </div>
 
-              {/* ===== Bản đồ liền mạch 21 ngày — nền tràn full-width, lối đi ở lane giữa ===== */}
+              {/* ===== Bản đồ liền mạch 14 ngày — nền tràn full-width, lối đi ở lane giữa ===== */}
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
                 <JourneyMap days={days} today={today} replayAll={s.replayAll} />
               </div>

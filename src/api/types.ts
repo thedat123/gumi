@@ -27,7 +27,7 @@ export interface Profile {
 
 export interface CampaignState {
   phase: CampaignPhase;
-  /** Cá nhân hoá: 0 với khách chưa đăng nhập; 1..21 tính từ NGÀY TẠO TÀI KHOẢN của người dùng. */
+  /** Cá nhân hoá: 0 với khách chưa đăng nhập; 1..14 tính từ NGÀY TẠO TÀI KHOẢN của người dùng. */
   day: number;
   startDate: string; // ISO date (Asia/Ho_Chi_Minh) — ngày tạo tài khoản = Ngày 1
 }
@@ -48,7 +48,7 @@ export interface Journey {
   streak: number;
   rank: number;
   passAvailable: boolean;
-  passesLeft: number; // số Bùa Hồi Sinh còn lại (0..3)
+  passesLeft: number; // số Bùa Hồi Sinh còn lại (0..2)
   passHoursLeft: number | null;
   gumi: GumiState;
   rejectedReason?: string;
@@ -137,8 +137,8 @@ export interface AdminPlayer {
   daysDone: number;   // số ngày đã hoàn thành (duyệt)
   points: number;
   streak: number;
-  eligible: boolean;  // đạt chỉ tiêu nhận quà (>= 14/21 ngày)
-  finished: boolean;  // hoàn thành đủ 21 ngày
+  eligible: boolean;  // đạt chỉ tiêu nhận quà (>= 10/14 ngày)
+  finished: boolean;  // hoàn thành đủ 14 ngày
   usedPass: boolean;  // đã từng dùng Sugar Pass (ảnh hưởng ưu tiên xếp hạng)
 }
 
@@ -146,8 +146,8 @@ export interface AdminPlayer {
 export interface AdminStats {
   totalPlayers: number;
   activePlayers: number;   // đang chơi (đã làm >=1 ngày, chưa hoàn thành)
-  eligibleCount: number;   // đạt chỉ tiêu >= 14/21 ngày
-  finishedCount: number;   // hoàn thành đủ 21 ngày
+  eligibleCount: number;   // đạt chỉ tiêu >= 10/14 ngày
+  finishedCount: number;   // hoàn thành đủ 14 ngày
   avgPoints: number;
   avgDaysDone: number;
   pendingCheckins: number; // số ảnh đang chờ duyệt (gồm cả cần duyệt tay)
