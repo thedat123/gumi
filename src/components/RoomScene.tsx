@@ -133,6 +133,3 @@ function BalconyScene({ id, weather, lights }: { id: string; weather: Weather; l
     <div className="room-scene-tint" style={{ opacity: lights ? 0 : .12 }} />
   </div>;
 }
-function IconPaw() {
-  return <svg viewBox="0 0 30 30" width="20" height="20"><ellipse cx="15" cy="20" rx="7" ry="5" fill="currentColor" />{[[6,12],[12,8],[19,8],[25,12]].map(([x,y]) => <ellipse key={x} cx={x} cy={y} rx="3" ry="4" fill="currentColor" />)}</svg>;
-}
