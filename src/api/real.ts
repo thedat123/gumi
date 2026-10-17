@@ -162,7 +162,11 @@ export function createSupabaseApi(): Api {
       return { ...journey, replayAll: tester === true };
     },
     markPlayed: () => rpc<number>('mark_played'),
-    getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),
+    async getLeaderboard(): Promise<Leaderboard> {
+      // Older RPCs return null from json_agg when there are no ranked players.
+      const leaderboard = await rpc<Omit<Leaderboard, 'top'> & { top: Leaderboard['top'] | null }>('get_leaderboard');
+      return { ...leaderboard, top: leaderboard.top ?? [] };
+    },
     async submitCheckin(day, level: SugarLevel, file, needsReview = false, sugarPercent = null): Promise<CheckinResult> {
       const s = (await auth.getSession());
       if (!s) throw new ApiError('forbidden');
