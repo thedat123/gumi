@@ -33,21 +33,23 @@ Seed đặt `start_date = current_date` → mở **Ngày 1 = hôm nay**. Đổi 
 
 ## Áp dụng
 
-**Cách 1 — Supabase CLI (khuyến nghị)**
+Chạy `bash scripts/db-push.sh` (hoặc `npm run db:seed`). Script đọc
+`SUPABASE_DB_URL` từ `.env.local`, lưu lịch sử trong
+`public.gumi_schema_migrations` và chỉ chạy file chưa áp dụng.
+Mỗi file và bản ghi lịch sử nằm trong cùng transaction; file lỗi được rollback.
+Không sửa migration cũ đã chạy: thêm file có số thứ tự mới.
+
+Database cũ chưa có lịch sử: xác minh phiên bản đã áp dụng, rồi đánh dấu một lần:
+
 ```bash
-supabase link --project-ref <ref>
-supabase db push          # chạy các file trong migrations/ theo thứ tự
+bash scripts/db-push.sh --baseline 0031  # chỉ đánh dấu, không chạy SQL
+bash scripts/db-push.sh --status
+bash scripts/db-push.sh                # chạy từ 0032 trở đi
 ```
 
-**Cách 2 — SQL Editor trên dashboard**
-Dán lần lượt nội dung `0001` → `0002` → `0003` và Run.
-
-**Cách 3 — psql**
-```bash
-psql "$DATABASE_URL" -f supabase/migrations/0001_init.sql
-psql "$DATABASE_URL" -f supabase/migrations/0002_functions.sql
-psql "$DATABASE_URL" -f supabase/migrations/0003_seed.sql
-```
+Chỉ dùng mốc `0031` khi database đã có các thay đổi đến 0031.
+Database mới hoàn toàn chỉ cần `bash scripts/db-push.sh`.
+Script không tự đoán lịch sử từ bảng đã tồn tại.
 
 Sau đó điền `.env.local`:
 ```
