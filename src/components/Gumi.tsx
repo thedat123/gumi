@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { Jersey } from './Jersey';
+export { Jersey } from './Jersey';
 import { vi } from '../content/vi';
 import { useAnimationPause } from '../hooks/useAnimationPause';
 import { useOutfit } from '../app/skin';
@@ -28,6 +30,9 @@ interface Props {
   feed?: { food: string; key: number } | null;
   onEventEnd?: () => void;
 }
+
+// Neck pieces use their own anchor: center (103,119), sized to the narrow neck below the chin.
+const NECK_ATTACHMENT = 'translate(103 119) scale(.62) translate(-100 -127)';
 
 /* Sprite source: ears at y32–63, forehead y57–82, eyes near (69,91)/(113,91), neck y123.
  * A hat needs a rear crown behind the sprite and a front band above the eyes. */
@@ -156,7 +161,7 @@ function Neck({ id }: { id: string }): ReactElement | null {
       );
     case 'bowtie':
       return (
-        <g className="acc-piece" transform="translate(100 132)">
+        <g className="acc-piece" transform="translate(100 127)">
           <path d="M0 0 L-20 -11 Q-26 0 -20 11 Z" fill="#B3261E" />
           <path d="M0 0 L20 -11 Q26 0 20 11 Z" fill="#B3261E" />
           <rect x="-5" y="-7" width="10" height="14" rx="3" fill="url(#accRed)" stroke="#7e1814" strokeWidth="1.5" />
@@ -182,6 +187,14 @@ function Neck({ id }: { id: string }): ReactElement | null {
       return null;
   }
 }
+
+// ẢNH ÁO THẬT (tuỳ chọn): thả file đã tách nền vào src/assets/jerseys/<id>.{webp,png,jpg}
+// sẽ TỰ ĐỘNG hiện lên thân Gumi (ưu tiên hơn áo vẽ SVG). Thiếu ảnh → fallback vẽ SVG bên dưới.
+const JERSEY_IMG: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('../assets/jerseys/*.{webp,png,jpg,jpeg}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>,
+  ).map(([path, url]) => [path.split('/').pop()!.replace(/\.\w+$/, ''), url]),
+);
 
 /** Lớp NỀN phía sau Gumi (chọn ở tủ đồ). Vẽ trong viewBox 200x220, đứng sau thân. */
 function Backdrop({ id }: { id: string }): ReactElement | null {
@@ -259,6 +272,7 @@ const SPARKLES = [
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
 export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
   const { outfit: ctxOutfit } = useOutfit();
+  const headClipId = `gumi-head-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const outfit = propOutfit ?? ctxOutfit;
   const ref = useRef<HTMLDivElement>(null);
   const paused = useAnimationPause(ref);
@@ -339,6 +353,7 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
     >
       <svg viewBox="0 0 200 220" aria-hidden="true" focusable="false">
         <defs>
+          <clipPath id={headClipId}><path d="M40 30 H140 V112 H120 Q112 124 96 125 Q79 124 69 112 H40 Z" /></clipPath>
           <radialGradient id="gHi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffffff" stopOpacity="0.6" /><stop offset="1" stopColor="#ffffff" stopOpacity="0" /></radialGradient>
           <radialGradient id="gCore" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#2A1A15" stopOpacity="0.2" /><stop offset="1" stopColor="#2A1A15" stopOpacity="0" /></radialGradient>
           <radialGradient id="bgSpot" cx="0.5" cy="0.46" r="0.55"><stop offset="0" stopColor="#FFF0C8" stopOpacity="0.9" /><stop offset="0.55" stopColor="#FFE0A0" stopOpacity="0.4" /><stop offset="1" stopColor="#FFE0A0" stopOpacity="0" /></radialGradient>
@@ -350,6 +365,8 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
           <linearGradient id="accDarkGlass" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#625968" /><stop offset=".35" stopColor="#29252d" /><stop offset="1" stopColor="#0e0d12" /></linearGradient>
           <linearGradient id="accBlueCloth" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#8bb8ef" /><stop offset=".5" stopColor="#5b8ac9" /><stop offset="1" stopColor="#365d92" /></linearGradient>
           <linearGradient id="accPurpleCloth" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#ad80db" /><stop offset=".5" stopColor="#7a4db3" /><stop offset="1" stopColor="#4d2d75" /></linearGradient>
+          {/* Khối vải cho áo đấu (sáng trên, tối dưới) — dùng chung cho mọi màu áo, giống style khăn/cape. */}
+          <linearGradient id="jShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".22" /><stop offset=".45" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".18" /></linearGradient>
         </defs>
         {outfit.background !== 'none' && <Backdrop id={outfit.background} />}
         <ellipse className="g-shadow" cx="100" cy="199" rx={fit ? 34 : 42} ry="5" />
@@ -360,6 +377,16 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
             <g className="acc-slot acc-hat acc-behind" transform="translate(-18.2 -7.35) scale(1.095)"><HatBehind id={outfit.hat} /></g>
             {/* ẢNH GUMI THẬT (cắt từ mascot.png) · sprite recolor theo màu lông đang chọn. */}
             <image href={skinSrc} x="40" y="30" width="120" height="170" style={{ filter: imgFilter }} preserveAspectRatio="xMidYMid meet" />
+            {/* Áo đấu esports — ưu tiên ẢNH THẬT nếu có, không thì vẽ SVG. Nằm dưới phụ kiện cổ/mặt/đầu. */}
+            {outfit.jersey !== 'none' && (
+              <g className="acc-slot acc-jersey" transform="translate(-21.8 -7.35) scale(1.095)">
+                {JERSEY_IMG[outfit.jersey]
+                  ? <image href={JERSEY_IMG[outfit.jersey]} x="52" y="112" width="96" height="74" preserveAspectRatio="xMidYMid meet" />
+                  : <Jersey id={outfit.jersey} />}
+              </g>
+            )}
+            {/* Head and paws sit in front of the garment: the neckline tucks under the chin. */}
+            {outfit.jersey !== 'none' && <image href={skinSrc} x="40" y="30" width="120" height="170" preserveAspectRatio="xMidYMid meet" style={{ filter: stateFx || undefined }} clipPath={`url(#${headClipId})`} />}
             {/* Overlay trạng thái (không đè mặt → đọc rõ): hấp hối = giọt mồ hôi; tiến hoá = lấp lánh */}
             {shown === 'hap_hoi' && <path className="g-sweat" d="M121 74 q8 12 0 18 q-8 -6 0 -18z" />}
             {shown === 'tien_hoa' && (
@@ -369,7 +396,7 @@ export function Gumi({ state, size = 200, event = null, eventKey = 0, interactiv
               </>
             )}
             {/* Phụ kiện — canh khớp MẮT THẬT của ảnh (đo được: (80,90)/(120,90) → (69,91)/(113,91)) */}
-            {outfit.neck !== 'cape' && <g className="acc-slot acc-neck" transform="translate(-18.2 -7.35) scale(1.095)"><Neck id={outfit.neck} /></g>}
+            {outfit.neck !== 'cape' && <g className="acc-slot acc-neck" transform="translate(-18.2 -7.35) scale(1.095)"><g transform={NECK_ATTACHMENT}><Neck id={outfit.neck} /></g></g>}
             <g className="acc-slot acc-glasses" transform="translate(-18.2 -7.35) scale(1.095)"><Glasses id={outfit.glasses} /></g>
             <g className="acc-slot acc-hat" transform="translate(-18.2 -7.35) scale(1.095)"><Hat id={outfit.hat} /></g>
           </g>

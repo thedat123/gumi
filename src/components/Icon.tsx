@@ -9,7 +9,8 @@ export type IconName =
   | 'map' | 'trophy' | 'shirt' | 'camera' | 'gamepad' | 'sofa' | 'utensils' | 'leaf'
   | 'chevron-left' | 'chevron-right' | 'arrow-right' | 'logout' | 'sparkle' | 'lock'
   | 'check' | 'bowl' | 'drop' | 'x' | 'clock' | 'play' | 'flag' | 'shield' | 'undo'
-  | 'sun' | 'cloud' | 'moon' | 'plus' | 'minus' | 'trash' | 'flip';
+  | 'sun' | 'cloud' | 'moon' | 'plus' | 'minus' | 'trash' | 'flip'
+  | 'hat' | 'glasses' | 'scarf' | 'palette';
 
 interface Props extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName;
@@ -101,6 +102,14 @@ export function Icon({ name, size = 22, filled = false, strokeWidth = 1.75, ...r
       return <svg {...common} {...(filled ? { fill: 'currentColor' } : {})}><path d="M7 18h10a3.5 3.5 0 0 0 .3-6.98A5 5 0 0 0 7.6 9.8 3.6 3.6 0 0 0 7 18z" /></svg>;
     case 'moon':
       return <svg {...common} {...(filled ? { fill: 'currentColor' } : {})}><path d="M20 13.5A8 8 0 1 1 10.5 4a6.3 6.3 0 0 0 9.5 9.5z" /></svg>;
+    case 'hat':
+      return <svg {...common}><path d="M5.5 13.5a6.5 5.5 0 0 1 13 0Z" {...(filled ? { fill: 'currentColor' } : {})} /><path d="M4 13.5h11" /><path d="M15 13.5h4c1.1 0 2 .4 2 1s-.9 1-2 1h-4z" /></svg>;
+    case 'glasses':
+      return <svg {...common}><circle cx="7" cy="13" r="3.3" {...(filled ? { fill: 'currentColor' } : {})} /><circle cx="17" cy="13" r="3.3" {...(filled ? { fill: 'currentColor' } : {})} /><path d="M10.3 12.6c.9-.7 2.5-.7 3.4 0" /><path d="M3.8 11 5.2 10" /><path d="M20.2 11 18.8 10" /></svg>;
+    case 'scarf':
+      return <svg {...common}><path d="M7 8c3 2.5 7 2.5 10 0" /><path d="M11 10.9l-.9 8 3-1 .6-6" {...(filled ? { fill: 'currentColor' } : {})} /></svg>;
+    case 'palette':
+      return <svg {...common}><path d="M12 3.5a8.5 8.5 0 1 0 1.2 16.9c1-.1 1.3-1.1.7-1.9-.7-.9 0-2.1 1.1-2.1h1.3a3.7 3.7 0 0 0 3.7-3.7c0-5-3.6-9.2-8-9.2z" {...(filled ? { fill: 'currentColor' } : {})} /><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none" /><circle cx="11.6" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="15.4" cy="9.2" r="1.1" fill="currentColor" stroke="none" /><circle cx="7" cy="14" r="1.1" fill="currentColor" stroke="none" /></svg>;
     default:
       return null;
   }

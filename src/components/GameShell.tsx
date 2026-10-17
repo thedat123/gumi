@@ -35,7 +35,7 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
   const mission = vi.missions[day - 1];
   const [introOpen, setIntroOpen] = useState(false);
   return (
-    <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
+    <div className={`game-shell act-${act} relative -mx-4 -mb-6 -mt-1 flex min-h-[calc(100dvh-var(--app-header))] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
       <div className={`relative z-10 mx-auto flex w-full flex-1 flex-col ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}>
         <header className="game-premium-header mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:p-4 [@media(max-height:520px)]:mb-2 [@media(max-height:520px)]:gap-2 [@media(max-height:520px)]:p-2">
@@ -60,7 +60,7 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
           {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px] [@media(max-height:520px)]:w-auto [@media(max-height:520px)]:pl-0">{hud}</div>}
         </header>
         <div className="flex flex-1 flex-col justify-center [@media(max-height:520px)]:justify-start">{children}</div>
-        {footer && <div className="game-premium-footer safe-bottom sticky bottom-0 z-20 mt-4 rounded-[20px] border border-white/60 bg-surface/90 p-2.5 shadow-[0_-8px_30px_rgba(51,24,55,.12)] backdrop-blur-xl [@media(max-height:520px)]:mt-2">{footer}</div>}
+        {footer && <div className="safe-bottom sticky bottom-0 z-20 mt-4 [@media(max-height:520px)]:mt-2">{footer}</div>}
       </div>
     </div>
   );

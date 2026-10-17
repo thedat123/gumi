@@ -18,11 +18,12 @@ describe('DRINK challenge validation', () => {
     expect(judgeDrink(1, 70, evidence(50)).kind).toBe('pass');
   });
 
-  it('day 6 không soi mức đường — thấy ly hợp lệ là đạt', () => {
-    // Ngày 6 (DRINK) không gán mức %: chỉ cần AI thấy một đồ uống hợp lệ.
+  it('day 6 yêu cầu tối đa 70% đường', () => {
+    // Ngày 6 (DRINK): gate ở mức tối đa 70% đường.
+    expect(judgeDrink(6, 100, evidence(70)).kind).toBe('pass'); // đúng mốc 70% → đạt
     expect(judgeDrink(6, 100, evidence(51)).kind).toBe('pass');
-    expect(judgeDrink(6, 100, evidence(90)).kind).toBe('pass');
-    expect(judgeDrink(6, 100, evidence(null)).kind).toBe('pass');
+    expect(judgeDrink(6, 100, evidence(90)).kind).toBe('fail'); // quá 70% → trượt
+    expect(judgeDrink(6, 100, evidence(null)).kind).toBe('unknown'); // không đọc được % → chờ duyệt tay
   });
 
   it('does not invent a percentage when the label cannot be read', () => {

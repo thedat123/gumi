@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import { useOutfit } from '../app/skin';
 import { vi } from '../content/vi';
-import { SLOTS, WARDROBE, isUnlocked, totalItems, unlockedItems, type Item, type Slot } from '../lib/wardrobe';
-import { Gumi } from './Gumi';
+import { SLOTS, WARDROBE, JERSEY_COLORWAYS, isUnlocked, totalItems, unlockedItems, type Item, type Slot } from '../lib/wardrobe';
+import { Gumi, Jersey } from './Gumi';
 import { Icon, type IconName } from './Icon';
 
 const PLACEMENT: Record<Slot, { title: string; hint: string; tag: string }> = {
-  hat: { title: 'Phụ kiện đội đầu', hint: 'Gắn theo viền tai và đỉnh đầu của Gumi', tag: 'ĐỈNH ĐẦU' },
-  glasses: { title: 'Phụ kiện khuôn mặt', hint: 'Căn đúng trục mắt để thử kính thật', tag: 'KHUÔN MẶT' },
-  neck: { title: 'Phụ kiện cổ', hint: 'Ôm quanh phần cổ, nằm sau cằm', tag: 'VÒNG CỔ' },
-  color: { title: 'Màu lông', hint: 'Đổi toàn bộ sprite lông Gumi', tag: 'TOÀN THÂN' },
-  background: { title: 'Không gian sân khấu', hint: 'Lớp nền nằm phía sau Gumi', tag: 'PHÔNG NỀN' },
+  hat: { title: 'Phụ kiện đội đầu', hint: 'Một điểm nhấn cho ngày mới', tag: 'ĐỈNH ĐẦU' },
+  glasses: { title: 'Phụ kiện khuôn mặt', hint: 'Thêm chút cá tính cho ánh nhìn', tag: 'KHUÔN MẶT' },
+  neck: { title: 'Phụ kiện cổ', hint: 'Nơ nhỏ, khăn mềm — vừa xinh dưới cằm', tag: 'VÒNG CỔ' },
+  jersey: { title: 'Áo đấu esports', hint: 'Màu áo đặc trưng · Nhìn là nhận ra đội', tag: 'THÂN TRÊN' },
+  color: { title: 'Màu lông', hint: 'Chọn sắc màu hợp với bộ đồ', tag: 'TOÀN THÂN' },
+  background: { title: 'Không gian sân khấu', hint: 'Thêm chút lấp lánh cho bộ đồ', tag: 'PHÔNG NỀN' },
 };
 
 /** Tủ đồ PHỐI TỰ DO: chọn mũ / kính / khăn / màu / nền độc lập. Món chưa mở khoá hiện điều kiện. */
 export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: () => void }) {
   const { outfit, setPiece, reset } = useOutfit();
-  const [slot, setSlot] = useState<Slot>('hat');
+  const [slot, setSlot] = useState<Slot>('jersey');
   const [note, setNote] = useState<string | null>(null);
   const haveCount = unlockedItems(daysDone);
   const total = totalItems();
@@ -31,7 +32,7 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={vi.wardrobe.title} onClick={onClose}>
-      <div className="wardrobe-modal max-h-[94dvh] w-full max-w-4xl overflow-y-auto rounded-[26px] border border-border bg-bg shadow-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="wardrobe-modal wardrobe-lookbook max-h-[94dvh] w-full max-w-4xl overflow-y-auto rounded-[26px] border border-border bg-bg shadow-pop" onClick={(e) => e.stopPropagation()}>
         {/* Header gradient + thanh sưu tập */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary via-[#C24C72] to-[#8E3A78] px-4 pt-4 pb-4 text-on-primary">
           <span aria-hidden className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15" />
@@ -61,7 +62,7 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
             <Icon key={i} name="sparkle" size={i % 2 ? 12 : 16} filled aria-hidden className="pointer-events-none absolute animate-pulse text-accent/70" style={{ left: l, top: t }} />
           ))}
           <div className="relative">
-            <Gumi state="bo_pho" size={156} outfit={outfit} />
+            <Gumi state="bo_pho" size={190} outfit={outfit} />
           </div>
           <span className="wardrobe-placement">{placement.tag}</span>
           <button type="button" onClick={reset} className="absolute right-2 top-2 flex items-center gap-1 rounded-pill border border-border bg-surface/90 px-2.5 py-1 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-transform active:scale-95">
@@ -99,12 +100,13 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
               <button key={item.id} type="button" onClick={() => tap(item)} aria-pressed={active} disabled={!unlocked}
                 className={`group relative flex flex-col items-center gap-1.5 rounded-card border-2 p-2.5 text-center transition-all active:scale-95 ${active ? 'border-primary bg-primary/10 shadow-pop' : 'border-border-strong bg-surface hover:border-primary/40'} ${!unlocked ? 'opacity-80' : ''}`}>
                 {active && <span aria-hidden className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-on-primary shadow-soft"><Icon name="check" size={12} strokeWidth={3} /></span>}
-                <span className={`wardrobe-item-preview relative flex h-16 w-full items-center justify-center overflow-hidden rounded-control border border-surface ${isNone ? 'bg-border/40' : ''}`}
-                  style={isNone ? undefined : { background: `linear-gradient(135deg, ${item.swatch}55, ${item.swatch})` }}>
+                <span className={`wardrobe-item-preview ${slot === 'jersey' ? 'jersey-preview' : ''} relative flex h-16 w-full items-center justify-center overflow-hidden rounded-control border border-surface ${isNone ? 'bg-border/40' : ''}`}
+                  style={isNone || slot === 'jersey' ? undefined : { background: `linear-gradient(135deg, ${item.swatch}55, ${item.swatch})` }}>
                   {!unlocked ? <span className="absolute inset-0 z-10 flex items-center justify-center bg-black/45"><Icon name="lock" size={18} className="text-white" /></span> : null}
-                  {isNone ? <Icon name="x" size={18} className="text-muted" /> : <Gumi state="bo_pho" size={76} outfit={{ ...outfit, [slot]: item.id }} />}
+                  {isNone ? <Icon name="x" size={18} className="text-muted" /> : slot === 'jersey' ? <svg viewBox="64 113 78 68" className="jersey-product" aria-hidden="true"><Jersey id={item.id} /></svg> : <Gumi state="bo_pho" size={76} outfit={{ ...outfit, [slot]: item.id }} />}
                 </span>
                 <span className="line-clamp-1 text-caption font-semibold leading-tight">{item.name}</span>
+                {slot === 'jersey' && !isNone && <span className="text-[9px] font-medium leading-tight text-muted">{JERSEY_COLORWAYS[item.id] ?? 'Phối màu đội tuyển'}</span>}
                 {active
                   ? <span className="text-caption font-bold text-primary">{vi.wardrobe.using}</span>
                   : !unlocked

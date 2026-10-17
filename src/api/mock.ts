@@ -522,8 +522,8 @@ export function createMockApi(): Api {
       const base = state.profile?.level ?? 100;
       if (sugarPercent != null) {
         // So bằng % THÔ để khớp y hệt AI (vd 69% vẫn hợp lệ). Ngày 1: chỉ cần thấp hơn thói quen.
-        const over = (day === 1 && sugarPercent >= base) || (day === 5 && sugarPercent > 50)
-          || (day === 15 && sugarPercent > 30) || (day === 20 && sugarPercent > 0);
+        const over = (day === 1 && sugarPercent >= base) || (day === 6 && sugarPercent > 70)
+          || (day === 10 && sugarPercent > 0);
         if (over) throw new ApiError('level_not_allowed');
       } else {
         const maxLevel = drinkTarget(day, base); // fallback (không có %): dùng nấc rời rạc như cũ
@@ -543,13 +543,14 @@ export function createMockApi(): Api {
     async submitQuiz(guesses): Promise<QuizResult> {
       requireSession();
       await delay(null, 500);
-      // 1 câu (trà sữa): trúng khoảng 12–15 = đủ 10 điểm; lệch thì trừ dần.
+      // 1 câu (trà sữa): trúng khoảng 12–15 = +10; sai = +2 điểm an ủi (theo brief).
       ensurePlayable(2);
       const guess = guesses[0] ?? 0;
       const lo = vi.quiz.correctMin, hi = vi.quiz.correctMax;
       const answer = Math.round((lo + hi) / 2);
-      const dist = guess >= lo && guess <= hi ? 0 : Math.min(Math.abs(guess - lo), Math.abs(guess - hi));
-      const points = Math.max(0, 10 - dist * 2);
+      // Đúng (trong khoảng 12–15) +10; sai thì +2 điểm an ủi.
+      const hit = guess >= lo && guess <= hi;
+      const points = hit ? 10 : 2;
       const result: QuizResult = { score: points, max: 10, items: [{ id: 0, guess, answer, points }] };
       state.quiz = result;
       advance(2);

@@ -7,6 +7,7 @@ export interface Line { who: Speaker; text: string }
 export interface Chapter { day: number; intro: Line[]; win: Line[]; tease: string }
 
 export const vi = {
+  flight: { hint: 'Chạm / Space để phụt nhiên liệu · 20 cột là đạt · 50/100 ăn thêm', ready: 'Chạm để cất cánh 🛸' },
   app: { name: 'Mật Độ', shortName: 'Mật Độ', tagline: 'Đường bớt một nấc, chất thêm một bậc' },
   nav: { home: 'Phòng Gumi', journey: 'Bản đồ', leaderboard: 'Xếp hạng', admin: 'Quản trị' },
   common: {
@@ -74,6 +75,22 @@ export const vi = {
     caption: { bo_pho: 'Gumi bơ phờ', hap_hoi: 'Gumi bị Cơn Thèm quật ngã', tien_hoa: 'Gumi đã tiến hoá' },
     // 4 nấc tiến hoá theo hành trình + trạng thái gục ngã.
     stage: { crash: 'Sugar Crash (X_X)', sleepy: 'Sugar Sleepy', balanced: 'Sugar Balanced', charged: 'Sugar Charged', master: 'Sugar Master' },
+  },
+
+  foodTray: {
+    title: 'Bữa nhỏ của Gumi',
+    hint: 'Chạm món hoặc kéo đến Gumi',
+    dragging: 'Thả món vào Gumi nhé',
+    served: (name: string) => `Gumi vừa nhận ${name.toLowerCase()} ♡`,
+    feed: (name: string) => `Cho Gumi ăn ${name.toLowerCase()}`,
+    foods: [
+      { kind: 'apple', emoji: '🍎', name: 'Táo', tint: '#f8e3de', accent: '#bf6666' },
+      { kind: 'sushi', emoji: '🍣', name: 'Sushi', tint: '#fae9da', accent: '#c78055' },
+      { kind: 'milk', emoji: '🥛', name: 'Sữa', tint: '#e4eef0', accent: '#6c979e' },
+      { kind: 'cookie', emoji: '🍪', name: 'Bánh', tint: '#f4e8d0', accent: '#ac8650' },
+      { kind: 'carrot', emoji: '🥕', name: 'Cà rốt', tint: '#e9eedc', accent: '#899b64' },
+      { kind: 'fish', emoji: '🐟', name: 'Cá', tint: '#dfeaf2', accent: '#688eaf' },
+    ],
   },
 
   wardrobe: {
@@ -194,7 +211,7 @@ export const vi = {
       { day: 14, intro: [
           { who: 'boss', text: 'Không thể nào… ngươi đã hết cần tới ta!' },
           { who: 'gumi', text: 'Hứng nốt những giọt nước lành cuối cùng — pha loãng Boss Đường nào!' },
-          { who: 'narrator', text: 'Ánh sáng bùng nổ trên Đỉnh 0%. Kính râm hiện ra, thân hình rắn rỏi…' },
+          { who: 'narrator', text: 'Ánh sáng bùng nổ trên đỉnh cao. Kính râm hiện ra, thân hình rắn rỏi…' },
         ], win: [ { who: 'gumi', text: 'CHIẾN THẦN 0% ĐƯỜNG — Sugar Master đã thức tỉnh! 14 ngày, cảm ơn bạn đã dắt mình đi.' } ],
         tease: 'Viết một câu cảm nhận gửi lên Bức tường cộng đồng của Gumi nhé!' },
     ] as Chapter[],
@@ -217,7 +234,7 @@ export const vi = {
     share: {
       heading: 'Chia sẻ lên Story',
       hint: 'Đăng ảnh lên Story kèm caption dưới đây (nhớ giữ hashtag & tag), rồi chụp màn hình Story tải lên làm bằng chứng.',
-      caption: 'Mình đang thử thách 14 ngày bớt ngọt cùng Gumi 🐱🥤 Đường bớt một nấc, chất thêm một bậc!\n#MatDo #GumiBotNgot #14NgayBotNgot @matdo.challenge',
+      caption: '#MatDo #GumiBotNgot #ChinhDuongDieuDo #MatDoChallenge @mat_do_fuda',
       shareBtn: '📤 Mở app chia sẻ',
       copyBtn: 'Sao chép caption',
       copied: '✓ Đã sao chép caption — dán vào Story nhé!',
@@ -357,7 +374,7 @@ export const vi = {
   },
   quiz: {
     title: 'Ngày 2: Đoán Thìa Đoán Muỗng',
-    intro: 'Kéo thanh trượt để đoán số thìa (muỗng cà phê) đường trong 1 ly trà sữa. Đoán trúng khoảng 12–15 là chuẩn nhất!',
+    intro: 'Kéo thanh trượt để đoán số thìa (muỗng cà phê) đường trong 1 ly trà sữa',
     start: 'Bắt đầu',
     note: '🧋 Biết không? Một ly trà sữa có thể "giấu" nhiều đường hơn cả một lon nước ngọt đó — thử đoán xem bao nhiêu thìa nhé!',
     question: 'Theo bạn, trong 1 ly trà sữa có thể chứa bao nhiêu thìa đường?',
@@ -368,7 +385,7 @@ export const vi = {
     correctMin: 12,
     correctMax: 15,
     correct: 'Chính xác! 🎉',
-    off: 'Hơi lệch nha — đáp án nằm trong khoảng 12–15 thìa.',
+    off: 'Hơi lệch nha — đáp án nằm trong khoảng 12–15 thìa. Bạn đừng buồn, vẫn còn những chặng thử thách phía trước chờ bạn chinh phục cùng Gumi nè!',
     answerWas: 'Đáp án: khoảng 12–15 thìa (≈ 50g – 60g đường).',
     explain:
       'Một ly trà sữa thông thường có thể chứa từ 12 đến 15 muỗng đường (tương đương khoảng 50g – 60g đường). Con số này thường vượt quá lượng đường tiêu thụ tối đa được khuyến nghị trong cả một ngày.',
@@ -398,6 +415,7 @@ export const vi = {
     title: 'Ngày 3: Đuổi Hình Bắt Chữ',
     intro: 'Ghép 2 hình lại thành tên một đồ uống. Đoán đúng để mở khoá sự thật về đường & calo của ly đó!',
     guessPrompt: 'Ghép 2 hình — đây là món gì?',
+    typeHint: 'Gõ tên món vào các ô (không cần bỏ dấu cũng được).',
     puzzleOf: (i: number, total: number) => `Hình ${i}/${total}`,
     wrong: 'Chưa đúng, nhìn kỹ 2 hình ghép lại nhé!',
     revealTitle: 'Bắt chữ chuẩn! Sự thật về ly này:',
@@ -413,31 +431,31 @@ export const vi = {
         tag: 'Cân nhắc lượng đường',
         tone: 'warn' as const,
         points: [
-          { h: 'Độ ngọt thay đổi theo công thức', p: 'Trà Thái có thể được thêm sữa đặc, siro hoặc đường. Lượng đường thay đổi theo cỡ ly và cách pha.' },
-          { h: 'Đừng đoán từ màu sắc', p: 'Màu sắc không cho biết ly chứa bao nhiêu đường. Hãy xem tem ly hoặc hỏi nhân viên về mức đường.' },
-          { h: 'Cách giảm ngọt', p: 'Chọn cỡ ly nhỏ hơn và yêu cầu giảm đường hoặc bớt sữa đặc nếu cửa hàng hỗ trợ.' },
+          { h: 'Cân nhắc lượng đường', p: 'Món "khoái khẩu" này chứa khoảng 250 – 400 calo/ly do có sữa đặc và đường cát. Uống vui thì okie nhưng đừng uống thay nước lọc nha!' },
+          { h: 'Bí mật màu sắc', p: 'Màu xanh/cam bắt mắt chủ yếu đến từ thành phần tạo màu thực phẩm trong cốt trà.' },
+          { h: 'Tip uống lành mạnh', p: 'Gọi giảm đường/sữa hoặc uống vào những ngày cần "nạp năng lượng" tinh thần nhé!' },
         ],
       },
       {
         emoji: '🍊',
         name: 'Cam Vắt',
-        tag: 'Xem đường thêm vào',
+        tag: 'Healthy chính hiệu',
         tone: 'good' as const,
         points: [
-          { h: 'Vẫn có đường tự nhiên', p: 'Cam vắt nguyên chất có đường từ trái cây. Khi thêm đường hoặc siro, lượng đường trong ly tăng thêm.' },
-          { h: 'Chất xơ ở đâu?', p: 'Ăn cam nguyên quả thường giữ được nhiều chất xơ hơn uống nước ép đã lọc bã.' },
-          { h: 'Cách gọi ly', p: 'Nếu chọn cam vắt, hãy thử gọi không thêm đường và chọn cỡ ly vừa phải.' },
+          { h: 'Món "Healthy" chính hiệu', p: '1 ly cam vắt chỉ khoảng 80 – 110 calo, bằng 1/4 ly trà sữa thôi đó! Vừa bao ngon vừa không lo "nặng bụng".' },
+          { h: 'Bí kíp dưỡng sắc', p: 'Đầy ắp Vitamin C và chất chống oxy hoá tự nhiên, giúp da dẻ mịn màng, tăng cường sức đề kháng mà không cần đến màu thực phẩm hay chất tạo ngọt nhân tạo.' },
+          { h: 'Tip đổi hệ Healthy', p: 'Những lúc thèm đồ ngọt hay cần "nạp năng lượng" chiều, thay vì chốt đơn trà sữa/đồ uống có đường, hãy thử đổi sang 1 ly cam vắt ít đường/nguyên chất. Vừa tỉnh táo tức thì và tinh thần cũng sảng khoái hẳn lên!' },
         ],
       },
       {
         emoji: '🥛',
         name: 'Sữa Gạo',
-        tag: 'Đọc thành phần',
+        tag: 'Lành tính, êm bụng',
         tone: 'good' as const,
         points: [
-          { h: 'Có thể được thêm đường', p: 'Sữa gạo đóng chai hoặc pha tại quán có thể chứa đường thêm vào. Hãy kiểm tra nhãn hoặc hỏi công thức.' },
-          { h: 'Kiểm tra loại sữa', p: 'Một số sản phẩm pha thêm sữa bò. Nếu bạn cần tránh lactose, hãy đọc danh sách thành phần.' },
-          { h: 'Cách chọn', p: 'Ưu tiên loại không thêm đường hoặc yêu cầu giảm ngọt khi đặt món.' },
+          { h: 'Món "Lành Tính" cho bụng êm', p: 'Lựa chọn hoàn hảo cho hội "dị ứng lactose" hay bụng yếu — thức uống mang lại cảm giác cực kỳ êm bụng mà không lo bị đầy hơi hay khó chịu.' },
+          { h: 'Nạp năng lượng nhẹ nhàng', p: '1 ly sữa gạo (khoảng 200ml) chỉ chứa tầm 100 – 120 calo, cung cấp tinh bột lành mạnh và các vitamin nhóm B giúp giải toả mệt mỏi, tỉnh táo tức thì.' },
+          { h: 'Tip đổi vị Healthy', p: 'Những ngày thèm đồ béo ngọt hay cần "nạp năng lượng" chiều, thử đổi sang 1 ly sữa gạo rang ít đường. Vừa thơm nức mũi, chill chill lại cực kỳ thanh mát!' },
         ],
       },
     ],
@@ -454,21 +472,21 @@ export const vi = {
       correct: 'Chuẩn luôn!',
       timeUp: 'Hết giờ rồi!',
       timeUpQuiz: 'Hết giờ! Đáp án đúng đang sáng màu xanh.',
-      timeUpMemory: (n: number, total: number) => `Hết 30 giây — bạn ghép được ${n}/${total} cặp. Cửa ải tính giờ không cho chơi lại, hẹn Gumi ở chặng sau nhé!`,
+      timeUpMemory: (n: number, total: number) => `Hết 1 phút — bạn ghép được ${n}/${total} cặp. Cửa ải tính giờ không cho chơi lại, hẹn Gumi ở chặng sau nhé!`,
     },
     // Ngày 6 — Đấu Trường Calo: xếp 5 ly theo độ ngọt.
     sort: {
       title: 'Ngày 5: Đấu Trường Calo',
-      intro: 'Kéo-thả 5 đồ uống từ ÍT đường nhất (trên cùng) đến NHIỀU đường nhất (dưới cùng) rồi bấm Kiểm tra. Bạn chỉ có 2 lượt!',
-      label: 'Ít đường ↑ · Nhiều đường ↓',
+      intro: 'Kéo-thả 5 đồ uống từ NHIỀU đường nhất (trên cùng) đến ÍT đường nhất (dưới cùng) rồi bấm Kiểm tra. Bạn chỉ có 2 lượt!',
+      label: 'Nhiều đường ↑ · Ít đường ↓',
       wrong: 'Thứ tự chưa đúng. Ngẫm lại độ ngọt rồi thử tiếp nhé!',
       tries: (left: number) => `Còn ${left} lượt`,
       lastTry: 'Lượt cuối rồi — ngẫm kỹ nhé!',
       outOfTries: 'Hết 2 lượt xếp rồi!',
       outOfTriesSub: 'Cửa ải này chỉ cho 2 lượt Kiểm tra — hẹn Gumi ở chặng sau nhé!',
       success: 'Xếp chuẩn! Giờ nhìn thực đơn là bạn biết ngay ly nào ngọt hơn.',
-      // Ít đường (trên) → nhiều đường (dưới): Cold Brew 0g · Trà tắc ~30-35g · Trà đào cam sả ~35g · Sữa tươi TC đường đen ~40-45g · Trà sữa TC ~55-60g
-      order: ['Cold Brew (trà ủ lạnh)', 'Trà tắc', 'Trà đào cam sả', 'Sữa tươi trân châu đường đen', 'Trà sữa trân châu truyền thống'],
+      // Nhiều đường (trên) → ít đường (dưới): Trà sữa TC ~55-60g · Sữa tươi TC đường đen ~40-45g · Trà đào cam sả ~35g · Trà tắc ~30-35g · Cold Brew 0g
+      order: ['Trà sữa trân châu truyền thống', 'Sữa tươi trân châu đường đen', 'Trà đào cam sả', 'Trà tắc', 'Cold Brew (trà ủ lạnh)'],
     },
     // Ngày 9 — Truy Tìm Mật Khẩu (word search): giải 5 gợi ý, bắt đúng 5 "mật khẩu" ẩn giữa đám chữ.
     wordHunt: {
@@ -492,7 +510,8 @@ export const vi = {
     // Ngày 12 & 18 — Lật thẻ trí nhớ (ghép cặp).
     memory12: {
       title: 'Ngày 12: Lật Thẻ Trí Nhớ',
-      intro: 'Lật 10 thẻ và ghép mỗi loại đường với tên gọi của nó trong 30 giây. Ghép đủ 5 cặp!',
+      intro: 'Các thẻ lật lên 3 giây để bạn ghi nhớ rồi úp lại. Ghép đủ 6 cặp đường ↔ tên gọi trong 1 phút!',
+      previewHint: '👀 Ghi nhớ vị trí các thẻ nhé!',
       success: 'Ghép trọn bộ! Đầu bạn giờ nhớ vị thật hơn vị ngọt.',
       pairs: [
         { a: 'Glucose', b: 'Đường đơn' },
@@ -500,6 +519,7 @@ export const vi = {
         { a: 'Sucrose', b: 'Đường mía / đường kính' },
         { a: 'Maltose', b: 'Đường mạch nha' },
         { a: 'Lactose', b: 'Đường sữa' },
+        { a: 'HFCS', b: 'Siro ngô (đường ẩn)' },
       ],
     },
     memory18: {

@@ -1,3 +1,4 @@
+import { ufoArt } from '../../lib/arcadeArt';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../api';
@@ -9,30 +10,40 @@ import { playSfx } from '../../lib/sfx';
 import { useArcadeLoop } from '../../lib/useArcadeLoop';
 import { vi } from '../../content/vi';
 
-const TARGET = 50; // tối đa 50 điểm — mỗi cột +1
+const PASS = 20;  // qua 20 cột = ĐẠT (tính streak) — pass rồi KHÔNG cho chơi lại
+const MAX = 100;  // tối đa 100 cột
+// Điểm = mốc CAO NHẤT đạt được trong 1 lần chơi: 20 / 50 / 100 cột → +20 / +50 / +100.
+const milestone = (n: number) => (n >= 100 ? 100 : n >= 50 ? 50 : n >= PASS ? PASS : 0);
 
 type Mode = 'ready' | 'play' | 'dead' | 'won';
 interface Pipe { x: number; xPrev: number; gapY: number; scored: boolean }
-interface State { mode: Mode; by: number; byPrev: number; vy: number; pipes: Pipe[]; score: number; w: number; h: number; t: number; best: number; acc: number; rot: number }
+interface State { mode: Mode; by: number; byPrev: number; vy: number; pipes: Pipe[]; score: number; w: number; h: number; t: number; best: number; acc: number; rot: number; thrust: number }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-/** Ngày 7 — "Bay Qua Cơn Thèm": Flappy Bird. Qua mỗi cột +1, tối đa 50 điểm thì thắng (hạ Boss Hồi 1). */
+/** Ngày 7 — "Bay Qua Cơn Thèm": Flappy. Qua 20 cột là ĐẠT (+20); cố thêm 50/100 cột để +50/+100.
+ *  Một lần chơi liền mạch tới khi chết hoặc đạt trần 100 cột; pass (≥20) rồi không cho chơi lại. */
 export function FlappyBird() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 7;
   const m = vi.missions[day - 1];
-  const points = m?.points ?? 30;
   const act = actOfDay(day);
 
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const g = useRef<State>({ mode: 'ready', by: 0, byPrev: 0, vy: 0, pipes: [], score: 0, w: 1, h: 1, t: 0, best: 0, acc: 0, rot: 0 });
+  const g = useRef<State>({ mode: 'ready', by: 0, byPrev: 0, vy: 0, pipes: [], score: 0, w: 1, h: 1, t: 0, best: 0, acc: 0, rot: 0, thrust: 0 });
   const [mode, setMode] = useState<Mode>('ready');
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [award, setAward] = useState<number>(m?.points ?? 20);
 
   const to = (mo: Mode) => { g.current.mode = mo; setMode(mo); };
+  // Chốt ván: trao điểm mốc rồi chuyển sang màn hoàn thành (không cho chơi lại).
+  const finish = (pts: number) => {
+    setAward(pts); to('won'); playSfx('win');
+    api.submitMinigame(day, pts).catch(() => {});
+    setTimeout(() => setDone(true), 700);
+  };
 
   const reset = useCallback(() => {
     const s = g.current;
@@ -47,7 +58,8 @@ export function FlappyBird() {
     const s2 = g.current;
     if (s2.mode === 'ready') to('play');
     s2.vy = -0.82 * s2.h; // lực vỗ cánh, tỉ lệ theo chiều cao khung
-    s2.rot = -0.5;        // hất mũi LÊN ngay khi vỗ (cảm giác nhạy như Flappy thật)
+    s2.thrust = 1;
+    s2.rot = -0.18;        // hất mũi LÊN ngay khi vỗ (cảm giác nhạy như Flappy thật)
     playSfx('pop');
   }, [reset]);
 
@@ -61,7 +73,7 @@ export function FlappyBird() {
   useArcadeLoop(boxRef, canvasRef, (ctx, w, h, dt) => {
     const s = g.current;
     if (s.w !== w || s.h !== h) { s.w = w; s.h = h; if (s.mode === 'ready') s.by = h * 0.42; }
-    s.t += dt;
+    s.t += dt; s.thrust = Math.max(0, s.thrust - dt * 2.8);
 
     // Kích thước phụ thuộc khung
     const birdX = w * 0.3, birdR = clamp(h * 0.034, 12, 22);
@@ -70,7 +82,12 @@ export function FlappyBird() {
     const speed = 235 * (h / 620);          // TỐC ĐỘ HẰNG SỐ như Flappy thật → cuộn đều, mượt
 
     // Vật lý FIXED-TIMESTEP (1/120s): chuyển động luôn mượt & ổn định dù frame-rate dao động.
-    const die = () => { if (s.mode === 'play') { to('dead'); s.best = Math.max(s.best, s.score); playSfx('sleep'); } };
+    const die = () => {
+      if (s.mode !== 'play') return;
+      s.best = Math.max(s.best, s.score);
+      if (s.score >= PASS) finish(milestone(s.score)); // đã ĐẠT → chốt điểm mốc, không chơi lại
+      else { to('dead'); playSfx('sleep'); }            // chưa đạt 20 cột → cho chơi lại
+    };
     const STEP = 1 / 120;
     s.acc = Math.min(s.acc + dt, 0.1);      // chống "spiral of death" khi tab bị nghẽn
     while (s.mode === 'play' && s.acc >= STEP) {
@@ -85,8 +102,8 @@ export function FlappyBird() {
       for (const p of s.pipes) p.x -= speed * STEP;
       for (const p of s.pipes) {
         if (!p.scored && p.x + pipeW < birdX - birdR) {
-          p.scored = true; s.score = Math.min(TARGET, s.score + 1); setScore(s.score); playSfx('sparkle');
-          if (s.score >= TARGET) { to('won'); playSfx('win'); api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 700); }
+          p.scored = true; s.score = Math.min(MAX, s.score + 1); setScore(s.score); playSfx('sparkle');
+          if (s.score >= MAX) finish(MAX); // đạt trần 100 cột
         }
       }
       s.pipes = s.pipes.filter((p) => p.x + pipeW > -20);
@@ -107,26 +124,26 @@ export function FlappyBird() {
     draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha });
   });
 
-  if (done) return <MissionDone day={day} points={points} note={`Bạn hạ gục Cơn Thèm với ${TARGET} điểm tuyệt đối!`} />;
+  if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
 
   const hud = (
     <span className="flex shrink-0 items-center gap-1.5 rounded-pill bg-surface/90 px-3 py-1.5 text-small font-extrabold text-primary shadow-soft backdrop-blur">
-      {score}<span className="text-caption font-semibold text-muted">/ {TARGET}</span>
+      {score}<span className="text-caption font-semibold text-muted">/ {MAX}</span>
     </span>
   );
 
   return (
-    <ArcadeStage act={act} title="Bay Qua Cơn Thèm" hint="Chạm / Space để vỗ cánh · qua mỗi cột +1" hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
+    <ArcadeStage act={act} title="Bay Qua Cơn Thèm" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
       overlay={
         mode === 'ready' ? (
           <ArcadeOverlay>
-            <p className="text-title font-extrabold text-white drop-shadow">Chạm để bay 🐣</p>
-            <p className="max-w-xs text-small font-medium text-white/90">Lách qua {TARGET} cột đường để hạ Boss Cơn Thèm. Chạm màn hình hoặc bấm Space.</p>
+            <p className="text-title font-extrabold text-white drop-shadow">{vi.flight.ready}</p>
+            <p className="max-w-xs text-small font-medium text-white/90">Qua <b>20 cột</b> là đạt (+20). Cố thêm <b>50 cột</b> (+50) và <b>100 cột</b> (+100)! Chạm màn hình hoặc bấm Space.</p>
             <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
           </ArcadeOverlay>
         ) : mode === 'dead' ? (
           <ArcadeOverlay>
-            <Banner kind="error">Ối! Đụng cột rồi. Điểm: {score}/{TARGET}</Banner>
+            <Banner kind="error">Ối! Mới {score} cột, chưa đủ 20 để đạt. Thử lại nào!</Banner>
             <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
           </ArcadeOverlay>
         ) : null
@@ -162,22 +179,16 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
   // chim Gumi (góc xoay đã nội suy mượt)
   const rot = s.rot;
   ctx.save();
-  ctx.translate(d.birdX, by); ctx.rotate(rot);
+  ctx.translate(d.birdX, by); ctx.rotate(rot * .3);
   const r = d.birdR;
-  // tai
-  ctx.fillStyle = '#E3A57C';
-  ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.7); ctx.lineTo(-r * 0.9, -r * 1.5); ctx.lineTo(-r * 0.1, -r * 0.95); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(r * 0.5, -r * 0.7); ctx.lineTo(r * 0.9, -r * 1.5); ctx.lineTo(r * 0.1, -r * 0.95); ctx.closePath(); ctx.fill();
-  // thân
-  ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
-  ctx.fillStyle = '#FBEFE4'; ctx.beginPath(); ctx.ellipse(0, r * 0.25, r * 0.62, r * 0.7, 0, 0, 7); ctx.fill();
-  // cánh vỗ
-  const flap = Math.sin(s.t * 18) * 0.5 + (s.mode === 'play' ? -0.2 : 0);
-  ctx.fillStyle = '#D98B57'; ctx.save(); ctx.translate(-r * 0.4, 0); ctx.rotate(flap);
-  ctx.beginPath(); ctx.ellipse(-r * 0.4, 0, r * 0.5, r * 0.32, 0, 0, 7); ctx.fill(); ctx.restore();
-  // mắt + mỏ
-  ctx.fillStyle = '#2A2320'; ctx.beginPath(); ctx.arc(r * 0.34, -r * 0.15, r * 0.16, 0, 7); ctx.fill();
-  ctx.fillStyle = '#F2A93C'; ctx.beginPath(); ctx.moveTo(r * 0.7, r * 0.02); ctx.lineTo(r * 1.15, r * 0.18); ctx.lineTo(r * 0.7, r * 0.32); ctx.closePath(); ctx.fill();
+  // Three thrusters brighten immediately on input, then cool down.
+  for (const offset of [-.65, 0, .65]) {
+    const length = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + offset) * .2));
+    const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + length);
+    glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.moveTo(offset * r - r * .15, r * .4); ctx.quadraticCurveTo(offset * r - r * .22, r * .8, offset * r, r * .4 + length); ctx.quadraticCurveTo(offset * r + r * .22, r * .8, offset * r + r * .15, r * .4); ctx.fill();
+  }
+  if (ufoArt.complete && ufoArt.naturalWidth) ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
   ctx.restore();
 }
 function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {

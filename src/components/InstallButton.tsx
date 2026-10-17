@@ -48,7 +48,7 @@ export function InstallButton({ className = '' }: { className?: string }) {
               <button
                 type="button"
                 onClick={async () => { await promptInstall(); setHint(false); }}
-                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary shadow-pop"
+                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[16px] border border-black/10 grad-brand px-5 font-semibold text-on-primary shadow-pop"
               >
                 <DownloadIcon /><span>{vi.pwa.install}</span>
               </button>

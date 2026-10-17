@@ -45,7 +45,7 @@ export function Dashboard() {
             <div aria-hidden className="fixed inset-0 -z-10" style={{ background: 'radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%)' }} />
 
             {/* Bản đồ tràn viền: mobile = 1 cột; desktop = full width (cinematic full-bleed) */}
-            <div className="relative mx-auto flex h-[calc(100dvh-3.5rem)] w-full flex-col overflow-hidden sm:h-[calc(100dvh-4rem)]">
+            <div className="relative mx-auto flex h-[calc(100dvh-var(--app-header))] w-full flex-col overflow-hidden">
               {/* ===== Header cố định: HUD + banner (nội dung căn giữa dù nền tràn ngang) ===== */}
               <div className="relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
                <div className="mx-auto w-full max-w-[560px]">

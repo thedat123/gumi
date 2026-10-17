@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import type { AppNotification } from '../api/types';
@@ -21,6 +22,10 @@ function ago(iso: string): string {
 export function NotificationBell() {
   const nav = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const [position, setPosition] = useState<CSSProperties>({});
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const unread = items.filter((n) => !n.read).length;
@@ -35,10 +40,53 @@ export function NotificationBell() {
   }, []);
   // Click ra ngoài → đóng.
   useEffect(() => {
-    const h = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('pointerdown', h);
     return () => document.removeEventListener('pointerdown', h);
   }, []);
+
+  // Portal avoids the header's backdrop-filter containing block and room stacking layers.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const anchor = buttonRef.current?.getBoundingClientRect();
+      if (!anchor) return;
+      const viewport = window.visualViewport;
+      const width = viewport?.width ?? window.innerWidth;
+      const height = viewport?.height ?? window.innerHeight;
+      const offsetLeft = viewport?.offsetLeft ?? 0;
+      const offsetTop = viewport?.offsetTop ?? 0;
+      const panelWidth = Math.min(360, width - 24);
+      const top = Math.max(offsetTop + 12, Math.min(anchor.bottom + 10, offsetTop + height - 140));
+      setPosition({
+        width: panelWidth,
+        left: Math.max(offsetLeft + 12, Math.min(anchor.right - panelWidth, offsetLeft + width - panelWidth - 12)),
+        top,
+        maxHeight: Math.max(100, offsetTop + height - top - 16),
+      });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    window.visualViewport?.addEventListener('resize', place);
+    window.visualViewport?.addEventListener('scroll', place);
+    panelRef.current?.focus({ preventScroll: true });
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      window.visualViewport?.removeEventListener('resize', place);
+      window.visualViewport?.removeEventListener('scroll', place);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setOpen(false); buttonRef.current?.focus(); }
+    };
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [open]);
 
   const toggle = async () => {
     const next = !open;
@@ -49,7 +97,7 @@ export function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={toggle} aria-label={`Thông báo${unread ? ` (${unread} chưa đọc)` : ''}`} aria-expanded={open}
+      <button ref={buttonRef} onClick={toggle} aria-label={`Thông báo${unread ? ` (${unread} chưa đọc)` : ''}`} aria-expanded={open} aria-controls={open ? panelId : undefined}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-pill border border-border bg-surface/80 text-muted shadow-soft backdrop-blur transition-colors hover:text-primary active:scale-95">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
@@ -58,13 +106,19 @@ export function NotificationBell() {
         {unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-on-primary shadow-soft">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border border-border bg-surface shadow-pop">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+      {open && createPortal(
+        <div ref={panelRef} id={panelId} role="dialog" aria-label="Thông báo" tabIndex={-1} style={position}
+          className="notification-panel fixed z-[4000] flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-2.5">
             <span className="text-small font-bold">Thông báo</span>
-            {items.length > 0 && <span className="text-caption text-muted">{items.length}</span>}
+            <div className="flex items-center gap-3">
+              {items.length > 0 && <span className="text-caption text-muted">{items.length}</span>}
+              <button type="button" onClick={() => { setOpen(false); buttonRef.current?.focus(); }} aria-label="Đóng thông báo" className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-primary/10">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+              </button>
+            </div>
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
             {items.length === 0 ? (
               <p className="px-4 py-8 text-center text-small text-muted">Chưa có thông báo nào.</p>
             ) : items.map((n) => (
@@ -76,13 +130,13 @@ export function NotificationBell() {
                     <span className="min-w-0 flex-1 truncate text-small font-bold text-text">{n.title}</span>
                     {!n.read && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   </span>
-                  <span className="mt-0.5 block text-caption leading-relaxed text-muted">{n.body}</span>
+                  <span className="mt-0.5 block break-words text-caption leading-relaxed text-muted [overflow-wrap:anywhere]">{n.body}</span>
                   <span className="mt-1 block text-[11px] text-muted/70">{ago(n.created_at)}</span>
                 </span>
               </button>
             ))}
           </div>
-        </div>
+        </div>, document.body,
       )}
     </div>
   );

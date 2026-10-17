@@ -9,11 +9,12 @@ import type { DayState } from '../api/types';
 /* ---- Con đường leo núi: Ngày 1 ở DƯỚI (xuất phát) → Ngày cuối ở TRÊN (đích). Một con đường liền mạch. ---- */
 const W = 420;
 const RH = 104;        // khoảng cách dọc giữa 2 chặng
-const TOP = 116;       // chừa chỗ cho cờ ĐÍCH
+const TOP = 200;       // chừa chỗ cho cờ ĐÍCH + Gumi đứng ở đỉnh (ngày cuối) không đè lên nhau
 const N = TOTAL_DAYS;
 const H = TOP + (N - 1) * RH + 128;
 const yOf = (day: number) => TOP + (N - day) * RH;
-const xOf = (day: number) => (isMilestone(day) ? 210 : 210 + 128 * Math.sin(day * 0.8 + 0.4));
+// Biên độ lệch ngang vừa phải (±96/420 ≈ ±23%) để pill nhãn node KHÔNG bị cắt mép trên máy hẹp.
+const xOf = (day: number) => (isMilestone(day) ? 210 : 210 + 96 * Math.sin(day * 0.8 + 0.4));
 const reached = (s: DayState) => s === 'checked' || s === 'passed' || s === 'open' || s === 'dying';
 
 // Ranh giới 2 vùng đất (theo y): trên là Rừng Đường Ẩn (Hồi 2, ngày 8–14), dưới là Đầm Lầy Ngọt (Hồi 1, ngày 1–7).
@@ -83,7 +84,7 @@ function Node({ day, state, isToday, replayAll }: { day: number; state: DayState
     </span>
   );
   const label = (
-    <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+5px)] flex w-36 -translate-x-1/2 flex-col items-center rounded-pill px-2 py-1 text-center backdrop-blur-sm ${isToday ? 'bg-primary text-on-primary shadow-pop' : 'bg-surface/85 text-text shadow-soft'}`}>
+    <span className={`pointer-events-none absolute left-1/2 top-[calc(100%+5px)] flex w-32 max-w-[46vw] -translate-x-1/2 flex-col items-center rounded-pill px-2.5 py-1 text-center backdrop-blur-sm ${isToday ? 'bg-primary text-on-primary shadow-pop' : 'bg-surface/85 text-text shadow-soft'}`}>
       <span className={`text-caption font-bold ${isToday ? 'text-on-primary' : 'text-muted'}`}>{isToday ? 'HÔM NAY' : `Ngày ${day}`}{mile && !isToday ? (day === TOTAL_DAYS ? ' · Đích' : ' · Cửa ải') : ''}</span>
       <span className={`line-clamp-1 text-caption font-semibold ${locked ? 'opacity-70' : ''}`}>{m.title}</span>
     </span>

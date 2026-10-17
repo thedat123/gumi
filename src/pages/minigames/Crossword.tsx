@@ -87,7 +87,7 @@ export function Crossword() {
       <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
       <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, words.length)}</p>
       <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{solvedCount * 5} điểm · {solvedCount} từ đúng</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
 
@@ -160,11 +160,11 @@ export function Crossword() {
   };
 
   const ClueList = ({ dir, label }: { dir: Dir; label: string }) => (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-caption font-extrabold uppercase tracking-wide text-muted">{label}</p>
+    <div className="flex flex-col gap-1">
+      <p className="mb-0.5 text-caption font-extrabold uppercase tracking-wide text-muted">{label}</p>
       {words.map((w, wi) => (w.dir !== dir ? null : (
         <button key={w.num} type="button" onClick={() => focusWord(wi)}
-          className={`rounded-card border px-2.5 py-1.5 text-left text-small leading-snug transition-colors ${solved[wi] ? 'border-success/50 bg-success/10 text-success' : activeWord === wi ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}>
+          className={`rounded-control border px-2.5 py-1 text-left text-small leading-snug transition-colors ${solved[wi] ? 'border-success/50 bg-success/10 text-success' : activeWord === wi ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}>
           <span className="font-extrabold text-primary">{w.num}.</span> {w.clue} <span className="text-muted">({w.answer.length})</span>
         </button>
       )))}
@@ -174,44 +174,41 @@ export function Crossword() {
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro} wide
       hud={<><GameStat icon="clock" value={mmss} tone={timeLeft <= 15 ? 'accent' : 'info'} /><GameStat icon="check" value={`${solvedCount}/${words.length}`} tone="success" /></>}>
-      <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-6 lg:flex-row lg:items-center lg:gap-10">
+      <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 lg:flex-row lg:items-center lg:gap-10">
         <div className="flex w-full min-w-0 flex-col items-center gap-3 lg:w-auto">
-        <div className="mx-auto w-max max-w-full overflow-x-auto">
-          <div className="w-max">
-            {Array.from({ length: cfg.rows }, (_, ri) => (
-              <div key={ri} className="flex">
-                {Array.from({ length: cfg.cols }, (_, ci) => {
-                  const key = K(ri + 1, ci + 1);
-                  const cell = cells.get(key);
-                  if (!cell) return <span key={ci} className="h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11" />;
-                  const isSolved = (cell.across != null && solved[cell.across]) || (cell.down != null && solved[cell.down]);
-                  const inWord = activeCells.has(key);
-                  const isActive = active?.key === key;
-                  return (
-                    <span key={ci} className="relative h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11">
-                      {cell.num && <span className="pointer-events-none absolute left-[2px] top-0 z-10 text-[8px] font-bold leading-none text-muted">{cell.num}</span>}
-                      <input
-                        ref={(el) => { refs.current[key] = el; }}
-                        value={entries[key] ?? ''}
-                        onFocus={() => onFocus(key)}
-                        onClick={() => onClick(key)}
-                        onChange={(e) => type(key, e.target.value)}
-                        onKeyDown={(e) => onKeyDown(e, key)}
-                        inputMode="text" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
-                        aria-label={`Ô ${key}`}
-                        className={`h-full w-full border text-center text-body font-extrabold uppercase caret-primary outline-none ${isSolved ? 'border-success/60 bg-success/20 text-success' : isActive ? 'border-primary bg-primary/15 text-text ring-2 ring-primary/40' : inWord ? 'border-primary/40 bg-primary/5 text-text' : 'border-border-strong/40 bg-surface text-text'}`}
-                      />
-                    </span>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+        {/* Lưới CO GIÃN theo bề rộng: ô vuông = container/số cột → luôn vừa màn, KHÔNG cuộn ngang. */}
+        <div className="mx-auto grid w-full max-w-[min(92vw,22rem)] lg:max-w-[26rem]"
+          style={{ gridTemplateColumns: `repeat(${cfg.cols}, minmax(0, 1fr))` }}>
+          {Array.from({ length: cfg.rows }, (_, ri) =>
+            Array.from({ length: cfg.cols }, (_, ci) => {
+              const key = K(ri + 1, ci + 1);
+              const cell = cells.get(key);
+              if (!cell) return <span key={`${ri}-${ci}`} className="aspect-square" />;
+              const isSolved = (cell.across != null && solved[cell.across]) || (cell.down != null && solved[cell.down]);
+              const inWord = activeCells.has(key);
+              const isActive = active?.key === key;
+              return (
+                <span key={`${ri}-${ci}`} className="relative aspect-square">
+                  {cell.num && <span className="pointer-events-none absolute left-[1px] top-0 z-10 text-[0.5rem] font-bold leading-none text-muted">{cell.num}</span>}
+                  <input
+                    ref={(el) => { refs.current[key] = el; }}
+                    value={entries[key] ?? ''}
+                    onFocus={() => onFocus(key)}
+                    onClick={() => onClick(key)}
+                    onChange={(e) => type(key, e.target.value)}
+                    onKeyDown={(e) => onKeyDown(e, key)}
+                    inputMode="text" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+                    aria-label={`Ô ${key}`}
+                    className={`h-full w-full border text-center text-[min(4.6vw,1rem)] font-extrabold uppercase caret-primary outline-none ${isSolved ? 'border-success/60 bg-success/20 text-success' : isActive ? 'border-primary bg-primary/15 text-text ring-2 ring-primary/40' : inWord ? 'border-primary/40 bg-primary/5 text-text' : 'border-border-strong/40 bg-surface text-text'}`}
+                  />
+                </span>
+              );
+            }),
+          )}
         </div>
-        <p className="-mt-2 text-center text-caption text-muted">{cfg.tapDir}</p>
         </div>
 
-        <div className="grid w-full gap-3 sm:grid-cols-2">
+        <div className="grid w-full gap-x-3 gap-y-2 sm:grid-cols-2">
           <ClueList dir="across" label={cfg.acrossLabel} />
           <ClueList dir="down" label={cfg.downLabel} />
         </div>

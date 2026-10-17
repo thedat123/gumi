@@ -54,7 +54,7 @@ export function SortGame() {
       <Gumi state="hap_hoi" size={140} />
       <Banner kind="error">{vi.minigames.sort.outOfTries}</Banner>
       <p className="max-w-xs text-small text-muted">{vi.minigames.sort.outOfTriesSub}</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
 
@@ -143,7 +143,7 @@ export function SortGame() {
       <div ref={listRef} className={`flex flex-col gap-2.5 ${warn ? 'shake' : ''}`} key={shake}>
         {order.map((item, i) => {
           const ok = won; // chỉ lộ đúng/sai SAU khi thắng — tránh gợi ý trước lúc Kiểm tra
-          const fill = ((i + 1) / order.length) * 100;
+          const fill = ((order.length - i) / order.length) * 100; // trên cùng = nhiều đường → thanh đầy nhất
           const dragging = i === dragIndex;
           return (
             <div

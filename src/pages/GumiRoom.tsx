@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
@@ -9,7 +9,6 @@ import { FoodTray } from '../components/FoodTray';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { SkinPicker } from '../components/SkinPicker';
 import { StreakFlame } from '../components/StreakFlame';
-import { RoomWeatherMenu } from '../components/RoomWeatherMenu';
 import { RoomDecorLayer } from '../components/RoomDecorLayer';
 import { useRoomDecor } from '../app/room-decor';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
@@ -22,17 +21,9 @@ import type { Weather } from '../components/RoomScene3D';
 const RoomScene2D = lazy(() => import('../components/RoomScene').then((m) => ({ default: m.RoomScene })));
 const FurnitureDrawer = lazy(() => import('../components/FurnitureDrawer').then((m) => ({ default: m.FurnitureDrawer })));
 
-// Chu kỳ thời tiết cho nút đổi (null = tự động theo giờ thật). Định nghĩa tại đây để không phá lazy-load scene.
-const WEATHERS: { w: Weather | null; label: string; icon: IconName }[] = [
-  { w: null, label: 'Tự động', icon: 'sparkle' },
-  { w: 'day', label: 'Ban ngày', icon: 'sun' },
-  { w: 'cloudy', label: 'Nhiều mây', icon: 'cloud' },
-  { w: 'sunset', label: 'Hoàng hôn', icon: 'sun' },
-  { w: 'rain', label: 'Mưa', icon: 'drop' },
-  { w: 'snow', label: 'Tuyết', icon: 'sparkle' },
-  { w: 'fog', label: 'Sương mù', icon: 'cloud' },
-  { w: 'night', label: 'Ban đêm', icon: 'moon' },
-];
+// Đã bỏ hẳn hệ thời tiết. Chỉ còn ngày/đêm, điều khiển bằng chính nút sáng/tối (sun/moon) trên HUD.
+// Mặc định theo giờ thật: 6h–18h là ban ngày.
+const initIsDay = () => (new Date().getHours() >= 6 && new Date().getHours() < 18);
 
 const ROOMS: { v: 'living' | 'kitchen' | 'garden'; name: string; icon: IconName }[] = [
   { v: 'living', name: 'Phòng khách', icon: 'sofa' },
@@ -68,14 +59,20 @@ export function GumiRoom() {
   const [slide, setSlide] = useState<'left' | 'right' | ''>('');
   const [feed, setFeed] = useState<{ food: string; key: number } | null>(null);
   const [muted, setMutedState] = useState(isMuted());
-  const [weatherIdx, setWeatherIdx] = useState(0);
-  const weatherAnchor = useRef<HTMLButtonElement>(null);
-  const [weatherOpen, setWeatherOpen] = useState(false);
-  const closeWeather = useCallback(() => setWeatherOpen(false), []); // bảng chọn thời tiết (1 bấm là đổi ngay)
-  const [lightsOn, setLightsOn] = useState(true); // công tắc đèn phòng (sáng/tối)
+  const [isDay, setIsDay] = useState(initIsDay); // true = ban ngày, false = ban đêm (nút sun/moon trên HUD)
   const [decorate, setDecorate] = useState(false); // chế độ trang trí (kéo-sắp nội thất) — chỉ ở phòng 2D
   const [drawerOpen, setDrawerOpen] = useState(false); // tủ nội thất (bottom sheet)
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
+  // Keep the mascot above the action tray as cards wrap or viewport text size changes.
+  const observeActions = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    const roomRoot = node.closest<HTMLElement>('.full-room');
+    const update = () => roomRoot?.style.setProperty('--room-actions-height', `${node.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => { observer.disconnect(); roomRoot?.style.removeProperty('--room-actions-height'); };
+  }, []);
   const gumiSize = useGumiSize();
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
   const feedGumi = (food: string) => setFeed((f) => ({ food, key: (f?.key ?? 0) + 1 }));
@@ -83,11 +80,10 @@ export function GumiRoom() {
   const changeRoom = (dir: 1 | -1) => { setSlide(dir > 0 ? 'left' : 'right'); setRoomIdx((i) => (i + dir + ROOMS.length) % ROOMS.length); };
   const exitDecorate = () => { setDecorate(false); setDrawerOpen(false); };
 
-  // Âm thanh nền theo thời tiết (null khi tắt tiếng). Auto (w=null) → suy theo giờ thật.
+  // Âm thanh nền theo ngày/đêm (null khi tắt tiếng).
   useEffect(() => {
-    const w = WEATHERS[weatherIdx]!.w ?? (() => { const h = new Date().getHours(); return h >= 5 && h < 16 ? 'day' as const : h >= 16 && h < 19 ? 'sunset' as const : 'night' as const; })();
-    setAmbience(muted ? null : w);
-  }, [weatherIdx, muted]);
+    setAmbience(muted ? null : (isDay ? 'day' : 'night'));
+  }, [isDay, muted]);
   useEffect(() => () => stopAmbience(), []);
 
   return (
@@ -102,8 +98,8 @@ export function GumiRoom() {
         const todayDone = s.days[todayIdx] === 'checked';
         const m = vi.missions[todayIdx];
         const running = s.phase === 'running' && s.day >= 1 && s.day <= vi.journey.total;
-        const weather = WEATHERS[weatherIdx]!.w ?? (() => { const hour = new Date().getHours(); return hour >= 5 && hour < 16 ? 'day' : hour >= 16 && hour < 19 ? 'sunset' : 'night'; })();
-        const roomBrightness = (lightsOn ? 1 : 0.67) * ({ day: 1, cloudy: 0.91, sunset: 0.86, rain: 0.82, snow: 0.96, fog: 0.9, night: 0.7 }[weather] ?? 1);
+        const weather: Weather = isDay ? 'day' : 'night';
+        const roomBrightness = isDay ? 1 : 0.7;
 
         const useFreeze = async () => {
           try { await api.useStreakFreeze(); fire('revive'); state.reload(); }
@@ -144,12 +140,8 @@ export function GumiRoom() {
                     <Icon name={ROOMS[roomIdx]!.icon} size={17} className="text-primary" />{ROOMS[roomIdx]!.name}
                     <span className="ml-1 flex gap-1">{ROOMS.map((_, i) => <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === roomIdx ? 'bg-primary' : 'bg-border-strong/30'}`} />)}</span>
                   </span>
-                  <div className="relative">
-                    <button ref={weatherAnchor} aria-haspopup="menu" aria-controls={weatherOpen ? "room-weather-menu" : undefined} type="button" onClick={() => setWeatherOpen((o) => !o)} aria-label={`Thời tiết: ${WEATHERS[weatherIdx]!.label}`} aria-expanded={weatherOpen} title="Chọn thời tiết" className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={WEATHERS[weatherIdx]!.icon} size={16} className="text-primary" />{WEATHERS[weatherIdx]!.label}</button>
-                    {weatherOpen && <RoomWeatherMenu anchor={weatherAnchor} options={WEATHERS} selected={weatherIdx} onClose={closeWeather} onSelect={i => { setWeatherIdx(i); setWeatherOpen(false); }} />}
-                  </div>
                   <button type="button" onClick={() => { setDecorate(true); setDrawerOpen(true); }} aria-label={vi.furniture.decorate} title={vi.furniture.decorate} className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name="sofa" size={16} className="text-primary" />{vi.furniture.decorate}</button>
-                  <button type="button" onClick={() => setLightsOn((v) => !v)} aria-label={lightsOn ? 'Tắt đèn (tối)' : 'Bật đèn (sáng)'} title={lightsOn ? 'Tắt đèn' : 'Bật đèn'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={lightsOn ? 'sun' : 'moon'} size={18} className={lightsOn ? 'text-accent' : 'text-info'} /></button>
+                  <button type="button" onClick={() => setIsDay((v) => !v)} aria-label={isDay ? 'Chuyển sang ban đêm' : 'Chuyển sang ban ngày'} title={isDay ? 'Ban ngày' : 'Ban đêm'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={isDay ? 'sun' : 'moon'} size={18} className={isDay ? 'text-accent' : 'text-info'} /></button>
                   <button type="button" onClick={toggleMute} aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={muted ? 'volume-off' : 'volume'} size={18} /></button>
                 </div>
 
@@ -158,9 +150,9 @@ export function GumiRoom() {
                 <section className="room-stage" aria-label={ROOMS[roomIdx]!.name}>
                   <div key={roomIdx} className={`room-world absolute inset-0 ${slide === 'left' ? 'room-in-left' : slide === 'right' ? 'room-in-right' : ''}`}>
                     <Suspense fallback={<div className="room-scene-placeholder absolute inset-0" />}>
-                      <RoomScene2D act={roomAct} variant={room} weather={weather} lights={lightsOn} />
+                      <RoomScene2D act={roomAct} variant={room} weather={weather} lights={isDay} />
                     </Suspense>
-                    <RoomDecorLayer room={room} act={roomAct} edit={decorate} brightness={Math.max(0.85, roomBrightness)} lightsOn={lightsOn} />
+                    <RoomDecorLayer room={room} act={roomAct} edit={decorate} brightness={Math.max(0.85, roomBrightness)} lightsOn={isDay} />
                   </div>
                   {!decorate && <>
                     <span className="room-stage-tag"><span />{ROOMS[roomIdx]!.name}</span>
@@ -183,7 +175,7 @@ export function GumiRoom() {
                     {!drawerOpen && <div className="room-edit-open"><Button onClick={() => setDrawerOpen(true)}><Icon name="plus" size={16} />{vi.furniture.open}</Button></div>}
                   </>}
                 </section>
-                {!decorate &&                 <div className="room-actions flex flex-col gap-2">
+                {!decorate &&                 <div ref={observeActions} className="room-actions flex flex-col gap-2">
                   <FoodTray onFeed={feedGumi} />
                   {/* Trạng thái HẤP HỐI: hiện tình trạng + số giờ còn lại; còn Bùa thì cho cứu chuỗi */}
                   {s.gumi === 'hap_hoi' && (

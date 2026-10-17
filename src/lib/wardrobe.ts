@@ -1,7 +1,7 @@
 // Tủ đồ PHỐI TỰ DO của Gumi: mỗi nhóm (mũ / kính / khăn / màu / nền) chọn độc lập.
 // Mở khoá dần theo số ngày đã hoàn thành (prototype suy từ tiến độ; bản thật chốt ở server).
 
-export type Slot = 'hat' | 'glasses' | 'neck' | 'color' | 'background';
+export type Slot = 'hat' | 'glasses' | 'neck' | 'jersey' | 'color' | 'background';
 
 export interface Item {
   id: string;
@@ -10,15 +10,16 @@ export interface Item {
   swatch: string;     // màu đại diện ở ô chọn
 }
 
-export interface Outfit { hat: string; glasses: string; neck: string; color: string; background: string }
-export const DEFAULT_OUTFIT: Outfit = { hat: 'none', glasses: 'none', neck: 'none', color: 'default', background: 'none' };
+export interface Outfit { hat: string; glasses: string; neck: string; jersey: string; color: string; background: string }
+export const DEFAULT_OUTFIT: Outfit = { hat: 'none', glasses: 'none', neck: 'none', jersey: 'none', color: 'default', background: 'none' };
 
-/** Thứ tự tab trong tủ đồ. `icon` dùng tên Icon có sẵn. */
+/** Thứ tự tab trong tủ đồ. `icon` là tên Icon TƯƠNG ỨNG nhóm (áo = shirt, mũ = hat, kính = glasses…). */
 export const SLOTS: { slot: Slot; label: string; icon: string }[] = [
-  { slot: 'hat', label: 'Mũ', icon: 'shirt' },
-  { slot: 'glasses', label: 'Kính', icon: 'sparkle' },
-  { slot: 'neck', label: 'Khăn', icon: 'heart' },
-  { slot: 'color', label: 'Màu', icon: 'paw' },
+  { slot: 'hat', label: 'Mũ', icon: 'hat' },
+  { slot: 'glasses', label: 'Kính', icon: 'glasses' },
+  { slot: 'neck', label: 'Khăn', icon: 'scarf' },
+  { slot: 'jersey', label: 'Áo', icon: 'shirt' },
+  { slot: 'color', label: 'Màu', icon: 'palette' },
   { slot: 'background', label: 'Nền', icon: 'star' },
 ];
 
@@ -50,6 +51,24 @@ export const WARDROBE: Record<Slot, Item[]> = {
     N('necklace', 'Vòng cổ', 9, '#F5C542'),
     N('cape', 'Áo choàng', 14, '#7A4DB3'),
   ],
+  // Áo đấu các đội LoL esports (màu & tên viết tắt cách điệu, không dùng logo gốc).
+  // 3 đội Việt Nam (VCS) lên đầu cho "gà nhà", rồi tới các đội quốc tế nổi bật.
+  jersey: [
+    N('none', 'Không', 0, 'transparent'),
+    N('gam', 'GAM Esports', 0, '#F3C533'),
+    N('tsw', 'Team Whales', 0, '#0E2A47'),
+    N('viking', 'Vikings Esports', 1, '#E0492A'),
+    N('t1', 'T1', 0, '#E51C3A'),
+    N('geng', 'Gen.G', 0, '#C5A25A'),
+    N('hle', 'Hanwha Life', 1, '#17191C'),
+    N('dk', 'Dplus KIA', 2, '#55D3BD'),
+    N('kt', 'KT Rolster', 3, '#E6323B'),
+    N('jdg', 'JD Gaming', 5, '#C72C42'),
+    N('blg', 'Bilibili Gaming', 6, '#267BC5'),
+    N('tes', 'Top Esports', 8, '#ED6432'),
+    N('g2', 'G2 Esports', 10, '#1C1E24'),
+    N('fnc', 'Fnatic', 12, '#FF862F'),
+  ],
   color: [
     N('default', 'Vàng Gumi', 0, '#FAB20A'),
     N('cream', 'Kem Sữa', 0, '#FADED2'),
@@ -66,6 +85,14 @@ export const WARDROBE: Record<Slot, Item[]> = {
     N('sunburst', 'Tia nắng', 13, '#FFD27A'),
     N('confetti', 'Kim tuyến', 14, '#8FD0B0'),
   ],
+};
+
+/** Signature team colourways, intentionally independent of a tournament or season. */
+export const JERSEY_COLORWAYS: Record<string, string> = {
+  gam: 'Đen · Vàng GAM', tsw: 'Navy · Xanh biển', viking: 'Đen · Đỏ lửa',
+  t1: 'Đỏ T1 · Đen', geng: 'Đen · Gold', hle: 'Đen · Viền cam kép',
+  dk: 'Mint · Đen', kt: 'Đỏ · Trắng', jdg: 'Đỏ · Navy',
+  blg: 'Xanh lam · Hồng', tes: 'Cam · Đen', g2: 'Đen · Trắng', fnc: 'Đen · Cam Fnatic',
 };
 
 /** Bảng màu lông theo lựa chọn (đổ vào CSS var của mascot). cheek = má ửng, nose = mũi. */
@@ -90,6 +117,6 @@ export function sanitizeOutfit(o: Outfit, daysDone: number): Outfit {
   const pick = (slot: Slot, id: string) => (isUnlocked(itemById(slot, id), daysDone) ? id : WARDROBE[slot][0]!.id);
   return {
     hat: pick('hat', o.hat), glasses: pick('glasses', o.glasses), neck: pick('neck', o.neck),
-    color: pick('color', o.color), background: pick('background', o.background),
+    jersey: pick('jersey', o.jersey), color: pick('color', o.color), background: pick('background', o.background),
   };
 }

@@ -129,3 +129,4 @@ html.rm .g-sparkle, html.rm .g-flash { display: none; }
 .acc-slot { pointer-events: none; }
 .acc-glasses .acc-piece { filter: drop-shadow(0 1.5px 1px rgba(31, 20, 18, .24)); }
 .acc-behind .acc-piece { filter: drop-shadow(0 4px 3px rgba(42, 22, 18, .22)); }
+.acc-neck:not(.acc-behind) .acc-piece { filter: drop-shadow(0 1px .7px rgba(43, 27, 19, .28)); }

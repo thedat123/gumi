@@ -12,36 +12,22 @@ import { useAsync } from '../app/useAsync';
 import { playSfx } from '../lib/sfx';
 import type { QuizQuestion, QuizResult } from '../api/types';
 
-type Phase = 'intro' | 'playing' | 'result';
+type Phase = 'playing' | 'result';
 const DAY = 2;
 
 /** S07 — Quiz Day 2 (thanh trượt): 1 câu "trà sữa có bao nhiêu thìa đường?". Trúng khoảng 12–15 = đúng.
  *  Điểm chấm ở server (mock/RPC); client chỉ gửi số đoán và hiển thị đúng/lệch + giải thích. */
 export function Quiz() {
   const qs = useAsync(() => api.getQuizQuestions(), []);
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<Phase>('playing');
   const [guess, setGuess] = useState(8);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (phase === 'result' && result) {
-    const hit = guess >= vi.quiz.correctMin && guess <= vi.quiz.correctMax;
     return <CompletionPanel day={DAY} points={result.score} note={vi.quiz.resultSub}>
-      <div className="space-y-2"><Banner kind={hit ? 'success' : 'info'}>{hit ? vi.quiz.correct : vi.quiz.off}</Banner>
-        <Card className="text-left"><p className="text-small font-bold text-primary">{vi.quiz.answerWas}</p><p className="mt-1 text-small text-muted">{vi.quiz.explain}</p></Card>
-      </div>
+      <Card className="text-left"><p className="text-small font-bold text-primary">{vi.quiz.answerWas}</p><p className="mt-1 text-small text-muted">{vi.quiz.explain}</p></Card>
     </CompletionPanel>;
-  }
-
-  if (phase === 'intro') {
-    return (
-      <GameShell act={actOfDay(DAY)} title={vi.quiz.title} intro={vi.quiz.intro}
-        footer={<Button onClick={() => setPhase('playing')} block>{vi.quiz.start}</Button>}>
-        <div className="flex flex-1 items-center justify-center">
-          <Banner kind="info">{vi.quiz.note}</Banner>
-        </div>
-      </GameShell>
-    );
   }
 
   return (
@@ -54,9 +40,10 @@ export function Quiz() {
           finally { setBusy(false); }
         };
         return (
-          <GameShell act={actOfDay(DAY)} title={vi.quiz.title}
+          <GameShell act={actOfDay(DAY)} title={vi.quiz.title} intro={vi.quiz.intro}
             footer={<Button onClick={submit} loading={busy} block>{vi.quiz.submit}</Button>}>
-            <div className="flex flex-1 flex-col justify-center">
+            <div className="flex flex-1 flex-col justify-center gap-3">
+              <Banner kind="info">{vi.quiz.note}</Banner>
               <Card className="flex flex-col gap-4">
                 <p className="text-body font-semibold">{vi.quiz.question}</p>
                 <div className="flex flex-col gap-2">

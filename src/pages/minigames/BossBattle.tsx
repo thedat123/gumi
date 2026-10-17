@@ -1,3 +1,4 @@
+import { bossArt, drawGumiCar } from '../../lib/arcadeArt';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../api';
@@ -132,16 +133,13 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
 
   // BOSS ĐƯỜNG ở trên
   const bx = w / 2, br = clamp(w * 0.2, 70, 140), by = Math.max(h * 0.2, br * 1.15);
-  const wob = Math.sin(s.t * 2) * br * 0.05;
-  ctx.fillStyle = s.hit > 0 ? '#F4A6C0' : '#E98FB4';
-  blob(ctx, bx, by, br + wob, br * 0.8);
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(bx - br * 0.34, by, br * 0.17, 0, 7); ctx.arc(bx + br * 0.34, by, br * 0.17, 0, 7); ctx.fill();
-  ctx.fillStyle = '#3A2320';
-  ctx.beginPath(); ctx.arc(bx - br * 0.34, by + 2, br * 0.08, 0, 7); ctx.arc(bx + br * 0.34, by + 2, br * 0.08, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#3A2320'; ctx.lineWidth = 4; ctx.beginPath();
-  if (s.hp <= hpMax * 0.4) ctx.arc(bx, by + br * 0.45, br * 0.2, Math.PI, 0); else ctx.arc(bx, by + br * 0.5, br * 0.22, 0, Math.PI);
-  ctx.stroke();
+  ctx.save(); ctx.translate(bx, by + Math.sin(s.t * 2) * br * .035);
+  ctx.rotate(Math.sin(s.t * 1.6) * .035);
+  ctx.shadowColor = s.hit > 0 ? '#62dfff' : '#364a6255'; ctx.shadowBlur = s.hit > 0 ? 24 : 12; ctx.shadowOffsetY = 8;
+  if (bossArt.complete && bossArt.naturalWidth) ctx.drawImage(bossArt, -br * .78, -br * .78, br * 1.56, br * 1.78);
+  ctx.restore();
+  // Dissolving sugar crystals react to each healthy catch.
+  if (s.hit > 0) for (let i = 0; i < 12; i++) { const angle = i * 2.4, dist = br * (1 + (.18 - s.hit) * 3); ctx.fillStyle = '#e9fbff'; ctx.fillRect(bx + Math.cos(angle) * dist, by + Math.sin(angle) * dist, 3, 3); }
   // thanh HP boss
   const barW = br * 2, bxL = bx - br, byY = Math.max(6, by - br * 1.05);
   ctx.fillStyle = 'rgba(0,0,0,0.18)'; round(ctx, bxL, byY, barW, 12, 6); ctx.fill();
@@ -165,23 +163,11 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
   ctx.fillStyle = act === 2 ? '#B98A5E' : act === 3 ? '#C9B79E' : '#E4C08C';
   ctx.fillRect(0, h - h * 0.045, w, h * 0.045);
 
-  // NGƯỜI CHƠI: bát hứng + Gumi
-  const px = d.pxAbs, py = d.py, pw = d.pw;
-  ctx.fillStyle = '#E3A57C';
-  ctx.beginPath(); ctx.moveTo(px - pw * 0.2, py - 20); ctx.lineTo(px - pw * 0.28, py - 36); ctx.lineTo(px - pw * 0.06, py - 22); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(px + pw * 0.2, py - 20); ctx.lineTo(px + pw * 0.28, py - 36); ctx.lineTo(px + pw * 0.06, py - 22); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.arc(px, py - 8, pw * 0.24, 0, 7); ctx.fill();
-  ctx.fillStyle = '#2A2320'; ctx.beginPath(); ctx.arc(px - pw * 0.08, py - 10, 2.6, 0, 7); ctx.arc(px + pw * 0.08, py - 10, 2.6, 0, 7); ctx.fill();
-  // bát
-  const bowl = ctx.createLinearGradient(0, py, 0, py + 24); bowl.addColorStop(0, '#FFF3D6'); bowl.addColorStop(1, '#E7B36A');
-  ctx.fillStyle = bowl;
-  ctx.beginPath(); ctx.moveTo(px - pw / 2, py); ctx.lineTo(px + pw / 2, py); ctx.lineTo(px + pw * 0.36, py + 26); ctx.lineTo(px - pw * 0.36, py + 26); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#D89A4E'; round(ctx, px - pw / 2 - 3, py - 6, pw + 6, 8, 4); ctx.fill();
-}
-function blob(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number) {
-  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(x - rx * 0.5, y + ry * 0.5, rx * 0.4, ry * 0.4, 0, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(x + rx * 0.5, y + ry * 0.5, rx * 0.4, ry * 0.4, 0, 0, 7); ctx.fill();
+  // Road and rolling lane markings sit behind the vehicle.
+  ctx.fillStyle = '#506574'; ctx.fillRect(0, d.py + d.pw * .28, w, h);
+  ctx.fillStyle = '#dce8d9';
+  for (let i = -1; i < w / 65 + 1; i++) ctx.fillRect(i * 65 - (s.t * 65) % 65, d.py + d.pw * .48, 32, 3);
+  drawGumiCar(ctx, d.pxAbs, d.py, d.pw, s.t, s.pxT - s.px);
 }
 function round(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   r = Math.min(r, w / 2, h / 2);

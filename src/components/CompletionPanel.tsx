@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { actOfDay } from '../lib/scoring';
-import { ChapterTease } from './ChapterTease';
 import { GameShell } from './GameShell';
 import { Gumi } from './Gumi';
 import { Icon } from './Icon';
@@ -13,7 +12,7 @@ export function CompletionPanel({ day, points, note, children, action }: {
 }) {
   const mission = vi.missions[day - 1];
   return <GameShell act={actOfDay(day)} title={`Ngày ${day}: Hoàn thành!`} intro={mission?.title} wide>
-    {/* Desktop: 2 cột (trái = thẻ ăn mừng, phải = fact + hé lộ ngày mai + nút); mobile: xếp dọc. */}
+    {/* Desktop: 2 cột (trái = thẻ ăn mừng, phải = fact + nút); mobile: xếp dọc. */}
     <div className="mx-auto grid w-full max-w-4xl flex-1 content-center items-start gap-4 py-3 lg:grid-cols-2 lg:gap-6">
       <div className="relative overflow-hidden rounded-[28px] border border-white/75 bg-gradient-to-br from-white via-[#FFF7F0] to-[#F9E4EB] p-5 text-center shadow-[0_18px_50px_rgba(80,39,59,.2)] sm:p-7">
         <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent/25 blur-3xl" />
@@ -26,9 +25,8 @@ export function CompletionPanel({ day, points, note, children, action }: {
       </div>
       <div className="flex flex-col gap-4">
         <SugarFactPopup day={day} />
-        <ChapterTease day={day} />
         {action ?? <div className="grid grid-cols-2 gap-2">
-          <Link to="/journey" className="inline-flex min-h-12 items-center justify-center rounded-control border border-black/15 bg-primary px-3 text-center text-small font-bold text-on-primary shadow-pop">Về bản đồ</Link>
+          <Link to="/journey" className="inline-flex min-h-12 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-3 text-center text-small font-bold text-on-primary shadow-pop">Về bản đồ</Link>
           <Link to="/" className="inline-flex min-h-12 items-center justify-center rounded-control border border-border bg-surface px-3 text-center text-small font-bold text-text shadow-soft">Về phòng Gumi</Link>
         </div>}
       </div>

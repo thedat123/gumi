@@ -29,7 +29,8 @@ export function readSugarPercent(text: string): number | null {
 
 export function drinkTarget(day: number, baseline: SugarLevel): number | null {
   if (day === 1) return STEPS[Math.max(0, STEPS.indexOf(baseline) - 1)]!;
-  return null; // ngày 6: không gán mức (chỉ cần ảnh ly giảm đường); ngày 10 DIY xử lý riêng ở judgeDrink
+  if (day === 6) return 70; // ngày 6: tối đa 70% đường
+  return null; // ngày 10 DIY xử lý riêng ở judgeDrink
 }
 
 export type DrinkVerdict = { kind: 'pass' | 'fail' | 'unknown'; title: string; detail: string; percent: number | null };

@@ -28,7 +28,7 @@ export function ChapterIntro() {
     return (
       <div className="flex flex-col items-center gap-3 pt-10 text-center">
         <Banner kind="error">Không có chương này.</Banner>
-        <Link to="/journey" className="inline-flex min-h-11 items-center rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary">{vi.story.ui.backToMap}</Link>
+        <Link to="/journey" className="inline-flex min-h-11 items-center rounded-[16px] border border-black/10 grad-brand px-5 font-semibold text-on-primary">{vi.story.ui.backToMap}</Link>
       </div>
     );
   }
@@ -38,19 +38,19 @@ export function ChapterIntro() {
   const big = isMilestone(day);
 
   return (
-    <div className="relative -mx-4 -mb-6 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
+    <div className="relative -mx-4 -mb-6 -mt-1 flex min-h-[calc(100dvh-var(--app-header))] flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
       <RegionScene act={act} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">
         {/* Thanh trên: chương + thoát */}
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-2 rounded-pill bg-surface/85 px-3 py-1.5 shadow-soft backdrop-blur">
-            <span aria-hidden="true">{a.icon}</span>
-            <span className="text-caption font-bold text-primary">{vi.story.ui.chapterOf(day)}</span>
-            <span className="text-caption font-semibold text-text">· {a.name}</span>
+          <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 shadow-soft backdrop-blur">
+            <span aria-hidden="true" className="shrink-0">{a.icon}</span>
+            <span className="shrink-0 whitespace-nowrap text-caption font-bold text-primary">{vi.story.ui.chapterOf(day)}</span>
+            <span className="truncate text-caption font-semibold text-text">· {a.name}</span>
           </span>
-          <Link to="/journey" className="inline-flex items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:text-primary">
-            <Icon name="x" size={15} /> {vi.story.ui.backToMap}
+          <Link to="/journey" className="inline-flex shrink-0 items-center gap-1.5 rounded-pill bg-surface/85 px-3 py-1.5 text-caption font-semibold text-muted shadow-soft backdrop-blur transition-colors hover:text-primary">
+            <Icon name="x" size={15} /> <span className="hidden sm:inline">{vi.story.ui.backToMap}</span>
           </Link>
         </div>
 
@@ -69,7 +69,7 @@ export function ChapterIntro() {
             {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
           </div>
           <div className="mt-4">
-            <Link to={`/mission/${day}`} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-black/15 bg-primary px-5 font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]">
+            <Link to={`/mission/${day}`} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-black/10 grad-brand px-5 font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]">
               {vi.story.ui.startMission} <Icon name="arrow-right" size={18} />
             </Link>
           </div>

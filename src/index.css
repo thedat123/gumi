@@ -78,3 +78,25 @@ html.gfx-low .admin-topbar { backdrop-filter: none; -webkit-backdrop-filter: non
 .wardrobe-item-preview { box-shadow: inset 0 1px rgba(255,255,255,.7), 0 5px 12px rgba(73,39,38,.1); }
 .wardrobe-item-preview .gumi { transform: translateY(8px); }
 @media (min-width: 640px) { .wardrobe-studio { min-height: 245px; } .wardrobe-items { max-height: 29dvh; } }
+
+/* Atelier wardrobe: quiet product cards and a lit fitting stage. */
+.wardrobe-lookbook { background: #f8f5ef; border-color: #e0d8cc; }
+.wardrobe-lookbook > div:first-child { background: linear-gradient(115deg, #182a32, #304b51 65%, #49635e); padding-bottom: 28px; }
+.wardrobe-lookbook .wardrobe-studio { min-height: 240px; background: radial-gradient(ellipse at 50% 35%, #fffdf5 0%, #eee9dc 45%, #cdd7cf 100%); border-color: #fff9; box-shadow: inset 0 1px 0 #fff, 0 8px 24px #24382c12; }
+.wardrobe-lookbook .wardrobe-studio::after { height: 26%; background: radial-gradient(ellipse at 50% 70%, #48605430, transparent 58%); }
+.wardrobe-lookbook .wardrobe-studio > .relative { z-index: 1; filter: drop-shadow(0 10px 8px #34493c25); }
+.wardrobe-lookbook .wardrobe-placement { color: #42574c; border-color: #cad3c8; font-size: 9px; }
+.wardrobe-lookbook .wardrobe-item-preview.jersey-preview { height: 112px; background: radial-gradient(ellipse at 50% 35%, #fff, #e6e9e4); border: 0; box-shadow: inset 0 1px 0 #fff; }
+.jersey-product { width: 110px; height: 108px; overflow: visible; filter: drop-shadow(0 6px 3px #15232a30); transition: transform .2s ease; }
+button:hover .jersey-product { transform: translateY(-3px) rotate(-2deg); }
+.wardrobe-lookbook .wardrobe-items > button { border-radius: 18px; }
+.wardrobe-lookbook .wardrobe-items { max-height: 35dvh; }
+@media (min-width: 640px) {
+  .wardrobe-lookbook .wardrobe-item-preview.jersey-preview { height: 140px; }
+  .wardrobe-lookbook .jersey-product { width: 140px; height: 132px; }
+}
+@media (max-height: 740px) {
+  .wardrobe-lookbook .wardrobe-studio { min-height: 180px; padding-top: 0; }
+  .wardrobe-lookbook .wardrobe-studio .gumi { width: 150px !important; height: 165px !important; }
+}
+@media (prefers-reduced-motion: reduce) { .jersey-product { transition: none; } }

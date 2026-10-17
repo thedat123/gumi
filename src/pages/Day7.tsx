@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
@@ -16,32 +16,68 @@ import rebusSuaGao from '../assets/games/rebus-sua-gao.webp';
 // Ảnh đề đuổi-hình theo thứ tự card trong nội dung (Trà Thái · Cam Vắt · Sữa Gạo).
 const IMAGES = [rebusTraThai, rebusCamVat, rebusSuaGao];
 
-/** S09 — Ngày 3: Đuổi Hình Bắt Chữ. Ghép 2 hình → đoán tên đồ uống; đúng thì mở khoá sự thật về
- *  đường/calo của ly đó. Giải hết 3 hình rồi gửi submit_minigame(3). */
+// Bỏ dấu + đưa về chữ HOA để so khớp (không bắt người chơi gõ dấu tiếng Việt).
+const strip = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toUpperCase().replace(/[^A-Z]/g, '');
+
+/** S09 — Ngày 3: Đuổi Hình Bắt Chữ. Ghép 2 hình → GÕ tên đồ uống vào ô chữ (tự nhảy ô);
+ *  đúng thì mở khoá sự thật về đường/calo của ly đó. Giải hết 3 hình rồi gửi submit_minigame(3). */
 export function Day7() {
   const day = 3;
   const m = vi.missions[day - 1]!;
   const cards = vi.day3.cards;
-  const options = cards.map((c) => c.name); // 3 tên món dùng làm đáp án chọn
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<'guess' | 'reveal'>('guess');
   const [wrong, setWrong] = useState(0);
   const [done, setDone] = useState(false);
   const [showFact, setShowFact] = useState(false);
-
-  if (done) return <MissionDone day={day} points={m.points} note={vi.day3.success} />;
+  const [entries, setEntries] = useState<Record<number, string>>({});
+  const inputs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const card = cards[step]!;
   const last = step + 1 >= cards.length;
 
-  const pick = (name: string) => {
-    if (name === card.name) { playSfx('happy'); setPhase('reveal'); setShowFact(true); }
+  // Tách tên món thành ký tự: ô nhập cho chữ cái, khoảng trống giữa các từ hiển thị là khe hở.
+  const chars = useMemo(() => Array.from(card.name), [card.name]);
+  const letterIdxs = useMemo(() => chars.map((c, i) => (/\p{L}/u.test(c) ? i : -1)).filter((i) => i >= 0), [chars]);
+  const target = useMemo(() => strip(card.name), [card.name]);
+  const guessStr = letterIdxs.map((i) => entries[i] ?? '').join('');
+  const allFilled = letterIdxs.every((i) => entries[i]);
+
+  // Tự kiểm tra khi điền kín ô: đúng → mở fact; sai → báo lỗi, cho sửa.
+  useEffect(() => {
+    if (phase !== 'guess' || !allFilled) return;
+    if (strip(guessStr) === target) { playSfx('happy'); setPhase('reveal'); setShowFact(true); }
     else { playSfx('wrong'); setWrong((n) => n + 1); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, phase]);
+
+  if (done) return <MissionDone day={day} points={m.points} note={vi.day3.success} />;
+
+  const focusAt = (i: number) => { const el = inputs.current[i]; if (el) { el.focus(); el.select(); } };
+  const nextLetter = (i: number) => letterIdxs[letterIdxs.indexOf(i) + 1];
+  const prevLetter = (i: number) => letterIdxs[letterIdxs.indexOf(i) - 1];
+
+  const type = (i: number, raw: string) => {
+    const ch = raw.slice(-1).toUpperCase();
+    if (ch && !/\p{L}/u.test(ch)) return;
+    setEntries((p) => {
+      const n = { ...p };
+      if (ch) n[i] = ch; else delete n[i];
+      return n;
+    });
+    if (ch) { const nx = nextLetter(i); if (nx != null) focusAt(nx); }
   };
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, i: number) => {
+    if (e.key === 'Backspace' && !(entries[i] ?? '')) {
+      const pv = prevLetter(i);
+      if (pv != null) { e.preventDefault(); setEntries((p) => { const n = { ...p }; delete n[pv]; return n; }); focusAt(pv); }
+    }
+  };
+
   const next = () => {
     setShowFact(false);
     if (last) { playSfx('win'); api.submitMinigame(day).catch(() => {}); setDone(true); }
-    else { setStep(step + 1); setPhase('guess'); setWrong(0); }
+    else { setStep(step + 1); setPhase('guess'); setWrong(0); setEntries({}); }
   };
 
   const good = card.tone === 'good';
@@ -58,11 +94,22 @@ export function Day7() {
           <>
             {wrong > 0 && <div key={wrong} className="shake"><Banner kind="error">{vi.day3.wrong}</Banner></div>}
             <p className="text-center text-small font-semibold">{vi.day3.guessPrompt}</p>
-            <div className="flex flex-col gap-2">
-              {options.map((name) => (
-                <Button key={name} variant="secondary" block onClick={() => pick(name)}>{name}</Button>
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {letterIdxs.map((i, n) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputs.current[i] = el; }}
+                  value={entries[i] ?? ''}
+                  onChange={(e) => type(i, e.target.value)}
+                  onKeyDown={(e) => onKeyDown(e, i)}
+                  onFocus={(e) => e.currentTarget.select()}
+                  inputMode="text" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+                  aria-label={`Ô chữ ${n + 1}`}
+                  className="h-11 w-9 rounded-control border-2 border-accent/60 bg-surface text-center text-title font-extrabold uppercase text-text caret-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+                />
               ))}
             </div>
+            <p className="text-center text-caption text-muted">{vi.day3.typeHint}</p>
           </>
         ) : (
           <Card className={`pop-in text-left ${good ? 'border-success! bg-success/8' : 'border-accent! bg-accent/8'}`}>

@@ -36,9 +36,10 @@ export function QuickQuiz() {
           seconds={10}
           onComplete={(correct) => {
             if (saving) return;
-            setEarned(m.points);
+            const pts = correct * 10; // brief: +10/câu đúng
+            setEarned(pts);
             setSaving(true); setSaveError(false);
-            void api.submitMinigame(day)
+            void api.submitMinigame(day, pts)
               .then(() => setNote(`Bạn trả lời đúng ${correct}/${cfg.questions.length} câu. ${cfg.note}`))
               .catch(() => setSaveError(true))
               .finally(() => setSaving(false));

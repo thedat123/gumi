@@ -10,7 +10,8 @@ import { actOfDay } from '../../lib/scoring';
 import { vi } from '../../content/vi';
 import { playSfx } from '../../lib/sfx';
 
-const TIME_LIMIT = 30; // brief: hoàn thành trong 30 giây
+const TIME_LIMIT = 60;   // 1 phút tính giờ (sau khi xem trước)
+const PREVIEW_MS = 3000; // lật mở toàn bộ ~3 giây để ghi nhớ, rồi úp lại mới chạy giờ
 
 interface MCard { id: number; pairId: number; text: string }
 
@@ -36,10 +37,14 @@ export function MemoryMatch() {
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [failed, setFailed] = useState(false);
+  const [preview, setPreview] = useState(true); // mở hết thẻ cho ghi nhớ trước khi tính giờ
 
-  // Đồng hồ đếm ngược 30 giây. Hết giờ khi chưa ghép đủ → THUA, khoá màn, tiêu ngày (không cho thử lại).
+  // Mở toàn bộ thẻ ~3 giây rồi úp lại, sau đó đồng hồ 1 phút mới bắt đầu.
+  useEffect(() => { const t = setTimeout(() => setPreview(false), PREVIEW_MS); return () => clearTimeout(t); }, []);
+
+  // Đồng hồ đếm ngược 1 phút (chỉ chạy sau khi hết xem trước). Hết giờ chưa đủ cặp → THUA, không chơi lại.
   useEffect(() => {
-    if (done || failed || matched.length >= cfg.pairs.length) return;
+    if (preview || done || failed || matched.length >= cfg.pairs.length) return;
     if (timeLeft <= 0) {
       setFailed(true);
       playSfx('wrong');
@@ -48,7 +53,7 @@ export function MemoryMatch() {
     }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
-  }, [timeLeft, done, failed, day, matched.length, cfg.pairs.length]);
+  }, [timeLeft, preview, done, failed, day, matched.length, cfg.pairs.length]);
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
   if (done) return <MissionDone day={day} points={m.points} note={`Ghép xong trong ${moves} lượt lật! ${cfg.success}`} />;
@@ -58,12 +63,12 @@ export function MemoryMatch() {
       <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
       <p className="max-w-xs text-small text-muted">{vi.minigames.common.timeUpMemory(matched.length, cfg.pairs.length)}</p>
       <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{matched.length * 10} điểm · {matched.length} cặp đúng</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
     </div>
   );
 
   const flip = (i: number) => {
-    if (busy || failed || flipped.includes(i) || matched.includes(cards[i]!.pairId)) return;
+    if (preview || busy || failed || flipped.includes(i) || matched.includes(cards[i]!.pairId)) return;
     playSfx('pop');
     const next = [...flipped, i];
     setFlipped(next);
@@ -87,12 +92,12 @@ export function MemoryMatch() {
 
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
-      hud={<><GameStat icon="clock" value={`${timeLeft}s`} tone={timeLeft <= 5 ? 'accent' : 'info'} /><GameStat icon="sparkle" value={`${moves}`} tone="accent" /></>}
-      footer={<p className="text-center text-caption font-semibold text-muted">Đã ghép {matched.length}/{cfg.pairs.length} cặp</p>}>
-      <div className="grid flex-1 grid-cols-3 content-center gap-2.5 sm:grid-cols-5 sm:gap-3">
+      hud={<><GameStat icon="clock" value={preview ? 'Xem' : `${timeLeft}s`} tone={!preview && timeLeft <= 5 ? 'accent' : 'info'} /><GameStat icon="sparkle" value={`${moves}`} tone="accent" /></>}
+      footer={<p className={`text-center text-caption font-semibold ${preview ? 'text-primary' : 'text-muted'}`}>{preview ? cfg.previewHint : `Đã ghép ${matched.length}/${cfg.pairs.length} cặp`}</p>}>
+      <div className="grid flex-1 grid-cols-4 content-center gap-2 sm:grid-cols-6 sm:gap-3">
         {cards.map((c, i) => {
           const isMatched = matched.includes(c.pairId);
-          const up = isMatched || flipped.includes(i);
+          const up = preview || isMatched || flipped.includes(i);
           return (
             <button key={c.id} type="button" onClick={() => flip(i)} aria-label={up ? c.text : 'Thẻ úp — chạm để lật'}
               className={`card3d aspect-[5/4] transition-transform active:scale-95 ${up ? 'flipped' : ''}`}>

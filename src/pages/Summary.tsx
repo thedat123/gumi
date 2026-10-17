@@ -25,7 +25,7 @@ export function Summary() {
             <div className="flex flex-col gap-4 pt-2">
               <h1 className="text-headline font-bold">{vi.summary.title}</h1>
               <Banner kind="info">{vi.summary.notEligible}</Banner>
-              <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-control border border-black/15 bg-primary px-5 font-semibold text-on-primary">{vi.summary.backHome}</Link>
+              <Link to="/" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-5 font-semibold text-on-primary">{vi.summary.backHome}</Link>
             </div>
           );
         }
@@ -102,7 +102,7 @@ export function Summary() {
               </div>
               {note && <Banner kind="success">{note}</Banner>}
               <p className="text-caption text-muted">{vi.summary.shareNote}</p>
-              <Link to="/" className="text-small text-primary underline underline-offset-2">{vi.summary.backHome}</Link>
+              <Link to="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]"><Icon name="map" size={18} />{vi.summary.backHome}</Link>
             </div>
           </div>
         );
