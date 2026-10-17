@@ -77,7 +77,6 @@ export function RoomScene({ act = 1, variant = 'living', weather = 'day', lights
         </>}
       </svg>
     </div>
-    <div className="room-wall-plaque"><IconPaw /><span>{variant === 'kitchen' ? 'GUMI CAFÉ' : garden ? 'LITTLE GARDEN' : 'HOME SWEET HOME'}</span></div>
     <div className="room-shaft" />
     <div className="room-scene-tint" style={{ opacity: lights ? night ? .12 : 0 : .3 }} />
   </div>;
