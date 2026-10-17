@@ -65,19 +65,6 @@ export function ChapterIntro() {
 
         {/* Panel thoại + CTA (kiểu visual-novel) */}
         <div className="beat rounded-card border border-white/60 bg-surface/92 p-4 shadow-pop backdrop-blur-md">
-          {supported && (
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => (speaking ? stop() : speak(chapter.intro))}
-                aria-pressed={speaking}
-                className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-caption font-bold shadow-soft transition-colors ${speaking ? 'bg-primary text-on-primary' : 'bg-surface text-primary ring-1 ring-primary/30 hover:bg-primary/5'}`}
-              >
-                <Icon name="volume" size={15} filled />
-                {speaking ? vi.story.ui.narrateStop : vi.story.ui.narrate}
-              </button>
-            </div>
-          )}
           <div className="flex flex-col gap-3 [@media(max-height:560px)]:max-h-[38vh] [@media(max-height:560px)]:overflow-y-auto [@media(max-height:560px)]:pr-1">
             {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
           </div>
