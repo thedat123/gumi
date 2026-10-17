@@ -15,7 +15,7 @@ export function AdminShell({ tabs, active, onSelect, children }: {
   const activeTab = tabs.find((t) => t.id === active);
 
   return (
-    <div className="admin-portal min-h-dvh text-text lg:grid lg:grid-cols-[17.5rem_1fr]">
+    <div className="admin-portal min-h-dvh text-text lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
       {/* ===== Sidebar (desktop) ===== */}
       <aside className="admin-sidebar hidden text-white lg:flex lg:flex-col">
         <div className="flex items-center gap-3 px-6 pb-6 pt-7">
@@ -59,7 +59,7 @@ export function AdminShell({ tabs, active, onSelect, children }: {
 
       {/* ===== Khu nội dung ===== (h-dvh + overflow-hidden → chỉ <main> cuộn, topbar luôn đứng yên,
            nội dung KHÔNG trượt ra sau thanh tiêu đề mờ gây chồng chữ) */}
-      <div className="flex h-dvh flex-col overflow-hidden">
+      <div className="flex h-dvh min-w-0 flex-col overflow-hidden">
         <header className="admin-topbar sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3.5 lg:px-8">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[.2em] text-primary/70">Bảng điều khiển</p>
@@ -86,7 +86,7 @@ export function AdminShell({ tabs, active, onSelect, children }: {
         </nav>
 
         <main className="flex-1 overflow-auto p-4 lg:p-8">
-          <div className="admin-page mx-auto max-w-6xl">{children}</div>
+          <div className="admin-page mx-auto w-full max-w-[1440px]">{children}</div>
         </main>
       </div>
     </div>

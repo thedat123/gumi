@@ -26,7 +26,7 @@ export function Admin() {
   return (
     <AdminShell tabs={TABS} active={tab} onSelect={setTab}>
       <AsyncView state={stats}>
-        {(s) => (tab === 'overview' ? <Overview s={s} /> : <PlayersPanel s={s} />)}
+        {(s) => (tab === 'overview' ? <Overview s={s} onSelect={setTab} /> : <PlayersPanel s={s} />)}
       </AsyncView>
     </AdminShell>
   );
@@ -124,7 +124,7 @@ function ReviewCard({ c, busy, onAct }: { c: AdminCheckin; busy: boolean; onAct:
 }
 
 /* ============================ TỔNG QUAN ============================ */
-function Overview({ s }: { s: AdminStats }) {
+function Overview({ s, onSelect }: { s: AdminStats; onSelect: (tab: string) => void }) {
   const rate = s.totalPlayers ? Math.round((s.finishedCount / s.totalPlayers) * 100) : 0;
 
   // Phân bố tiến độ theo nhóm ngày hoàn thành.
@@ -140,6 +140,21 @@ function Overview({ s }: { s: AdminStats }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <section className="admin-welcome flex flex-wrap items-center justify-between gap-6 rounded-[24px] p-6 sm:p-8">
+        <div className="max-w-lg">
+          <p className="mb-3 text-caption font-bold uppercase tracking-[.2em] text-white/60">GUMI · QUẢN LÝ HÀNH TRÌNH</p>
+          <h2 className="text-[28px] font-extrabold leading-tight tracking-tight text-white sm:text-[34px]">Một góc nhìn, toàn bộ hành trình.</h2>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Theo dõi tiến độ, kết nối người chơi và xử lý ảnh check-in trong cùng một không gian.</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button onClick={() => onSelect('review')} className="rounded-xl bg-white px-4 py-2.5 text-small font-bold text-[#263247] hover:bg-white/90">Duyệt ảnh <span aria-hidden="true">→</span></button>
+            <button onClick={() => onSelect('players')} className="rounded-xl border border-white/25 px-4 py-2.5 text-small font-bold text-white hover:bg-white/10">Xem người chơi</button>
+          </div>
+        </div>
+        <div className="admin-completion flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-full border-[8px] border-white/15">
+          <span className="text-[32px] font-extrabold text-white">{rate}%</span>
+          <span className="text-caption text-white/65">Hoàn thành</span>
+        </div>
+      </section>
       <section>
         <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Chỉ số chính</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
@@ -206,7 +221,7 @@ function DailyTrend({ players }: { players: AdminPlayer[] }) {
   const y = (c: number) => pad.t + ih - (c / max) * ih;
   const line = data.map((d) => `${x(d.day).toFixed(1)},${y(d.count).toFixed(1)}`).join(' ');
   const area = `M${x(1)},${pad.t + ih} L${line.replace(/ /g, ' L')} L${x(TOTAL)},${pad.t + ih} Z`;
-  const gy = [0, Math.round(max / 2), max];
+  const gy = [...new Set([0, Math.round(max / 2), max])];
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Biểu đồ số người đạt tới mỗi ngày">
@@ -270,16 +285,17 @@ function exportCsv(rows: AdminPlayer[]) {
 function PlayersPanel({ s }: { s: AdminStats }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortKey>('points');
+  const [status, setStatus] = useState('all');
 
   const rows = useMemo(() => {
     const key = q.trim().toLowerCase();
-    const filtered = key ? s.players.filter((p) => p.name.toLowerCase().includes(key)) : s.players;
+    const filtered = s.players.filter((p) => (!key || p.name.toLowerCase().includes(key)) && (status === 'all' || (status === 'finished' ? p.finished : status === 'active' ? !p.finished && p.daysDone > 0 : p.daysDone === 0))); 
     return [...filtered].sort((a, b) =>
       sort === 'name' ? a.name.localeCompare(b.name)
         : sort === 'days' ? b.daysDone - a.daysDone
           : sort === 'streak' ? b.streak - a.streak
             : b.points - a.points);
-  }, [s.players, q, sort]);
+  }, [s.players, q, sort, status]);
 
   const SORTS: { k: SortKey; label: string }[] = [
     { k: 'points', label: 'Điểm' }, { k: 'days', label: 'Ngày' }, { k: 'streak', label: 'Chuỗi' }, { k: 'name', label: 'Tên' },
@@ -292,6 +308,9 @@ function PlayersPanel({ s }: { s: AdminStats }) {
         <div className="flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍  Tìm tên người chơi…" aria-label="Tìm người chơi"
             className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
+          <select aria-label="Lọc trạng thái người chơi" value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 rounded-lg border border-border bg-surface px-3 text-small">
+            <option value="all">Tất cả trạng thái</option><option value="active">Đang tham gia</option><option value="finished">Hoàn thành</option><option value="idle">Chưa bắt đầu</option>
+          </select>
           <div className="flex items-center gap-1 rounded-lg bg-bg p-1">
             {SORTS.map((o) => (
               <button key={o.k} onClick={() => setSort(o.k)} aria-pressed={sort === o.k}
@@ -307,7 +326,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
         </div>
       </div>
 
-      <Card className="divide-y divide-border/60 p-0">
+      <div className="overflow-x-auto rounded-[20px] border border-border bg-surface"><Card className="min-w-[640px] divide-y divide-border/60 border-0 p-0">
         <div className="sticky top-0 z-10 flex items-center gap-2 bg-bg/80 px-3 py-2.5 text-caption font-bold uppercase tracking-wide text-muted backdrop-blur">
           <span className="w-7 text-center">#</span>
           <span className="flex-1">{st.colPlayer}</span>
@@ -335,7 +354,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
               </div>
             );
           })}
-      </Card>
+      </Card></div>
     </div>
   );
 }

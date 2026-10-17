@@ -1,3 +1,4 @@
+import { canEnterMission } from '../lib/missionAccess';
 // Bảo vệ định tuyến: cần đăng nhập / cần có hồ sơ / cần quyền admin. Chờ auth tải xong mới quyết định.
 import type { ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
@@ -35,8 +36,8 @@ export function RequireToday({ children }: { children: ReactNode }) {
   if (loading) return <Loading />;
   if (error || !data) return <Navigate to="/journey" replace />;
   const st = data.days[Number(day) - 1];
-  // Tester/QA (replayAll): vào lại được MỌI chặng đã mở, kể cả chặng đã hoàn thành — chỉ chặng 'future' còn khoá.
-  const allowed = st === 'open' || st === 'dying' || (data.replayAll && st !== undefined && st !== 'future');
+  // Tester/QA luôn vào được mọi màn hợp lệ, bất kể trạng thái tiến độ.
+  const allowed = Number.isInteger(Number(day)) && canEnterMission(st, data.replayAll);
   if (!allowed) return <Navigate to="/journey" replace />;
   return <>{children}</>;
 }

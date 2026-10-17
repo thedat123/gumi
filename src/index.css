@@ -100,3 +100,17 @@ button:hover .jersey-product { transform: translateY(-3px) rotate(-2deg); }
   .wardrobe-lookbook .wardrobe-studio .gumi { width: 150px !important; height: 165px !important; }
 }
 @media (prefers-reduced-motion: reduce) { .jersey-product { transition: none; } }
+
+/* Admin workspace */
+.admin-portal { --color-border: #e3e8ef; --color-text: #243247; --color-muted: #708096; background: #f5f7fb; }
+.admin-sidebar { background: linear-gradient(165deg, #253448, #131e2e); }
+.admin-welcome { background: radial-gradient(ellipse at 95% 10%, #526481 0%, transparent 60%), linear-gradient(120deg, #26364e, #192638); box-shadow: 0 12px 32px #1b2c4314; }
+.admin-page > div { animation: admin-enter .25s ease-out; }
+.admin-page .rounded-card { border-radius: 20px; box-shadow: 0 4px 20px #25344804; }
+.admin-kpi { min-height: 158px; }
+.admin-kpi::before { inset: 20px 0 20px auto; width: 3px; height: auto; border-radius: 4px 0 0 4px; opacity: .65; }
+.admin-row { min-height: 68px; }
+.admin-portal button:focus-visible, .admin-portal select:focus-visible, .admin-portal input:focus-visible { outline: 3px solid #b8355670; outline-offset: 3px; }
+@keyframes admin-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .admin-page > div { animation: none; } }
+@media (max-width: 640px) { .admin-completion { display: none; } .admin-kpi { min-height: 145px; } }

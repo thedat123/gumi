@@ -1,3 +1,4 @@
+import { canEnterMission } from '../lib/missionAccess';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
@@ -70,17 +71,17 @@ function pathThrough(pts: { x: number; y: number }[]): string {
 function Node({ day, state, isToday, replayAll }: { day: number; state: DayState; isToday: boolean; replayAll?: boolean }) {
   const mile = isMilestone(day);
   const m = vi.missions[day - 1] ?? { title: `Ngày ${day}`, kind: 'GAME' as const }; // guard: không bao giờ crash nếu lệch ngày
-  const look = NODE[state];
-  const locked = state === 'future';
-  // Tester/QA: bấm vào lại được MỌI chặng đã mở (kể cả chặng đã xong); người thường chỉ vào chặng đang mở.
-  const active = state === 'open' || state === 'dying' || (!!replayAll && !locked);
+  const look = NODE[replayAll && state === 'future' ? 'open' : state];
+  const locked = state === 'future' && !replayAll;
+  // Tester/QA vào mọi màn; người thường theo trạng thái tiến độ.
+  const active = canEnterMission(state, replayAll);
   const size = mile ? 'h-[76px] w-[76px] text-title' : 'h-[58px] w-[58px] text-body';
   const style = { left: `${(xOf(day) / W) * 100}%`, top: `${yOf(day)}px` };
 
   const circle = (
     <span className={`relative flex ${size} items-center justify-center rounded-full border-[3px] font-extrabold shadow-[0_5px_0_rgba(58,36,30,0.22)] ${look.face} ${mile ? 'ring-4 ring-[#F5C542]/70' : ''} ${active ? 'node-today' : ''} ${locked ? '' : 'transition-transform group-active:translate-y-0.5 group-active:shadow-[0_3px_0_rgba(58,36,30,0.22)]'}`}>
       <span aria-hidden="true" className="absolute left-1/2 top-1 h-2.5 w-6 -translate-x-1/2 rounded-full bg-white/45 blur-[1px]" />
-      <span className="relative flex items-center justify-center"><Glyph day={day} state={state} mile={mile} /></span>
+      <span className="relative flex items-center justify-center"><Glyph day={day} state={replayAll && state === 'future' ? 'open' : state} mile={mile} /></span>
     </span>
   );
   const label = (
@@ -90,7 +91,7 @@ function Node({ day, state, isToday, replayAll }: { day: number; state: DayState
     </span>
   );
 
-  // Chỉ CHẶNG ĐANG MỞ mới vào chơi được — chặng đã xong / bị khoá / đã xong hôm nay đều không bấm được.
+  // Giữ trạng thái tiến độ khi hiển thị, quyền vào màn được tính riêng.
   if (!active) return <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)} aria-disabled="true">{circle}{label}</div>;
   return <Link to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)}>{circle}{label}</Link>;
 }

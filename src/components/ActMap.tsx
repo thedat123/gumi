@@ -1,3 +1,4 @@
+import { canEnterMission } from '../lib/missionAccess';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone, actDays, TOTAL_DAYS } from '../lib/scoring';
@@ -55,7 +56,7 @@ function pathThrough(pts: { x: number; y: number }[]): string {
 }
 
 /** Bản đồ một Hồi: cảnh nền lấp đầy + con đường 7 chặng leo dốc + Gumi ở chặng hiện tại. */
-export function ActMap({ days, today, act }: { days: DayState[]; today: number; act: 1 | 2 | 3 }) {
+export function ActMap({ days, today, act, replayAll }: { days: DayState[]; today: number; act: 1 | 2 | 3; replayAll?: boolean }) {
   const acts = vi.story.acts[act - 1]!;
   const dayNums = actDays(act);                              // ngày thuộc hồi (độ dài 4–5)
   const n = dayNums.length;
@@ -104,16 +105,16 @@ export function ActMap({ days, today, act }: { days: DayState[]; today: number; 
       {dayNums.map((day, i) => {
         const state = states[i]!;
         const mile = isMilestone(day);
-        const look = NODE[state];
-        const locked = state === 'future';
-        const active = state === 'open' || state === 'dying';
+        const look = NODE[replayAll && state === 'future' ? 'open' : state];
+        const locked = state === 'future' && !replayAll;
+        const active = canEnterMission(state, replayAll);
         const isToday = day === today;
         const m = vi.missions[day - 1]!;
         const size = mile ? 'h-[74px] w-[74px]' : 'h-[58px] w-[58px]';
         const circle = (
           <span className={`relative flex ${size} items-center justify-center rounded-full border-[3px] font-extrabold shadow-[0_6px_0_rgba(40,26,30,0.28)] ${look.face} ${mile ? 'ring-4 ring-[#F5C542]/80' : ''} ${active ? 'node-today' : ''} ${locked ? '' : 'transition-transform group-active:translate-y-1 group-active:shadow-[0_3px_0_rgba(40,26,30,0.28)]'}`}>
             <span aria-hidden className="absolute left-1/2 top-1.5 h-2.5 w-7 -translate-x-1/2 rounded-full bg-white/50 blur-[1px]" />
-            <span className="relative flex items-center justify-center"><Glyph day={day} state={state} mile={mile} /></span>
+            <span className="relative flex items-center justify-center"><Glyph day={day} state={replayAll && state === 'future' ? 'open' : state} mile={mile} /></span>
           </span>
         );
         const label = (
@@ -123,7 +124,7 @@ export function ActMap({ days, today, act }: { days: DayState[]; today: number; 
           </span>
         );
         const style = { left: `${pts[i]!.x}%`, top: `${pts[i]!.y}%` };
-        // Chỉ CHẶNG ĐANG MỞ mới vào chơi được — chặng đã xong / bị khoá / đã xong hôm nay đều không bấm được.
+        // Tester có thể vào lại cả màn đã hoàn thành.
         if (!active) return <div key={day} className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-disabled="true" aria-label={vi.map.nodeAria(day, m.title, vi.map.locked)}>{circle}{label}</div>;
         return <Link key={day} to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, m.title)}>{circle}{label}</Link>;
       })}
