@@ -153,7 +153,14 @@ export function createSupabaseApi(): Api {
         p_ua: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }),
     deletePushSubscription: (endpoint) => rpc<void>('delete_push_subscription', { p_endpoint: endpoint }),
-    getJourney: () => rpc<Journey>('get_my_journey'),
+    async getJourney() {
+      const journey = await rpc<Journey>('get_my_journey');
+      if (journey.replayAll) return journey;
+      // DB cũ có thể chưa trả replayAll. Xác minh quyền QA từ server,
+      // giữ nguyên trạng thái checked để tester vẫn thấy tiến độ và chơi lại.
+      const tester = await rpc<boolean>('_is_tester').catch(() => false);
+      return { ...journey, replayAll: tester === true };
+    },
     markPlayed: () => rpc<number>('mark_played'),
     getLeaderboard: () => rpc<Leaderboard>('get_leaderboard'),
     async submitCheckin(day, level: SugarLevel, file, needsReview = false, sugarPercent = null): Promise<CheckinResult> {

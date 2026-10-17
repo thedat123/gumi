@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
@@ -33,93 +33,128 @@ export function Admin() {
 }
 
 /* ============================ DUYỆT ẢNH (gửi admin duyệt tay) ============================ */
-/** Hàng đợi ảnh check-in AI chưa xác nhận được → người chơi gửi admin duyệt tay. Duyệt / Từ chối. */
+const isSocialPhoto = (c: AdminCheckin) => c.kind === 'SHARE' || c.kind === 'FINAL' || /Đăng MXH|Tốt nghiệp/.test(c.flag ?? '');
+
 function ReviewPanel() {
   const queue = useAsync(() => api.admin.listFlags(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-
-  const act = async (id: string, status: 'approved' | 'rejected') => {
-    let reason: string | undefined;
-    if (status === 'rejected') {
-      // Lý do sẽ được gửi vào thông báo cho người chơi (xem admin_set_checkin_status).
-      const r = window.prompt('Lý do từ chối (gửi cho người chơi):', 'Ảnh không hợp lệ.');
-      if (r === null) return; // huỷ
-      reason = r.trim() || undefined;
-    }
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [resolved, setResolved] = useState<string[]>([]);
+  const pending = (queue.data ?? []).filter((c) => c.status === 'pending' && !resolved.includes(c.id));
+  const socialCount = pending.filter(isSocialPhoto).length;
+  const tabs = [
+    { id: 'all', label: 'Tất cả ảnh', count: pending.length },
+    { id: 'checkin', label: 'Check-in đồ uống', count: pending.length - socialCount },
+    { id: 'social', label: 'Story & tốt nghiệp', count: socialCount },
+  ];
+  const act = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
+    if (busyId) return;
     setBusyId(id); setErr(null);
-    try { await api.admin.setCheckinStatus(id, status, reason); queue.reload(); }
-    catch { setErr('Không cập nhật được, thử lại.'); }
+    try {
+      await api.admin.setCheckinStatus(id, status, reason);
+      setResolved((ids) => [...ids, id]);
+    } catch { setErr('Không cập nhật được ảnh. Vui lòng thử lại.'); }
     finally { setBusyId(null); }
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-title font-bold">Duyệt ảnh chờ xử lý</h2>
-        <p className="mt-0.5 text-small text-muted">Tách 2 mục: ảnh AI chưa chắc chắn & ảnh người chơi đăng mạng xã hội. Ảnh giả → Từ chối (trừ điểm + báo người chơi).</p>
-      </div>
-      {err && <Banner kind="error">{err}</Banner>}
-      <AsyncView state={queue} empty={<Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>}>
-        {(items) => {
-          const pending = items.filter((c) => c.status === 'pending');
-          if (pending.length === 0) return <Banner kind="success">Không còn ảnh nào chờ duyệt. 🎉</Banner>;
-          // Ảnh đăng MXH (ngày SHARE + tốt nghiệp) tách khỏi ảnh check-in AI theo cờ (flag).
-          const isSocial = (c: AdminCheckin) => /Đăng MXH|Tốt nghiệp/.test(c.flag ?? '');
-          const social = pending.filter(isSocial);
-          const aiPics = pending.filter((c) => !isSocial(c));
-          return (
-            <div className="flex flex-col gap-6">
-              <ReviewSection title="Duyệt ảnh AI" sub="Check-in đồ uống AI chưa xác nhận chắc chắn — người chơi gửi duyệt tay." items={aiPics} busyId={busyId} onAct={act} />
-              <ReviewSection title="Duyệt ảnh đăng mạng xã hội" sub="Ảnh ngày SHARE & ảnh Story tốt nghiệp người chơi đăng lên MXH." items={social} busyId={busyId} onAct={act} />
-            </div>
-          );
-        }}
-      </AsyncView>
+    <div className="flex flex-col gap-6">
+      <section className="admin-welcome flex flex-wrap items-center justify-between gap-6 rounded-[24px] p-6 sm:p-8">
+        <div className="max-w-xl">
+          <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · KIỂM DUYỆT NỘI DUNG</p>
+          <h2 className="text-[28px] font-extrabold leading-tight text-white sm:text-[34px]">Mỗi bức ảnh, một bước tiến.</h2>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Xem ảnh check-in và Story, xác nhận nỗ lực của người chơi trên hành trình bớt ngọt.</p>
+        </div>
+        <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-[#F2A9BC]"><Icon name="flag" size={24} /></span>
+          <div><p className="text-[32px] font-extrabold leading-none tabular-nums text-white">{queue.loading ? '—' : pending.length}</p><p className="mt-1 text-caption text-white/65">ảnh đang chờ duyệt</p></div>
+        </div>
+      </section>
+      {err && <div role="alert"><Banner kind="error">{err}</Banner></div>}
+      <section className="overflow-hidden rounded-[24px] border border-border bg-surface shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4 sm:p-5">
+          <div className="flex flex-wrap gap-1.5" aria-label="Loại ảnh">
+            {tabs.map((t) => <button key={t.id} onClick={() => setFilter(t.id)} aria-pressed={filter === t.id}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-small font-bold transition-colors ${filter === t.id ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-bg'}`}>
+              {t.label}<span className={`rounded-md px-1.5 py-0.5 text-caption tabular-nums ${filter === t.id ? 'bg-primary/10' : 'bg-bg'}`}>{t.count}</span>
+            </button>)}
+          </div>
+          <input aria-label="Tìm ảnh theo tên người chơi" placeholder="Tìm tên người chơi…" value={search} onChange={(e) => setSearch(e.target.value)}
+            className="min-h-11 w-full rounded-xl border border-border bg-bg/50 px-4 text-small outline-none focus:border-primary sm:w-60" />
+        </div>
+        <AsyncView state={queue}>
+          {() => {
+            const items = pending.filter((c) => (filter === 'all' || (filter === 'social' ? isSocialPhoto(c) : !isSocialPhoto(c))) && c.user.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi')));
+            return items.length ? <div className="grid items-start gap-5 bg-bg/40 p-4 min-[700px]:grid-cols-2 sm:p-5 min-[1600px]:grid-cols-3">
+              {items.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} disabled={busyId !== null} onAct={act} />)}
+            </div> : <div className="flex flex-col items-center px-6 py-16 text-center">
+              <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Icon name={pending.length ? 'flag' : 'check'} size={30} /></span>
+              <h3 className="text-title font-bold">{pending.length ? 'Không tìm thấy ảnh phù hợp' : 'Đã xử lý hết ảnh chờ duyệt'}</h3>
+              <p className="mt-2 max-w-sm text-small text-muted">{pending.length ? 'Thử tên khác hoặc chọn một nhóm ảnh khác.' : 'Ảnh mới của người chơi sẽ xuất hiện tại đây.'}</p>
+            </div>;
+          }}
+        </AsyncView>
+      </section>
     </div>
   );
 }
 
-/** Một mục duyệt (AI hoặc MXH) — tiêu đề + lưới thẻ; tự hiện "hết ảnh" khi rỗng. */
-function ReviewSection({ title, sub, items, busyId, onAct }: { title: string; sub: string; items: AdminCheckin[]; busyId: string | null; onAct: (id: string, s: 'approved' | 'rejected') => void }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <div>
-        <h3 className="text-body font-bold">{title} <span className="text-caption font-semibold text-muted">· {items.length}</span></h3>
-        <p className="text-caption text-muted">{sub}</p>
-      </div>
-      {items.length === 0
-        ? <Banner kind="info">Không còn ảnh nào chờ duyệt ở mục này.</Banner>
-        : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{items.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} onAct={onAct} />)}</div>}
-    </section>
-  );
-}
-
-function ReviewCard({ c, busy, onAct }: { c: AdminCheckin; busy: boolean; onAct: (id: string, s: 'approved' | 'rejected') => void }) {
+function ReviewCard({ c, busy, disabled, onAct }: {
+  c: AdminCheckin; busy: boolean; disabled: boolean;
+  onAct: (id: string, status: 'approved' | 'rejected', reason?: string) => Promise<void>;
+}) {
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const [imageFailed, setImageFailed] = useState(false);
   const isUrl = /^https?:\/\//.test(c.emoji);
+  const isPath = !isUrl && c.emoji.includes('/');
+  const photo = useAsync(async () => isUrl ? c.emoji : isPath ? api.admin.photoUrl(c.emoji) : null, [c.emoji]);
+  const imageUrl = photo.data;
+
   const mission = vi.missions[c.day - 1];
+  const social = isSocialPhoto(c);
   return (
-    <Card className="flex flex-col gap-3 p-4">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-control border border-border bg-bg">
-        {isUrl ? <img src={c.emoji} alt={`Ảnh check-in ngày ${c.day}`} className="h-full w-full object-contain" />
-          : <span className="text-[64px]" aria-hidden="true">{c.emoji}</span>}
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border bg-surface shadow-soft">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <span className="text-caption font-semibold text-muted">Ảnh minh chứng</span>
+        <span className="rounded-md bg-bg px-2 py-1 text-caption font-semibold text-text">Ngày {c.day}</span>
       </div>
-      <div className="min-w-0">
-        <p className="truncate font-bold">{c.user}</p>
-        <p className="text-caption text-muted">Ngày {c.day}{mission ? ` · ${mission.kind}` : ''}{c.level != null ? ` · AI đọc ${c.level}%` : ''}</p>
-        {c.flag && <p className="mt-1 inline-block rounded-pill bg-accent/15 px-2 py-0.5 text-caption font-semibold text-accent">⚑ {c.flag}</p>}
+      <div className="bg-[#eef2f6]">
+        {imageUrl && !imageFailed ? <img src={imageUrl} alt={`Ảnh của ${c.user}, ngày ${c.day}`} loading="lazy" onError={() => setImageFailed(true)} className="block h-auto w-full" />
+          : photo.loading ? <p role="status" className="px-5 py-12 text-center text-small text-muted">Đang tải ảnh…</p>
+          : isPath || isUrl || imageFailed ? <div className="px-5 py-12 text-center">
+            <p className="text-small text-muted">Không tải được ảnh minh chứng.</p>
+            <button onClick={() => { setImageFailed(false); photo.reload(); }} className="mt-3 min-h-11 rounded-lg border border-border bg-surface px-4 text-small font-semibold">Tải lại ảnh</button>
+          </div> : <div className="flex min-h-48 items-center justify-center text-[64px]" aria-label="Ảnh minh hoạ">{c.emoji}</div>}
       </div>
-      <div className="mt-auto grid grid-cols-2 gap-2">
-        <button onClick={() => onAct(c.id, 'rejected')} disabled={busy}
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control border border-danger/40 bg-danger/10 text-small font-bold text-danger transition-colors hover:bg-danger/15 active:scale-95 disabled:opacity-50">
-          <Icon name="x" size={16} /> Từ chối
-        </button>
-        <button onClick={() => onAct(c.id, 'approved')} disabled={busy}
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-control border border-black/15 bg-success text-small font-bold text-white shadow-pop transition-all hover:brightness-105 active:scale-95 disabled:opacity-50">
-          <Icon name="check" size={16} /> Duyệt
-        </button>
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-small font-extrabold text-primary">{c.user.charAt(0).toLocaleUpperCase('vi')}</span>
+          <div className="min-w-0"><h3 className="truncate text-body font-bold" title={c.user}>{c.user}</h3><p className="mt-0.5 text-caption text-muted">{social ? 'Story & tốt nghiệp' : 'Check-in đồ uống'}</p></div>
+          <span className="ml-auto shrink-0 rounded-pill bg-[#fff4df] px-2.5 py-1 text-[11px] font-bold text-[#946019]">Chờ duyệt</span>
+        </div>
+        <div className="rounded-xl bg-bg/70 p-3">
+          <p className="text-small font-semibold">{mission?.title ?? `Nhiệm vụ ngày ${c.day}`}</p>
+          <p className="mt-1 text-caption leading-relaxed text-muted">{c.flag || 'Người chơi gửi ảnh để xác nhận nhiệm vụ.'}</p>
+          {c.level != null && <p className="mt-2 text-caption font-semibold text-info">Mức đường nhận diện: {c.level}%</p>}
+        </div>
+        {rejecting ? <form className="mt-auto space-y-3" onSubmit={(e) => { e.preventDefault(); if (reason.trim()) void onAct(c.id, 'rejected', reason.trim()); }}>
+          <label className="block text-small font-bold" htmlFor={`reason-${c.id}`}>Lý do từ chối</label>
+          <textarea id={`reason-${c.id}`} autoFocus required maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Cho người chơi biết ảnh cần sửa ở đâu…" disabled={disabled}
+            className="min-h-24 w-full resize-y rounded-xl border border-border bg-surface p-3 text-small outline-none focus:border-primary" />
+          <p className="text-caption text-muted">Lý do sẽ được gửi cho người chơi cùng thông báo từ chối.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setRejecting(false)} disabled={disabled} className="min-h-11 rounded-xl border border-border text-small font-bold disabled:opacity-50">Huỷ</button>
+            <button type="submit" disabled={disabled || !reason.trim()} className="min-h-11 rounded-xl bg-danger text-small font-bold text-white disabled:opacity-50">{busy ? 'Đang gửi…' : 'Gửi từ chối'}</button>
+          </div>
+        </form> : <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-4">
+          <button onClick={() => setRejecting(true)} disabled={disabled} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-small font-bold text-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"><Icon name="x" size={16} />Từ chối</button>
+          <button onClick={() => void onAct(c.id, 'approved')} disabled={disabled} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#247758] text-small font-bold text-white transition-colors hover:bg-[#1c6248] disabled:opacity-50"><Icon name="check" size={16} />{busy ? 'Đang duyệt…' : 'Duyệt ảnh'}</button>
+        </div>}
       </div>
-    </Card>
+    </article>
   );
 }
 
@@ -157,7 +192,7 @@ function Overview({ s, onSelect }: { s: AdminStats; onSelect: (tab: string) => v
       </section>
       <section>
         <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Chỉ số chính</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 min-[1500px]:grid-cols-6">
           <StatCard icon="paw" cls="text-primary" accent="#B83556" value={s.totalPlayers} label={st.totalPlayers} />
           <StatCard icon="play" cls="text-accent" accent="#EF9F2A" value={s.activePlayers} label={st.activePlayers} />
           <StatCard icon="medal" cls="text-info" accent="#55768C" value={s.eligibleCount} label={st.eligible} hint={st.eligibleHint} />
@@ -167,7 +202,7 @@ function Overview({ s, onSelect }: { s: AdminStats; onSelect: (tab: string) => v
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 min-[1100px]:grid-cols-2">
         {/* Phễu chuyển đổi */}
         <Card className="flex flex-col gap-4 p-5">
           <h3 className="text-body font-bold">Phễu người chơi</h3>
@@ -199,22 +234,23 @@ function Overview({ s, onSelect }: { s: AdminStats; onSelect: (tab: string) => v
 
       {/* Xu hướng theo ngày — bao nhiêu người đạt tới từng ngày trong hành trình (thấy rơi rụng). */}
       <Card className="flex flex-col gap-3 p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-body font-bold">Xu hướng theo ngày</h3>
           <span className="text-caption text-muted">Số người đạt tới mỗi ngày · tối đa {s.totalPlayers}</span>
         </div>
-        <DailyTrend players={s.players} />
+        <div className="sm:hidden"><DailyTrend players={s.players} compact /></div>
+        <div className="hidden sm:block"><DailyTrend players={s.players} /></div>
       </Card>
     </div>
   );
 }
 
-function DailyTrend({ players }: { players: AdminPlayer[] }) {
+function DailyTrend({ players, compact = false }: { players: AdminPlayer[]; compact?: boolean }) {
   const data = useMemo(
     () => Array.from({ length: TOTAL }, (_, i) => ({ day: i + 1, count: players.filter((p) => p.daysDone >= i + 1).length })),
     [players],
   );
-  const W = 660, H = 180, pad = { l: 26, r: 10, t: 12, b: 24 };
+  const W = compact ? 340 : 660, H = 180, pad = { l: 26, r: 10, t: 12, b: 24 };
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
   const max = Math.max(1, players.length, ...data.map((d) => d.count));
   const x = (day: number) => pad.l + ((day - 1) / (TOTAL - 1)) * iw;
@@ -226,7 +262,7 @@ function DailyTrend({ players }: { players: AdminPlayer[] }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Biểu đồ số người đạt tới mỗi ngày">
       <defs>
-        <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`trendFill-${compact ? 'compact' : 'wide'}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#B83556" stopOpacity="0.28" />
           <stop offset="1" stopColor="#B83556" stopOpacity="0" />
         </linearGradient>
@@ -237,13 +273,13 @@ function DailyTrend({ players }: { players: AdminPlayer[] }) {
           <text x={pad.l - 6} y={y(v) + 3} textAnchor="end" className="fill-[color:var(--color-muted)]" fontSize="9">{v}</text>
         </g>
       ))}
-      <path d={area} fill="url(#trendFill)" />
+      <path d={area} fill={`url(#trendFill-${compact ? 'compact' : 'wide'})`} />
       <polyline points={line} fill="none" stroke="#B83556" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {data.map((d) => (
         <circle key={d.day} cx={x(d.day)} cy={y(d.count)} r={d.day === 1 || d.day === TOTAL || d.day % 7 === 0 ? 3 : 0} fill="#B83556" />
       ))}
       {[1, 7, 14].map((d) => (
-        <text key={d} x={x(d)} y={H - 6} textAnchor="middle" className="fill-[color:var(--color-muted)]" fontSize="9">Ngày {d}</text>
+        <text key={d} x={x(d)} y={H - 6} textAnchor={d === 1 ? 'start' : d === TOTAL ? 'end' : 'middle'} className="fill-[color:var(--color-muted)]" fontSize="9">Ngày {d}</text>
       ))}
     </svg>
   );
@@ -282,6 +318,46 @@ function exportCsv(rows: AdminPlayer[]) {
   URL.revokeObjectURL(url);
 }
 
+function PlayerStatusSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const options = [
+    { value: 'all', label: 'Tất cả trạng thái' },
+    { value: 'active', label: 'Đang tham gia' },
+    { value: 'finished', label: 'Hoàn thành' },
+    { value: 'idle', label: 'Chưa bắt đầu' },
+  ];
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    optionRefs.current[options.findIndex((o) => o.value === value)]?.focus();
+    const close = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open, value]);
+  return <div ref={root} className="admin-status-select" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false); }}>
+    <button ref={trigger} type="button" aria-label="Lọc trạng thái người chơi" aria-haspopup="listbox" aria-expanded={open} aria-controls="player-status-options"
+      onClick={() => setOpen(!open)} onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); } }} className="admin-status-trigger">
+      {options.find((o) => o.value === value)?.label}<Icon name="chevron-right" size={18} className={open ? '-rotate-90' : 'rotate-90'} />
+    </button>
+    {open && <div id="player-status-options" role="listbox" aria-label="Trạng thái người chơi" className="admin-status-options">
+      {options.map((o, i) => <button key={o.value} ref={(el) => { optionRefs.current[i] = el; }} type="button" role="option" aria-selected={value === o.value} tabIndex={value === o.value ? 0 : -1}
+        onClick={() => { onChange(o.value); setOpen(false); trigger.current?.focus(); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') { e.preventDefault(); setOpen(false); trigger.current?.focus(); }
+          if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+            e.preventDefault();
+            const next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+            optionRefs.current[next]?.focus();
+          }
+        }}>
+        <span>{o.label}</span>{value === o.value && <Icon name="check" size={20} />}
+      </button>)}
+    </div>}
+  </div>;
+}
+
 function PlayersPanel({ s }: { s: AdminStats }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortKey>('points');
@@ -304,29 +380,46 @@ function PlayersPanel({ s }: { s: AdminStats }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-title font-bold">{st.tableTitle} · {rows.length}/{s.totalPlayers}</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍  Tìm tên người chơi…" aria-label="Tìm người chơi"
+        <div className="flex flex-wrap items-center gap-2.5"><h2 className="admin-section-title">{st.tableTitle}</h2><span className="admin-result-count">{rows.length}/{s.totalPlayers}</span></div>
+        <div className="admin-player-tools flex w-full flex-wrap items-center gap-2">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm tên người chơi…" aria-label="Tìm người chơi"
             className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
-          <select aria-label="Lọc trạng thái người chơi" value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 rounded-lg border border-border bg-surface px-3 text-small">
-            <option value="all">Tất cả trạng thái</option><option value="active">Đang tham gia</option><option value="finished">Hoàn thành</option><option value="idle">Chưa bắt đầu</option>
-          </select>
-          <div className="flex items-center gap-1 rounded-lg bg-bg p-1">
+          <PlayerStatusSelect value={status} onChange={setStatus} />
+          <div className="admin-sort flex items-center gap-1 rounded-lg p-1">
             {SORTS.map((o) => (
               <button key={o.k} onClick={() => setSort(o.k)} aria-pressed={sort === o.k}
-                className={`rounded-md px-2.5 py-1 text-caption font-bold transition-colors ${sort === o.k ? 'bg-surface text-primary shadow-soft' : 'text-muted hover:text-text'}`}>
+                className={`rounded-md px-2.5 py-1 transition-colors ${sort === o.k ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'}`}>
                 {o.label}
               </button>
             ))}
           </div>
           <button onClick={() => exportCsv(rows)} disabled={rows.length === 0}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-black/15 bg-primary px-3 text-small font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.05] active:scale-95 disabled:opacity-40">
+            className="admin-export flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-small font-semibold text-text transition-colors hover:bg-bg disabled:opacity-40">
             <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[20px] border border-border bg-surface"><Card className="min-w-[640px] divide-y divide-border/60 border-0 p-0">
+      <div className="grid gap-3 sm:grid-cols-2 min-[1100px]:hidden">
+        {rows.length === 0 && <p className="col-span-full rounded-2xl border border-border bg-surface px-4 py-10 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>}
+        {rows.map((p, i) => {
+          const b = playerBadge(p);
+          return <article key={p.id} className="min-w-0 rounded-[20px] border border-border bg-surface p-4 shadow-soft">
+            <div className="flex items-center gap-3">
+              <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-bg text-title">{p.avatar}</span>
+              <div className="min-w-0 flex-1"><p className="text-caption text-muted">#{i + 1}</p><h3 className="break-words text-small font-bold">{p.name}</h3></div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2"><span className={`rounded-pill px-2.5 py-1 text-caption font-bold ${b.cls}`}>{b.text}</span>{p.usedPass && <span className="text-caption text-muted">{st.usedPass}</span>}</div>
+            <dl className="mt-4 grid grid-cols-3 divide-x divide-border rounded-xl bg-bg/60 py-3 text-center">
+              <div><dt className="text-caption text-muted">Tiến độ</dt><dd className="mt-1 text-small font-extrabold tabular-nums">{p.daysDone}/{TOTAL}</dd></div>
+              <div><dt className="text-caption text-muted">Tổng điểm</dt><dd className="mt-1 text-small font-extrabold tabular-nums text-primary">{p.points}</dd></div>
+              <div><dt className="text-caption text-muted">Chuỗi ngày</dt><dd className="mt-1 text-small font-extrabold tabular-nums">{p.streak} 🔥</dd></div>
+            </dl>
+          </article>;
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-[20px] border border-border bg-surface min-[1100px]:block"><Card className="min-w-[640px] divide-y divide-border/60 border-0 p-0">
         <div className="sticky top-0 z-10 flex items-center gap-2 bg-bg/80 px-3 py-2.5 text-caption font-bold uppercase tracking-wide text-muted backdrop-blur">
           <span className="w-7 text-center">#</span>
           <span className="flex-1">{st.colPlayer}</span>

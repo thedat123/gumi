@@ -114,3 +114,92 @@ button:hover .jersey-product { transform: translateY(-3px) rotate(-2deg); }
 @keyframes admin-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .admin-page > div { animation: none; } }
 @media (max-width: 640px) { .admin-completion { display: none; } .admin-kpi { min-height: 145px; } }
+
+/* Responsive admin: phone tabs, tablet rail, desktop sidebar. */
+.admin-workspace { height: 100dvh; }
+.admin-main { scrollbar-gutter: stable; padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+.admin-topbar { padding-top: max(.875rem, env(safe-area-inset-top)); }
+.admin-page { min-width: 0; }
+.admin-page section, .admin-page article { min-width: 0; }
+.admin-player-tools input { flex: 1 1 220px; min-width: 0; }
+.admin-player-tools input, .admin-player-tools select, .admin-player-tools > button { min-height: 44px; }
+.admin-player-tools > div button { min-height: 36px; }
+.admin-portal textarea:focus-visible { outline: 3px solid #b8355670; outline-offset: 3px; }
+@media (max-width: 639px) {
+  .admin-main { scrollbar-gutter: auto; }
+  .admin-page > div { gap: 20px; }
+  .admin-welcome { padding: 20px; border-radius: 20px; gap: 20px; }
+  .admin-welcome h2 { font-size: 25px; line-height: 1.2; }
+  .admin-welcome > div:last-child:not(:first-child):not(.admin-completion) { width: 100%; }
+  .admin-player-tools select { flex: 1 1 100%; width: 100%; }
+  .admin-player-tools > div { flex: 1 1 auto; justify-content: space-between; }
+  .admin-kpi { min-height: 150px; padding: 14px; }
+  .admin-kpi > span:nth-child(2) { font-size: 27px; }
+}
+@media (max-width: 359px) {
+  .admin-player-tools > button { width: 100%; justify-content: center; }
+  .admin-topbar { gap: 8px; padding-inline: 12px; }
+  .admin-topbar h1 { font-size: 20px; }
+}
+
+/* Admin typography: restrained headings, consistent controls, clear secondary text. */
+.admin-portal { --color-bg: #f3f5f8; }
+.admin-portal h1 { font-size: 22px; font-weight: 700; line-height: 1.3; letter-spacing: -.025em; }
+.admin-page h2:not(.admin-section-title) { font-size: 22px; font-weight: 700; line-height: 1.35; letter-spacing: -.025em; }
+.admin-page .admin-welcome h2 { font-size: clamp(23px, 2.2vw, 30px); font-weight: 700; line-height: 1.3; letter-spacing: -.03em; }
+.admin-page h3 { font-size: 15px; line-height: 1.45; font-weight: 650; }
+.admin-section-title { font-size: 20px; line-height: 1.4; font-weight: 700; letter-spacing: -.025em; }
+.admin-result-count { border: 1px solid #e3e8ef; border-radius: 7px; background: #fff; padding: 3px 8px; color: #708096; font-size: 12px; line-height: 1.5; font-weight: 500; font-variant-numeric: tabular-nums; }
+.admin-player-tools { gap: 10px; }
+.admin-player-tools input, .admin-player-tools select, .admin-player-tools > button { height: 44px; border-radius: 10px; font-size: 14px; line-height: 1.4; font-weight: 500; box-shadow: none; }
+.admin-player-tools select { padding-inline: 14px 32px; }
+.admin-player-tools input::placeholder { color: #8a95a5; font-weight: 400; }
+.admin-player-tools .admin-sort { background: #e9edf2; border: 1px solid #e3e8ef; border-radius: 10px; }
+.admin-player-tools .admin-sort button { min-height: 34px; font-size: 13px; line-height: 1.4; font-weight: 600; padding-inline: 13px; }
+.admin-player-tools .admin-export { flex: 0 0 auto; font-size: 13px; font-weight: 600; }
+.admin-portal button:focus-visible, .admin-portal select:focus-visible, .admin-portal input:focus-visible, .admin-portal textarea:focus-visible { outline: 2px solid #b8355670; outline-offset: 2px; }
+.admin-kpi > span:nth-child(2) { font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.025em; }
+.admin-kpi > span:nth-child(3) { font-size: 13px; font-weight: 550; line-height: 1.5; }
+.admin-kpi > span:nth-child(4) { font-size: 12px; font-weight: 400; line-height: 1.5; }
+.admin-page article dt { font-size: 12px; font-weight: 400; }
+.admin-page article dd { font-size: 15px; font-weight: 650; }
+@media (max-width: 639px) {
+  .admin-portal h1 { font-size: 20px; }
+  .admin-section-title { font-size: 18px; }
+  .admin-page .admin-welcome > div > p:first-child { font-size: 10px; letter-spacing: .14em; }
+  .admin-page .admin-welcome > div > p:not(:first-child) { font-size: 13px; line-height: 1.65; }
+  .admin-player-tools .admin-sort { flex: 1 1 auto; }
+  .admin-player-tools .admin-sort button { flex: 1; padding-inline: 9px; }
+  .admin-kpi > span:nth-child(2) { font-size: 26px; }
+}
+
+/* Comfortable admin controls, including native select menus. */
+.admin-player-tools input, .admin-player-tools select, .admin-player-tools > button {
+  min-height: 48px;
+  height: 48px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.admin-player-tools select option { font-size: 16px; }
+.admin-player-tools .admin-sort button {
+  min-height: 40px;
+  font-size: 15px;
+  font-weight: 600;
+  padding-inline: 12px;
+}
+.admin-player-tools .admin-export { min-height: 48px; font-size: 15px; }
+@media (max-width: 639px) {
+  .admin-player-tools .admin-sort { flex: 1 1 100%; }
+  .admin-player-tools .admin-sort button { min-height: 44px; font-size: 15px; }
+  .admin-player-tools .admin-export { width: 100%; }
+}
+
+.admin-status-select { position: relative; flex: 0 0 230px; min-width: 0; }
+.admin-status-trigger { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; color: var(--color-text); font-size: 16px; font-weight: 500; text-align: left; }
+.admin-status-trigger svg { flex-shrink: 0; }
+.admin-status-options { position: absolute; inset: calc(100% + 8px) 0 auto; z-index: 30; padding: 6px; border: 1px solid var(--color-border); border-radius: 14px; background: #fff; box-shadow: 0 12px 32px #24324726; }
+.admin-status-options [role="option"] { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 12px; border-radius: 9px; color: #243247; font-size: 18px; line-height: 1.5; font-weight: 500; text-align: left; }
+.admin-status-options [role="option"]:hover, .admin-status-options [role="option"]:focus-visible { background: #f1f4f8; outline: none; }
+.admin-status-options [aria-selected="true"] { background: #fbeef2; color: #a72e4c; }
+@media (max-width: 639px) { .admin-status-select { flex-basis: 100%; width: 100%; } }
+@media (max-width: 639px) { .admin-player-tools .admin-status-select { flex: 1 1 100%; } }
