@@ -4,9 +4,9 @@ import { vi } from '../content/vi';
 import type { DayState, GumiState } from '../api/types';
 
 export const TOTAL_DAYS = 14;
-export const MILESTONE_DAYS = [5, 10, 14]; // ngày cuối mỗi vùng đất / tiến hoá Gumi
-// 3 vùng đất trên 14 ngày: Hồi 1 = 1–5, Hồi 2 = 6–10, Hồi 3 = 11–14.
-export const ACT_STARTS: readonly number[] = [1, 6, 11];
+export const MILESTONE_DAYS = [7, 14]; // cửa ải cuối mỗi vùng đất / tiến hoá Gumi
+// 2 vùng đất trên 14 ngày: Hồi 1 = 1–7 (cửa ải Flappy ngày 7), Hồi 2 = 8–14 (cửa ải cuối ngày 14).
+export const ACT_STARTS: readonly number[] = [1, 8];
 export const STREAK_BONUS: { n: number; pts: number }[] = [
   { n: 5, pts: 10 },
   { n: 10, pts: 20 },
@@ -85,14 +85,14 @@ export function approvedCount(days: DayState[]): number {
   return days.filter((d) => d === 'checked').length;
 }
 
-/** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–5), 2 = Rừng Đường Ẩn (6–10), 3 = Đỉnh 0% (11–14). */
-export const actOfDay = (day: number): 1 | 2 | 3 => (day <= 5 ? 1 : day <= 10 ? 2 : 3);
+/** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–7), 2 = Rừng Đường Ẩn (8–14). */
+export const actOfDay = (day: number): 1 | 2 => (day <= 7 ? 1 : 2);
 export const isMilestone = (day: number): boolean => MILESTONE_DAYS.includes(day);
 
-/** Danh sách ngày thuộc một hồi (độ dài không đều: 5/5/4 ngày). */
+/** Danh sách ngày thuộc một hồi (mỗi hồi 7 ngày). */
 export function actDays(act: 1 | 2 | 3): number[] {
   const start = ACT_STARTS[act - 1]!;
-  const end = act < 3 ? ACT_STARTS[act]! - 1 : TOTAL_DAYS;
+  const end = act < ACT_STARTS.length ? ACT_STARTS[act]! - 1 : TOTAL_DAYS;
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 

@@ -21,11 +21,11 @@ function build(pairs: readonly { a: string; b: string }[]): MCard[] {
   return cards;
 }
 
-/** Ngày 12 & 18 — Lật thẻ trí nhớ THẬT: thẻ lật 3D, đếm lượt, ghép đủ cặp là thắng. */
+/** Ngày 12 — Lật thẻ trí nhớ THẬT: thẻ lật 3D, đếm lượt, ghép đủ cặp là thắng. */
 export function MemoryMatch() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 12;
-  const cfg = day === 18 ? vi.minigames.memory18 : vi.minigames.memory12;
+  const cfg = vi.minigames.memory12;
   const m = vi.missions[day - 1];
   const [cards] = useState<MCard[]>(() => build(cfg.pairs));
   const [flipped, setFlipped] = useState<number[]>([]);

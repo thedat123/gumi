@@ -21,12 +21,8 @@ export function ChapterIntro() {
   // "Bắt đầu chơi": vào màn hôm nay là điểm danh streak (idempotent — chỉ tính 1 lần/ngày).
   useEffect(() => { void api.markPlayed().catch(() => {}); }, []);
 
-  // Tự đọc cốt truyện khi vừa vào chương (điều hướng tới đây tính là một cú bấm → trình duyệt cho phát tiếng). Dừng khi rời trang.
-  useEffect(() => {
-    if (!chapter) return;
-    const id = setTimeout(() => speak(chapter.intro), 350);
-    return () => { clearTimeout(id); stop(); };
-  }, [day, chapter, speak, stop]);
+  // Không tự đọc cốt truyện nữa — người chơi tự bấm nút loa nếu muốn nghe. Vẫn tắt tiếng khi rời trang.
+  useEffect(() => () => stop(), [day, stop]);
 
   if (!chapter || !m || day < 1 || day > TOTAL_DAYS) {
     return (
@@ -85,12 +81,9 @@ export function ChapterIntro() {
           <div className="flex flex-col gap-3 [@media(max-height:560px)]:max-h-[38vh] [@media(max-height:560px)]:overflow-y-auto [@media(max-height:560px)]:pr-1">
             {chapter.intro.map((line, i) => <DialogueLine key={i} line={line} />)}
           </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row-reverse">
-            <Link to={`/mission/${day}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control border border-black/15 bg-primary px-5 font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]">
+          <div className="mt-4">
+            <Link to={`/mission/${day}`} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-black/15 bg-primary px-5 font-bold text-on-primary shadow-pop transition-all hover:brightness-[1.06] active:scale-[0.98]">
               {vi.story.ui.startMission} <Icon name="arrow-right" size={18} />
-            </Link>
-            <Link to={`/mission/${day}`} className="inline-flex min-h-12 items-center justify-center rounded-control border border-border-strong/40 bg-surface px-5 text-small font-semibold text-muted transition-colors hover:text-text sm:flex-none">
-              {vi.story.ui.skip}
             </Link>
           </div>
         </div>

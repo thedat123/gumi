@@ -11,7 +11,7 @@ import { vi } from '../../content/vi';
 const BY_DAY = vi.minigames.quiz.days;
 type QuizDay = keyof typeof BY_DAY;
 
-/** Trắc nghiệm / đuổi hình bắt chữ dùng chung cho Ngày 7 / 16 / 17. */
+/** Trắc Nghiệm Chớp Nhoáng — Ngày 8. */
 export function QuickQuiz() {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) as QuizDay;
@@ -25,7 +25,6 @@ export function QuickQuiz() {
   if (!cfg || !m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
   if (note !== null) return <MissionDone day={day} points={earned ?? m.points} note={note} />;
 
-  const isRebus = day === 16; // đuổi hình bắt chữ → đề emoji cỡ lớn
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={vi.minigames.quiz.intro}>
       <div className="flex flex-1 flex-col justify-center">
@@ -33,14 +32,13 @@ export function QuickQuiz() {
         {saving && <Banner kind="info">Đang lưu kết quả…</Banner>}
         <QuizGame
           questions={cfg.questions}
-          promptClass={isRebus ? 'text-[44px]' : 'text-title'}
+          promptClass="text-title"
           seconds={10}
           onComplete={(correct) => {
             if (saving) return;
-            const points = day === 17 ? correct * 5 : m.points;
-            setEarned(points);
+            setEarned(m.points);
             setSaving(true); setSaveError(false);
-            void api.submitMinigame(day, day === 17 ? points : undefined)
+            void api.submitMinigame(day)
               .then(() => setNote(`Bạn trả lời đúng ${correct}/${cfg.questions.length} câu. ${cfg.note}`))
               .catch(() => setSaveError(true))
               .finally(() => setSaving(false));

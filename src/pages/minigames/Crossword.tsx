@@ -19,11 +19,11 @@ const cellsOf = (w: Word) => Array.from(w.answer, (ch, i) => ({
   key: w.dir === 'down' ? K(w.r + i, w.c) : K(w.r, w.c + i), ch,
 }));
 
-/** Ngày 16 — Gumi Bắt Chữ: crossword ô lồng nhau, GÕ TRỰC TIẾP vào ô (tự nhảy ô kế).
+/** Ngày 11 — Gumi Bắt Chữ: crossword ô lồng nhau, GÕ TRỰC TIẾP vào ô (tự nhảy ô kế).
  *  Hết 3 phút là dừng, không chơi lại. */
 export function Crossword() {
   const { day: dayParam } = useParams();
-  const day = Number(dayParam) || 16;
+  const day = Number(dayParam) || 11;
   const m = vi.missions[day - 1];
   const cfg = vi.minigames.crossword;
   const words = cfg.words;

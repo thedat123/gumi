@@ -1,6 +1,6 @@
 // Toàn bộ chữ hiển thị nằm ở đây (không rải trong component) để team duyệt và sửa một chỗ.
 // Nội dung sức khoẻ dùng giọng vui, gần gũi; số liệu đường/calo nên được người có chuyên môn dinh dưỡng rà lại trước khi launch.
-// Bản 14 NGÀY — cốt truyện phiêu lưu 3 vùng đất, Gumi tiến hoá 4 nấc.
+// Bản 14 NGÀY — cốt truyện phiêu lưu 2 vùng đất, Gumi tiến hoá 4 nấc.
 
 export type Speaker = 'gumi' | 'boss' | 'narrator';
 export interface Line { who: Speaker; text: string }
@@ -123,11 +123,10 @@ export const vi = {
       earned: (pts: number) => `+${pts} điểm`,
       speaker: { gumi: 'Gumi', boss: 'Boss Đường', narrator: '' } as Record<Speaker, string>,
     },
-    // 3 vùng đất = 3 hồi, cũng là 3 nấc tiến hoá của Gumi.
+    // 2 vùng đất = 2 hồi; cửa ải cuối mỗi hồi (ngày 7 & 14) là 2 nấc tiến hoá chính của Gumi.
     acts: [
-      { n: 1, name: 'Đầm Lầy Ngọt', range: 'Ngày 1–5', icon: '🫧', blurb: 'Nơi Gumi chìm trong đường lỏng. Lội ra để tỉnh giấc — hoá Sugar Balanced.' },
-      { n: 2, name: 'Rừng Đường Ẩn', range: 'Ngày 6–10', icon: '🌫️', blurb: 'Đường cải trang khắp lối. Vạch mặt chúng để nạp năng lượng — hoá Sugar Charged.' },
-      { n: 3, name: 'Đỉnh 0%', range: 'Ngày 11–14', icon: '🏔️', blurb: 'Chặng leo cuối. Chạm mốc 0% và thức tỉnh thành Sugar Master — Chiến Thần 0% Đường.' },
+      { n: 1, name: 'Đầm Lầy Ngọt', range: 'Ngày 1–7', icon: '🫧', blurb: 'Nơi Gumi chìm trong đường lỏng. Lội ra khỏi đầm để tỉnh giấc — hoá Sugar Balanced.' },
+      { n: 2, name: 'Rừng Đường Ẩn', range: 'Ngày 8–14', icon: '🌫️', blurb: 'Đường cải trang khắp lối rừng. Vạch mặt chúng, leo tới mốc 0% và thức tỉnh thành Sugar Master — Chiến Thần 0% Đường.' },
     ],
     chapters: [
       { day: 1, intro: [
@@ -316,11 +315,11 @@ export const vi = {
     title: 'Mật Độ',
     subtitle: 'Đường bớt một nấc, chất thêm một bậc — 14 ngày cùng Gumi reset vị giác!',
     bullets: [
-      { icon: 'map', text: 'Đi qua 3 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
+      { icon: 'map', text: 'Đi qua 2 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
       { icon: 'flame', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
       { icon: 'sparkle', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
     ],
-    stats: { days: '14 ngày', players: '~100 người chơi', missions: '3 vùng đất' },
+    stats: { days: '14 ngày', players: '~100 người chơi', missions: '2 vùng đất' },
     ctaPrimary: 'Bắt đầu — nhận nuôi Gumi',
     ctaSecondary: 'Mình đã có tài khoản',
     before: (date: string) => `Hành trình khởi động ngày ${date}. Đăng ký trước để không lỡ Ngày 1!`,
@@ -459,7 +458,7 @@ export const vi = {
     },
     // Ngày 6 — Đấu Trường Calo: xếp 5 ly theo độ ngọt.
     sort: {
-      title: 'Ngày 6: Đấu Trường Calo',
+      title: 'Ngày 5: Đấu Trường Calo',
       intro: 'Kéo-thả 5 đồ uống từ ÍT đường nhất (trên cùng) đến NHIỀU đường nhất (dưới cùng) rồi bấm Kiểm tra. Bạn chỉ có 2 lượt!',
       label: 'Ít đường ↑ · Nhiều đường ↓',
       wrong: 'Thứ tự chưa đúng. Ngẫm lại độ ngọt rồi thử tiếp nhé!',
@@ -540,10 +539,10 @@ export const vi = {
       success: 'Nạp năng lượng xong — tiến thẳng tới Đỉnh 0%!',
       segments: [10, 15, 20, 25, 30],
     },
-    // Ngày 16 — Gumi Bắt Chữ (crossword ô lồng nhau): điền từ khoá theo gợi ý ngang/dọc, trong 3 phút.
+    // Ngày 11 — Gumi Bắt Chữ (crossword ô lồng nhau): điền từ khoá theo gợi ý ngang/dọc, trong 3 phút.
     // grid toạ độ 1-index (r,c); các ô giao nhau đã kiểm tra khớp chữ. Bảng 15×15 (chỉ ô của từ mới hiện).
     crossword: {
-      title: 'Ngày 16: Gumi Bắt Chữ',
+      title: 'Ngày 11: Gumi Bắt Chữ',
       subtitle: 'Xoá Xổ Đường Dư',
       intro: 'Bấm vào ô rồi gõ thẳng chữ (bàn phím máy tính hoặc điện thoại) — gõ xong tự nhảy ô kế. Bấm gợi ý để tới nhanh. Bạn có 3 phút!',
       tapDir: 'Bấm lại ô để đổi hướng ngang ↔ dọc.',
@@ -575,39 +574,19 @@ export const vi = {
       toMessage: 'Viết lời nhắn tốt nghiệp →',
       success: 'Gumi thoát ra ngoài, tiến hoá thành Chiến Thần 0% đường 🎉',
     },
-    // Ngày 7, 16, 17 — trắc nghiệm nhanh (chung một màn QuickQuiz).
+    // Ngày 8 — Trắc Nghiệm Chớp Nhoáng (màn QuickQuiz).
     quiz: {
       intro: 'Chọn đáp án đúng cho mỗi câu. Trả lời nhanh nào!',
       questionOf: (i: number, total: number) => `Câu ${i}/${total}`,
       wrong: 'Chưa đúng, thử lại nhé!',
       days: {
-        7: {
-          title: 'Ngày 7: Trắc Nghiệm Chớp Nhoáng',
+        8: {
+          title: 'Ngày 8: Trắc Nghiệm Chớp Nhoáng',
           note: 'Giảm đường từ từ, cơ thể sẽ cảm ơn bạn: tim khoẻ hơn, đầu óc tỉnh táo hơn, da cũng đẹp hơn 💪',
           questions: [
             { prompt: 'Theo WHO, lượng đường tự do (free sugar) khuyến nghị tối đa cho một người trưởng thành mỗi ngày là bao nhiêu?', options: ['15g (≈ 3 thìa cà phê)', '25g (≈ 5–6 thìa cà phê)', '50g (≈ 10–12 thìa cà phê)', 'Càng nhiều càng tốt'], answer: 1, explain: 'WHO khuyến nghị giới hạn dưới 25g/ngày (≈ 5% tổng năng lượng) để tốt nhất cho tim mạch và cân nặng.' },
             { prompt: 'Khi bắt đầu giảm đường, quy tắc nào giúp vị giác thích nghi mà không thèm ngọt cồn cào?', options: ['Nhịn ngọt tuyệt đối 100% ngay ngày đầu', 'Hạ dần từng nấc (100% → 70% → 50% → 30%) trong 2–3 tuần', 'Uống nước ngọt thay nước lọc', 'Uống trà sữa lúc đêm muộn'], answer: 1, explain: 'Gai vị giác cần ~2–3 tuần để làm quen độ nhạt mới; giảm đột ngột dễ gây stress và ăn bù.' },
             { prompt: 'Cảm giác hưng phấn sau khi uống trà sữa rồi bỗng mệt mỏi, buồn ngủ lờ đờ sau 1–2 tiếng gọi là gì?', options: ['Say caffeine', 'Tụt đường huyết (Sugar Crash)', 'Trúng thực nhẹ', 'Thiếu oxy não'], answer: 1, explain: 'Đường lỏng làm đường huyết tăng vọt, cơ thể tiết nhiều insulin để hạ nên đường huyết tụt nhanh, gây mệt.' },
-          ],
-        },
-        16: {
-          title: 'Ngày 16: Đuổi Hình Bắt Chữ · Vòng 2',
-          note: 'Giải nhanh chuỗi emoji thành tên đồ uống nhiều đường.',
-          questions: [
-            { prompt: '🧋🟤🟤🟤', options: ['Trà sữa trân châu', 'Nước lọc', 'Cà phê đen'], answer: 0, explain: '🧋 + trân châu = ly nhiều đường bậc nhất.' },
-            { prompt: '🥤🍋 ➕ 🍬', options: ['Trà mộc', 'Soda chanh ngọt', 'Trà xanh không đường'], answer: 1, explain: 'Nước có ga + siro chanh = lượng đường ẩn khá cao.' },
-            { prompt: '🧊☕️🍮', options: ['Cà phê không đường', 'Bạc xỉu / cà phê caramel', 'Nước dừa tươi'], answer: 1, explain: 'Cà phê nhiều sữa đặc + caramel rất ngọt.' },
-          ],
-        },
-        17: {
-          title: 'Ngày 17: Truy Tìm Sự Thật',
-          note: 'Nhớ nha: đường "ẩn" có mặt ở cả đồ mặn — đọc nhãn trước khi mua là bạn đã thắng một nửa rồi! 🔍',
-          questions: [
-            { prompt: 'Nước ép trái cây đóng chai luôn "healthy" và ít đường.', options: ['Đúng', 'Sai'], answer: 1, explain: 'Nhiều loại nước ép đóng chai được thêm đường, không hề ít.' },
-            { prompt: 'Đường "ẩn" có thể xuất hiện cả trong đồ mặn như nước sốt, bánh mì.', options: ['Đúng', 'Sai'], answer: 0, explain: 'Đúng — nước sốt, bánh mì, đồ hộp đều có thể chứa đường.' },
-            { prompt: 'Uống nhiều đường một lúc có thể gây tụt năng lượng sau đó (sugar crash).', options: ['Đúng', 'Sai'], answer: 0, explain: 'Đường huyết tăng vọt rồi tụt nhanh khiến mệt và thèm ngọt tiếp.' },
-            { prompt: 'Đồ uống dán nhãn "không đường" chắc chắn không có chất tạo ngọt nào.', options: ['Đúng', 'Sai'], answer: 1, explain: '"Không đường" vẫn có thể dùng chất tạo ngọt thay thế.' },
-            { prompt: 'Giảm đường từ từ giúp vị giác quen dần và dễ duy trì hơn.', options: ['Đúng', 'Sai'], answer: 0, explain: 'Giảm dần dễ theo hơn là cắt đột ngột.' },
           ],
         },
       },

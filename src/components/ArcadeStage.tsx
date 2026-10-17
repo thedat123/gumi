@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject } from 'react';
+import { useState, type ReactNode, type RefObject } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Icon } from './Icon';
 import { vi } from '../content/vi';
@@ -12,6 +12,7 @@ export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, over
   const { day: dayParam } = useParams();
   const day = Number(dayParam);
   const mission = vi.missions[day - 1];
+  const [hintOpen, setHintOpen] = useState(false);
   return (
     <div className={`game-shell act-${act} relative -mx-4 -mb-6 -mt-1 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden sm:h-[calc(100dvh-4rem)]`}>
       <div className="game-bg" aria-hidden="true" />
@@ -22,7 +23,17 @@ export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, over
         <div className="min-w-0 flex-1">
           {mission && <p className="mb-0.5 text-[10px] font-black uppercase tracking-[.16em] text-primary/80 [@media(max-height:520px)]:hidden">CHẶNG {String(day).padStart(2, '0')} / {vi.journey.total} · {mission.kind} · +{mission.points} ĐIỂM</p>}
           <h1 className="text-title font-extrabold leading-tight [@media(max-height:520px)]:text-body">{title}</h1>
-          {hint && <p className="line-clamp-2 text-caption font-medium text-muted [@media(max-height:520px)]:hidden">{hint}</p>}
+          {hint && (
+            <button
+              type="button"
+              onClick={() => setHintOpen((v) => !v)}
+              aria-expanded={hintOpen}
+              className="flex w-full items-start gap-1 text-left [@media(max-height:520px)]:hidden"
+            >
+              <span className={`text-caption font-medium text-muted ${hintOpen ? '' : 'line-clamp-2'}`}>{hint}</span>
+              <Icon name="chevron-right" size={14} className={`mt-0.5 shrink-0 text-primary/70 transition-transform ${hintOpen ? '-rotate-90' : 'rotate-90'}`} />
+            </button>
+          )}
         </div>
         {hud && <div className="flex flex-wrap items-center gap-1.5 max-sm:w-full max-sm:pl-[52px] [@media(max-height:520px)]:w-auto [@media(max-height:520px)]:pl-0">{hud}</div>}
       </header>

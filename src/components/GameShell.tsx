@@ -33,6 +33,7 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
   const { day: dayParam } = useParams();
   const day = Number(dayParam);
   const mission = vi.missions[day - 1];
+  const [introOpen, setIntroOpen] = useState(false);
   return (
     <div className={`game-shell act-${act} relative -mx-4 -mt-1 flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
@@ -44,7 +45,17 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
           <div className="min-w-0 flex-1">
             {mission && <p className="mb-0.5 text-[10px] font-black uppercase tracking-[.16em] text-primary/80 [@media(max-height:520px)]:hidden">CHẶNG {String(day).padStart(2, '0')} / {vi.journey.total} · {mission.kind} · +{mission.points} ĐIỂM</p>}
             <h1 className="text-title font-extrabold leading-tight text-text [@media(max-height:520px)]:text-body">{title}</h1>
-            {intro && <p className="mt-1 line-clamp-2 text-caption font-medium leading-relaxed text-muted [@media(max-height:520px)]:hidden">{intro}</p>}
+            {intro && (
+              <button
+                type="button"
+                onClick={() => setIntroOpen((v) => !v)}
+                aria-expanded={introOpen}
+                className="mt-1 flex w-full items-start gap-1 text-left [@media(max-height:520px)]:hidden"
+              >
+                <span className={`text-caption font-medium leading-relaxed text-muted ${introOpen ? '' : 'line-clamp-2'}`}>{intro}</span>
+                <Icon name="chevron-right" size={14} className={`mt-0.5 shrink-0 text-primary/70 transition-transform ${introOpen ? '-rotate-90' : 'rotate-90'}`} />
+              </button>
+            )}
           </div>
           {hud && <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 max-sm:w-full max-sm:justify-start max-sm:pl-[52px] [@media(max-height:520px)]:w-auto [@media(max-height:520px)]:pl-0">{hud}</div>}
         </header>

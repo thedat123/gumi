@@ -16,20 +16,17 @@ const yOf = (day: number) => TOP + (N - day) * RH;
 const xOf = (day: number) => (isMilestone(day) ? 210 : 210 + 128 * Math.sin(day * 0.8 + 0.4));
 const reached = (s: DayState) => s === 'checked' || s === 'passed' || s === 'open' || s === 'dying';
 
-// Ranh giới 3 vùng đất (theo y): trên cùng là Đỉnh 0% (Hồi 3), dưới cùng là Đầm Lầy (Hồi 1).
-const B23 = (yOf(ACT_STARTS[2]! - 1) + yOf(ACT_STARTS[2]!)) / 2; // giữa Hồi 2 (ngày 10) và Hồi 3 (ngày 11)
-const B12 = (yOf(ACT_STARTS[1]! - 1) + yOf(ACT_STARTS[1]!)) / 2; // giữa Hồi 1 (ngày 5) và Hồi 2 (ngày 6)
+// Ranh giới 2 vùng đất (theo y): trên là Rừng Đường Ẩn (Hồi 2, ngày 8–14), dưới là Đầm Lầy Ngọt (Hồi 1, ngày 1–7).
+const B12 = (yOf(ACT_STARTS[1]! - 1) + yOf(ACT_STARTS[1]!)) / 2; // giữa Hồi 1 (ngày 7) và Hồi 2 (ngày 8)
 const BANDS = [
-  { act: 3 as const, top: 0, height: B23 },
-  { act: 2 as const, top: B23, height: B12 - B23 },
+  { act: 2 as const, top: 0, height: B12 },
   { act: 1 as const, top: B12, height: H - B12 },
 ];
 
-// Nền 3 vùng đất — GRADIENT PHẲNG TĨNH (không hạt/sương/parallax) cho nhẹ trên mọi máy.
-const BAND_BG: Record<1 | 2 | 3, string> = {
+// Nền 2 vùng đất — GRADIENT PHẲNG TĨNH (không hạt/sương/parallax) cho nhẹ trên mọi máy.
+const BAND_BG: Record<1 | 2, string> = {
   1: 'linear-gradient(180deg, #4FB08C 0%, #1E8069 55%, #0E4F41 100%)', // Đầm Lầy Ngọt (xanh lá)
   2: 'linear-gradient(180deg, #8B6FB0 0%, #5B4E90 55%, #2C2456 100%)', // Rừng Đường Ẩn (tím)
-  3: 'linear-gradient(180deg, #CFE6F6 0%, #AFCFEC 55%, #8FB6E0 100%)', // Đỉnh 0% (xanh dương)
 };
 
 const NODE: Record<DayState, { face: string; text: string }> = {
@@ -110,7 +107,7 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
 
   return (
     <div className="journey-world relative w-full overflow-hidden border border-white/50 shadow-soft" style={{ height: H }}>
-      {/* Nền 3 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax) */}
+      {/* Nền 2 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax) */}
       {BANDS.map((b) => (
         <div key={b.act} aria-hidden="true" className="absolute inset-x-0" style={{ top: b.top, height: b.height, background: BAND_BG[b.act] }} />
       ))}
