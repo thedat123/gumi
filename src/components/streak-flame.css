@@ -13,3 +13,7 @@
 @media (prefers-reduced-motion: reduce) {
   .streak-flame-body, .streak-flame-middle, .streak-flame-ember { animation: none; }
 }
+/* Máy yếu + tầm trung: ngọn lửa chuỗi (hiện ở HUD mọi màn game) đứng yên cho nhẹ GPU. */
+html.gfx-low .streak-flame-body, html.gfx-mid .streak-flame-body,
+html.gfx-low .streak-flame-middle, html.gfx-mid .streak-flame-middle,
+html.gfx-low .streak-flame-ember, html.gfx-mid .streak-flame-ember { animation: none; }

@@ -22,8 +22,15 @@
 @keyframes bubble-rise { 0% { transform: translateY(0) scale(0.9); opacity: 0; } 15% { opacity: .8; } 100% { transform: translateY(-120vh) scale(1.1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .game-bg::before, .game-bubble { animation: none; } }
 html.rm .game-bubble { display: none; }
-html.gfx-low .game-bubble { display: none; }
-html.gfx-low .game-bg::before { animation: none; }
+/* Máy yếu + TẦM TRUNG (vd Galaxy A32): BỎ bong bóng + DỪNG nền động ở MỌI màn game.
+   Nền động là transform-animation trên lớp texture full-screen → recomposite liên tục, rất nặng GPU máy cũ
+   (JS adaptive không bắt được vì là chi phí PAINT, không phải long task) → đây là nguồn lag mọi màn game. */
+html.gfx-low .game-bubble, html.gfx-mid .game-bubble { display: none; }
+html.gfx-low .game-bg::before, html.gfx-mid .game-bg::before {
+  animation: none; inset: 0;
+  /* Nền MỘT lớp gradient phẳng (bỏ 3 vầng sáng + phóng to) → paint 1 lần, nhẹ bộ nhớ & băng thông GPU. */
+  background: linear-gradient(165deg, var(--g1) 0%, var(--g2) 52%, var(--g3) 100%);
+}
 
 /* ===== Ngày 21: Cat Sliding Puzzle ===== */
 .slide-arena {

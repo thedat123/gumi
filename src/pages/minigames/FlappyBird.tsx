@@ -29,7 +29,6 @@ export function FlappyBird() {
   const day = Number(dayParam) || 7;
   const m = vi.missions[day - 1];
   const act = actOfDay(day);
-  const low = getQuality().tier === 'low'; // máy siêu yếu: nền phẳng + bỏ mây cho nhẹ
 
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,7 +122,8 @@ export function FlappyBird() {
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
-    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, low });
+    // Đọc 'low' THEO KHUNG: khi vòng lặp tự hạ xuống low (máy đuối) thì nền phẳng + bỏ mây bật NGAY.
+    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, low: getQuality().tier === 'low' });
   });
 
   if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;

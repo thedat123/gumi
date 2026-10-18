@@ -78,6 +78,9 @@ function detect(): Tier {
   if (isSlowNetwork() || gpuIsWeak() || mem <= 2 || cores <= 2) return 'low';
   // Điện thoại KHÔNG báo RAM + ít nhân thường là máy đời thấp → coi là yếu để chạy mượt.
   if (mobile && !memKnown && cores <= 4) return 'low';
+  // Điện thoại budget RAM ≤ 4GB (vd Samsung Galaxy A32, Helio G80 GPU yếu) → hạng THẤP:
+  // nền game phẳng tĩnh, không blur, DPR thấp… cho NHẸ & MƯỢT nhất, không chờ adaptive phản ứng.
+  if (mobile && mem <= 4) return 'low';
   if (mem <= 4 || cores <= 4 || (mobile && (mem <= 6 || cores <= 6))) return 'mid';
   return 'high';
 }

@@ -24,8 +24,9 @@ export function useArcadeLoop(
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
     const q = getQuality();
-    // Game TOÀN MÀN vẽ lại 60 lần/s → DPR2 là phí; trần 1.5 vẫn nét mà nhẹ hơn ~44% pixel → mượt từ khung đầu.
-    let dprCap = Math.min(q.pixelRatio, 1.5);                // trần DPR hiện tại (hạ dần nếu máy đuối)
+    // Game TOÀN MÀN vẽ lại 60 lần/s → DPR cao là phí fill-rate (nặng nhất trên GPU máy cũ như Galaxy A32).
+    // Trần 1.25 vẫn nét cho game hoạt hình mà nhẹ hơn nhiều DPR2 → mượt từ khung đầu, rồi hạ tiếp nếu cần.
+    let dprCap = Math.min(q.pixelRatio, 1.25);               // trần DPR hiện tại (hạ dần nếu máy đuối)
     let targetFps = q.fpsCap > 0 ? q.fpsCap : 60;            // FPS mục tiêu để so sánh
     let frameInterval = q.fpsCap > 0 ? 1000 / q.fpsCap : 0;  // ms giữa 2 khung; 0 = không giới hạn
     let w = 1, h = 1;
@@ -60,13 +61,13 @@ export function useArcadeLoop(
       const dt = Math.min(0.05, Math.max(0, dtMs / 1000)); last = t; lastRender = t;
       frame.current(ctx, w, h, dt);
       winFrames++;
-      // PHẢN ỨNG NHANH: nhiều khung LIÊN TIẾP trễ hơn mục tiêu (máy không theo kịp) → hạ NGAY, không đợi hết cửa sổ.
+      // PHẢN ỨNG NHANH: 5 khung LIÊN TIẾP trễ hơn mục tiêu (~<44fps) → máy không theo kịp → hạ NGAY.
       const targetDt = 1000 / (targetFps || 60);
-      if (dtMs > targetDt * 1.5) { if (++slowStreak >= 6) { downgrade(); slowStreak = 0; } } else slowStreak = 0;
-      // Backstop theo cửa sổ ~0.6s: FPS trung bình vẫn thấp thì hạ tiếp.
+      if (dtMs > targetDt * 1.35) { if (++slowStreak >= 5) { downgrade(); slowStreak = 0; } } else slowStreak = 0;
+      // Backstop theo cửa sổ ~0.6s: FPS trung bình < 80% mục tiêu thì hạ tiếp (bắt cả máy chạy ~45–50fps cứ ì ạch).
       if (t - winStart >= 600) {
         const achieved = winFrames * 1000 / (t - winStart);
-        if (winFrames >= 4 && achieved < targetFps * 0.7) downgrade();
+        if (winFrames >= 4 && achieved < targetFps * 0.8) downgrade();
         winStart = t; winFrames = 0;
       }
     };
