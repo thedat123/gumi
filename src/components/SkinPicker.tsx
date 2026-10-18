@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useOutfit } from '../app/skin';
 import { vi } from '../content/vi';
 import { SLOTS, WARDROBE, JERSEY_COLORWAYS, isUnlocked, totalItems, unlockedItems, type Item, type Slot } from '../lib/wardrobe';
@@ -14,6 +14,22 @@ const PLACEMENT: Record<Slot, { title: string; hint: string; tag: string }> = {
   background: { title: 'Không gian sân khấu', hint: 'Thêm chút lấp lánh cho bộ đồ', tag: 'PHÔNG NỀN' },
 };
 
+/** Hé lộ danh sách theo TỪNG LÔ khi luồng chính rảnh (requestIdleCallback) → mở tủ đồ KHÔNG treo máy:
+ *  mỗi món là 1 Gumi SVG nặng, render hết cùng lúc sẽ khoá main thread vài giây trên máy cũ (A32). */
+function useBatchReveal(total: number, resetKey: unknown, step = 3): number {
+  const [shown, setShown] = useState(() => Math.min(step, total));
+  useEffect(() => { setShown(Math.min(step, total)); }, [resetKey, total, step]);
+  useEffect(() => {
+    if (shown >= total) return;
+    let cancelled = false;
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const grow = () => { if (!cancelled) setShown((s) => Math.min(total, s + step)); };
+    const id = w.requestIdleCallback ? w.requestIdleCallback(grow, { timeout: 250 }) : window.setTimeout(grow, 24);
+    return () => { cancelled = true; if (w.requestIdleCallback && w.cancelIdleCallback) w.cancelIdleCallback(id); else window.clearTimeout(id); };
+  }, [shown, total, step]);
+  return shown;
+}
+
 /** Tủ đồ PHỐI TỰ DO: chọn mũ / kính / khăn / màu / nền độc lập. Món chưa mở khoá hiện điều kiện. */
 export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: () => void }) {
   const { outfit, setPiece, reset } = useOutfit();
@@ -23,6 +39,7 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
   const total = totalItems();
   const pct = Math.round((haveCount / Math.max(1, total)) * 100);
   const placement = PLACEMENT[slot];
+  const shown = useBatchReveal(WARDROBE[slot].length, slot); // render từng lô cho mượt, không treo
 
   const tap = (item: Item) => {
     if (!isUnlocked(item, daysDone)) { setNote(vi.wardrobe.locked(item.unlockDays)); return; }
@@ -92,7 +109,7 @@ export function SkinPicker({ daysDone, onClose }: { daysDone: number; onClose: (
 
         {/* Lưới món của nhóm đang chọn */}
         <div className="wardrobe-items grid max-h-[32dvh] grid-cols-2 gap-2.5 overflow-auto p-4 pt-3 sm:grid-cols-3 lg:grid-cols-4">
-          {WARDROBE[slot].map((item) => {
+          {WARDROBE[slot].slice(0, shown).map((item) => {
             const unlocked = isUnlocked(item, daysDone);
             const active = outfit[slot] === item.id;
             const isNone = item.id === 'none';
