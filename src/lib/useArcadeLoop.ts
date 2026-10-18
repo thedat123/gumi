@@ -24,7 +24,8 @@ export function useArcadeLoop(
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
     const q = getQuality();
-    let dprCap = q.pixelRatio;                               // trần DPR hiện tại (hạ dần nếu máy đuối)
+    // Game TOÀN MÀN vẽ lại 60 lần/s → DPR2 là phí; trần 1.5 vẫn nét mà nhẹ hơn ~44% pixel → mượt từ khung đầu.
+    let dprCap = Math.min(q.pixelRatio, 1.5);                // trần DPR hiện tại (hạ dần nếu máy đuối)
     let targetFps = q.fpsCap > 0 ? q.fpsCap : 60;            // FPS mục tiêu để so sánh
     let frameInterval = q.fpsCap > 0 ? 1000 / q.fpsCap : 0;  // ms giữa 2 khung; 0 = không giới hạn
     let w = 1, h = 1;
@@ -38,27 +39,34 @@ export function useArcadeLoop(
     fit();
     const ro = new ResizeObserver(fit); ro.observe(box);
     let raf = 0, last = performance.now(), lastRender = last, stop = false;
-    // TỰ THÍCH ỨNG: đo FPS thật mỗi ~1s; không theo kịp mục tiêu → HẠ DPR (ít pixel = đòn mạnh nhất)
-    // + siết FPS + hạ CSS toàn app. Nhờ vậy máy bị CPU throttle / quá nhiệt / đời cũ vẫn chơi mượt.
-    let winStart = last, winFrames = 0, downgrades = 0;
+    // TỰ THÍCH ỨNG (kiểu game mobile): đo khung thật, máy không kịp → HẠ DPR (ít pixel = đòn mạnh nhất)
+    // + siết FPS + hạ CSS. PHẢN ỨNG NHANH trong vài khung để KHÔNG giật lúc mở, mượt từ đầu trên mọi máy.
+    let winStart = last, winFrames = 0, downgrades = 0, slowStreak = 0;
+    const downgrade = () => {
+      if (downgrades >= 4) return;
+      downgrades++;
+      dprCap = Math.max(0.6, dprCap * 0.75);   // giảm độ phân giải canvas (giảm pixel bậc hai)
+      targetFps = downgrades >= 2 ? 20 : 30;   // siết khung hình
+      frameInterval = 1000 / targetFps;
+      fit();
+      markDeviceSlow();                         // tắt blur/hiệu ứng CSS + làm nhẹ các mount sau
+    };
     const loop = (t: number) => {
       if (stop) return;
       raf = requestAnimationFrame(loop);
       // Giới hạn FPS: bỏ qua khung rAF chưa đủ thời gian (giữ -2ms để không hụt vì jitter).
       if (frameInterval && t - lastRender < frameInterval - 2) return;
-      const dt = Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t; lastRender = t;
+      const dtMs = t - last;
+      const dt = Math.min(0.05, Math.max(0, dtMs / 1000)); last = t; lastRender = t;
       frame.current(ctx, w, h, dt);
       winFrames++;
-      if (t - winStart >= 1000) {
+      // PHẢN ỨNG NHANH: nhiều khung LIÊN TIẾP trễ hơn mục tiêu (máy không theo kịp) → hạ NGAY, không đợi hết cửa sổ.
+      const targetDt = 1000 / (targetFps || 60);
+      if (dtMs > targetDt * 1.5) { if (++slowStreak >= 6) { downgrade(); slowStreak = 0; } } else slowStreak = 0;
+      // Backstop theo cửa sổ ~0.6s: FPS trung bình vẫn thấp thì hạ tiếp.
+      if (t - winStart >= 600) {
         const achieved = winFrames * 1000 / (t - winStart);
-        if (winFrames >= 5 && achieved < targetFps * 0.7 && downgrades < 4) {
-          downgrades++;
-          dprCap = Math.max(0.6, dprCap * 0.78);  // giảm độ phân giải canvas (giảm pixel bậc hai)
-          targetFps = downgrades >= 2 ? 20 : 30;  // siết khung hình
-          frameInterval = 1000 / targetFps;
-          fit();
-          markDeviceSlow();                        // tắt blur/hiệu ứng CSS + làm nhẹ các mount sau
-        }
+        if (winFrames >= 4 && achieved < targetFps * 0.7) downgrade();
         winStart = t; winFrames = 0;
       }
     };
