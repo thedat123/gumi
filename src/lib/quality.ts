@@ -118,3 +118,36 @@ export function applyGfxClass(): void {
   el.classList.remove('gfx-low', 'gfx-mid', 'gfx-high');
   el.classList.add(`gfx-${tier}`);
 }
+
+/**
+ * HẠ HẲN xuống hạng THẤP khi phát hiện máy thực sự ĐUỐI lúc chạy (FPS tụt) — kể cả khi
+ * dò ban đầu đoán là máy khoẻ (CPU bị throttle, quá nhiệt, máy cũ báo cấu hình ảo…).
+ * Dùng bởi useArcadeLoop khi game không theo kịp: tắt luôn blur/hiệu ứng ở CSS (gfx-low)
+ * và để các màn/mount sau tự nhẹ (nền game phẳng, không hạt). Chỉ hạ, không nâng lại.
+ */
+export function markDeviceSlow(): void {
+  if (!cached) getQuality();
+  if (!cached || cached.tier === 'low') return;
+  cached = { tier: 'low', reduce: cached.reduce, particles: false, ...PRESET.low };
+  applyGfxClass();
+}
+
+/**
+ * Giám sát thích ứng TOÀN APP: nếu thiết bị liên tục có "long task" (chạm bị khựng, INP cao)
+ * thì tự HẠ xuống hạng thấp — tắt blur/hiệu ứng ở MỌI màn (không chỉ game). Bắt được cả máy
+ * bị dò nhầm là khoẻ (CPU throttle, quá nhiệt, chạy nền nặng). Gọi 1 lần lúc khởi động.
+ */
+export function startAdaptiveQuality(): void {
+  if (typeof PerformanceObserver === 'undefined') return;
+  if (getQuality().tier === 'low') return; // đã thấp nhất, khỏi theo dõi
+  let longCount = 0, windowStart = (typeof performance !== 'undefined' ? performance.now() : 0);
+  try {
+    const po = new PerformanceObserver((list) => {
+      const now = performance.now();
+      if (now - windowStart > 5000) { longCount = 0; windowStart = now; } // cửa sổ trượt 5s
+      for (const e of list.getEntries()) if (e.duration >= 120) longCount++;
+      if (longCount >= 3) { po.disconnect(); markDeviceSlow(); } // 3 lần khựng/5s → máy đuối thật
+    });
+    po.observe({ entryTypes: ['longtask'] });
+  } catch { /* trình duyệt không hỗ trợ longtask */ }
+}

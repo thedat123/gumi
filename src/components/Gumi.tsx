@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { memo, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { Jersey } from './Jersey';
 export { Jersey } from './Jersey';
 import { vi } from '../content/vi';
@@ -270,7 +270,9 @@ const SPARKLES = [
 ];
 
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
-export function Gumi({ state, size = 200, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
+// memo: mascot SVG khá nặng → chỉ render lại khi props đổi (state/size/event/feed…), không theo mọi lần chạm phòng.
+export const Gumi = memo(GumiBase);
+function GumiBase({ state, size = 200, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
   const { outfit: ctxOutfit } = useOutfit();
   const headClipId = `gumi-head-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const outfit = propOutfit ?? ctxOutfit;

@@ -1,11 +1,13 @@
-import { useId } from 'react';
+import { memo, useId } from 'react';
 import { P } from './FurnitureSvg';
 import type { RoomVariant } from '../lib/furniture';
 import type { Weather } from './RoomScene3D';
 export type { RoomVariant } from '../lib/furniture';
 
 /** Vector architecture: the same crisp room on every device, with no WebGL/assets to load. */
-export function RoomScene({ act = 1, variant = 'living', weather = 'day', lights = true }: {
+// memo: chỉ vẽ lại khi act/variant/weather/lights đổi → chạm nút khác không redraw phòng.
+export const RoomScene = memo(RoomSceneBase);
+function RoomSceneBase({ act = 1, variant = 'living', weather = 'day', lights = true }: {
   act?: 1 | 2 | 3; variant?: RoomVariant; weather?: Weather; lights?: boolean;
 }) {
   const id = useId().replace(/:/g, '');

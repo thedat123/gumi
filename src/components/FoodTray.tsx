@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { vi } from '../content/vi';
 import { FoodArt } from './FoodArt';
@@ -9,7 +9,9 @@ type Food = (typeof vi.foodTray.foods)[number];
 type Gesture = { food: Food; pointer: number; x: number; y: number; moved: boolean };
 
 /** Tap, keyboard, mouse and touch share the same feeding action. */
-export function FoodTray({ onFeed }: { onFeed: (food: string) => void }) {
+// memo: khay ăn chỉ phụ thuộc onFeed (đã useCallback ở GumiRoom) → không render lại khi chạm nút khác.
+export const FoodTray = memo(FoodTrayBase);
+function FoodTrayBase({ onFeed }: { onFeed: (food: string) => void }) {
   const [drag, setDrag] = useState<{ food: Food; x: number; y: number } | null>(null);
   const [served, setServed] = useState<Food | null>(null);
   const gesture = useRef<Gesture | null>(null);

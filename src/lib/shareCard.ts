@@ -122,43 +122,57 @@ export async function renderCard(d: CardData): Promise<Blob> {
 
   g.fillStyle = onP; g.textAlign = 'center';
 
-  // tiêu đề
-  g.font = `800 58px ${font}`;
+  // tiêu đề (thu gọn để chừa khoảng trống dán ảnh phía dưới)
+  g.font = `800 56px ${font}`;
   const lines = wrap(g, d.heading, W - 160);
-  let y = 210;
-  for (const ln of lines) { g.fillText(ln, W / 2, y); y += 74; }
+  let y = 180;
+  for (const ln of lines) { g.fillText(ln, W / 2, y); y += 68; }
 
   // mascot THẬT
-  drawMascot(g, mascot, W / 2, 840, 460);
+  drawMascot(g, mascot, W / 2, 660, 340);
 
   // caption
-  g.font = `600 34px ${font}`;
-  const cap = wrap(g, d.caption, W - 200); let cy = 870;
-  g.globalAlpha = 0.95; for (const ln of cap) { g.fillText(ln, W / 2, cy); cy += 46; } g.globalAlpha = 1;
+  g.font = `600 32px ${font}`;
+  const cap = wrap(g, d.caption, W - 200); let cy = Math.max(y + 8, 712);
+  g.globalAlpha = 0.95; for (const ln of cap) { g.fillText(ln, W / 2, cy); cy += 44; } g.globalAlpha = 1;
 
   // lưới chỉ số 2×3
-  const pad = 80, gap = 28, cols = 2;
-  const cw = (W - pad * 2 - gap) / cols, ch = 150;
-  let gy = Math.max(cy + 30, 1000);
+  const pad = 80, gap = 24, cols = 2;
+  const cw = (W - pad * 2 - gap) / cols, ch = 128;
+  let gy = Math.max(cy + 24, 812);
   g.textAlign = 'left';
   d.metrics.slice(0, 6).forEach((mt, i) => {
     const col = i % cols, row = Math.floor(i / cols);
     const x = pad + col * (cw + gap), yy = gy + row * (ch + gap);
-    g.fillStyle = 'rgba(255,255,255,0.15)'; roundRect(g, x, yy, cw, ch, 26); g.fill();
-    g.fillStyle = onP; g.globalAlpha = 0.85; g.font = `600 26px ${font}`;
-    for (const [j, ln] of wrap(g, mt.label, cw - 48).slice(0, 2).entries()) g.fillText(ln, x + 26, yy + 46 + j * 30);
-    g.globalAlpha = 1; g.font = `800 44px ${font}`; g.fillText(mt.value, x + 26, yy + ch - 30);
+    g.fillStyle = 'rgba(255,255,255,0.15)'; roundRect(g, x, yy, cw, ch, 24); g.fill();
+    g.fillStyle = onP; g.globalAlpha = 0.85; g.font = `600 25px ${font}`;
+    for (const [j, ln] of wrap(g, mt.label, cw - 48).slice(0, 2).entries()) g.fillText(ln, x + 26, yy + 42 + j * 28);
+    g.globalAlpha = 1; g.font = `800 42px ${font}`; g.fillText(mt.value, x + 26, yy + ch - 26);
   });
   gy += 3 * (ch + gap);
 
   // tổng điểm
   g.textAlign = 'center';
-  g.fillStyle = 'rgba(255,255,255,0.18)'; roundRect(g, pad, gy + 6, W - pad * 2, 128, 30); g.fill();
-  g.fillStyle = onP; g.globalAlpha = 0.85; g.font = `600 30px ${font}`; g.fillText(d.totalLabel, W / 2, gy + 54);
-  g.globalAlpha = 1; g.font = `800 64px ${font}`; g.fillText(d.totalValue, W / 2, gy + 112);
+  g.fillStyle = 'rgba(255,255,255,0.18)'; roundRect(g, pad, gy + 2, W - pad * 2, 104, 28); g.fill();
+  g.fillStyle = onP; g.globalAlpha = 0.85; g.font = `600 28px ${font}`; g.fillText(d.totalLabel, W / 2, gy + 44);
+  g.globalAlpha = 1; g.font = `800 56px ${font}`; g.fillText(d.totalValue, W / 2, gy + 92);
+
+  // Ô TRỐNG (viền nét đứt) để người chơi dán ảnh của mình khi đăng Story.
+  const bX = 80, bW = W - 160, bY = gy + 134, bH = (H - 150) - (gy + 134);
+  g.save();
+  g.fillStyle = 'rgba(255,255,255,0.06)'; roundRect(g, bX, bY, bW, bH, 30); g.fill();
+  g.setLineDash([18, 14]); g.lineWidth = 4; g.strokeStyle = 'rgba(255,255,255,0.55)';
+  roundRect(g, bX, bY, bW, bH, 30); g.stroke();
+  g.restore();
+  const bCY = bY + bH / 2;
+  g.textAlign = 'center'; g.fillStyle = onP;
+  g.globalAlpha = 0.85; g.font = `400 64px ${font}`; g.fillText('📷', W / 2, bCY - 18);
+  g.globalAlpha = 0.9; g.font = `700 36px ${font}`; g.fillText('Dán ảnh của bạn', W / 2, bCY + 44);
+  g.globalAlpha = 0.7; g.font = `500 28px ${font}`; g.fillText('vào khoảng trống này nhé', W / 2, bCY + 86);
+  g.globalAlpha = 1;
 
   // thương hiệu
-  g.globalAlpha = 0.9; g.font = `700 32px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 70); g.globalAlpha = 1;
+  g.globalAlpha = 0.9; g.font = `700 32px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 64); g.globalAlpha = 1;
 
   return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }
@@ -207,36 +221,51 @@ export async function renderSharePoster(d: {
   g.fillStyle = 'rgba(255,255,255,0.16)'; roundRect(g, (W - ew) / 2, 236, ew, 78, 39); g.fill();
   g.fillStyle = gold; g.fillText(d.heading, W / 2, 288);
 
-  // mascot THẬT
-  drawMascot(g, mascot, W / 2, 820, 440);
+  // mascot THẬT (thu gọn để chừa khoảng trống dán ảnh ở nửa dưới)
+  drawMascot(g, mascot, W / 2, 700, 360);
 
-  // Dòng lớn (ngày X/21) — vàng nổi bật.
-  g.fillStyle = gold; g.font = `900 112px ${font}`;
-  g.fillText(d.big, W / 2, 980);
+  // Dòng lớn (ngày X/14) — vàng nổi bật; thu nhỏ 1 xíu để nén bố cục.
+  g.fillStyle = gold; g.font = `900 96px ${font}`;
+  g.fillText(d.big, W / 2, 824);
 
   // Số liệu thật dạng 3 ô.
   const stats = (d.stats ?? []).slice(0, 3);
-  let subY = 1180;
+  let subY = 1010;
   if (stats.length) {
     const pad = 70, gap = 24, n = stats.length;
-    const cw = (W - pad * 2 - gap * (n - 1)) / n, ch = 210, cy = 1060;
+    const cw = (W - pad * 2 - gap * (n - 1)) / n, ch = 188, cy = 884;
     stats.forEach((st, i) => {
       const x = pad + i * (cw + gap);
       g.fillStyle = 'rgba(255,255,255,0.14)'; roundRect(g, x, cy, cw, ch, 30); g.fill();
-      g.fillStyle = gold; g.font = `900 76px ${font}`; g.fillText(st.value, x + cw / 2, cy + 104);
+      g.fillStyle = gold; g.font = `900 72px ${font}`; g.fillText(st.value, x + cw / 2, cy + 96);
       g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `600 26px ${font}`;
-      wrap(g, st.label, cw - 28).slice(0, 2).forEach((ln, j) => g.fillText(ln, x + cw / 2, cy + 150 + j * 32));
+      wrap(g, st.label, cw - 28).slice(0, 2).forEach((ln, j) => g.fillText(ln, x + cw / 2, cy + 138 + j * 32));
       g.globalAlpha = 1;
     });
-    subY = cy + ch + 90;
+    subY = cy + ch + 74;
   }
 
   // CTA phụ đề.
-  g.fillStyle = onP; g.font = `600 42px ${font}`; g.globalAlpha = 0.95;
-  for (const ln of wrap(g, d.subtitle, W - 200)) { g.fillText(ln, W / 2, subY); subY += 58; }
+  g.fillStyle = onP; g.font = `600 38px ${font}`; g.globalAlpha = 0.95;
+  for (const ln of wrap(g, d.subtitle, W - 200)) { g.fillText(ln, W / 2, subY); subY += 50; }
   g.globalAlpha = 1;
 
-  g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `700 34px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 80); g.globalAlpha = 1;
+  // Ô TRỐNG (viền nét đứt) để người chơi dán ảnh ly nước của mình khi đăng Story.
+  const boxX = 70, boxW = W - 140;
+  const boxY = Math.max(subY + 24, 1260), boxBottom = H - 150, boxH = boxBottom - boxY;
+  g.save();
+  g.fillStyle = 'rgba(255,255,255,0.06)'; roundRect(g, boxX, boxY, boxW, boxH, 34); g.fill();
+  g.setLineDash([18, 14]); g.lineWidth = 4; g.strokeStyle = 'rgba(255,255,255,0.55)';
+  roundRect(g, boxX, boxY, boxW, boxH, 34); g.stroke();
+  g.restore();
+  const boxCY = boxY + boxH / 2;
+  g.textAlign = 'center'; g.fillStyle = onP;
+  g.globalAlpha = 0.85; g.font = `400 72px ${font}`; g.fillText('📷', W / 2, boxCY - 24);
+  g.globalAlpha = 0.9; g.font = `700 40px ${font}`; g.fillText('Dán ảnh ly nước của bạn', W / 2, boxCY + 48);
+  g.globalAlpha = 0.7; g.font = `500 30px ${font}`; g.fillText('vào khoảng trống này nhé', W / 2, boxCY + 96);
+  g.globalAlpha = 1;
+
+  g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `700 34px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 70); g.globalAlpha = 1;
 
   return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }

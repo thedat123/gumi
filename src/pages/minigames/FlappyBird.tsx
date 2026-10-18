@@ -8,6 +8,7 @@ import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
 import { playSfx } from '../../lib/sfx';
 import { useArcadeLoop } from '../../lib/useArcadeLoop';
+import { getQuality } from '../../lib/quality';
 import { vi } from '../../content/vi';
 
 const PASS = 20;  // qua 20 cột = ĐẠT (tính streak) — pass rồi KHÔNG cho chơi lại
@@ -28,6 +29,7 @@ export function FlappyBird() {
   const day = Number(dayParam) || 7;
   const m = vi.missions[day - 1];
   const act = actOfDay(day);
+  const low = getQuality().tier === 'low'; // máy siêu yếu: nền phẳng + bỏ mây cho nhẹ
 
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -121,7 +123,7 @@ export function FlappyBird() {
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
-    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha });
+    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, low });
   });
 
   if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
@@ -133,7 +135,7 @@ export function FlappyBird() {
   );
 
   return (
-    <ArcadeStage act={act} title="Bay Qua Cơn Thèm" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
+    <ArcadeStage act={act} title="Flappy Gumi" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
       overlay={
         mode === 'ready' ? (
           <ArcadeOverlay>
@@ -154,15 +156,20 @@ export function FlappyBird() {
 
 /* ---- Vẽ ---- */
 const SKY: Record<1 | 2 | 3, [string, string]> = { 1: ['#BFE9FB', '#F6E8DC'], 2: ['#CDE7C6', '#EFE2C4'], 3: ['#CFE6FA', '#EAF2FB'] };
-function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act: 1 | 2 | 3, d: { birdX: number; birdR: number; gap: number; pipeW: number; alpha: number }) {
+function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act: 1 | 2 | 3, d: { birdX: number; birdR: number; gap: number; pipeW: number; alpha: number; low?: boolean }) {
   const a = d.alpha;
   const by = s.byPrev + (s.by - s.byPrev) * a;           // vị trí chim đã nội suy
   const [c0, c1] = SKY[act];
-  const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, c0); sky.addColorStop(1, c1);
-  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
-  // mây mềm
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  for (let i = 0; i < 3; i++) { const cx = ((s.t * 12 + i * w * 0.42) % (w + 160)) - 80, cy = h * (0.14 + i * 0.12); cloud(ctx, cx, cy, 26 + i * 6); }
+  // Máy siêu yếu: tô nền MỘT MÀU (rẻ hơn gradient toàn màn mỗi khung) và BỎ mây trang trí.
+  if (d.low) {
+    ctx.fillStyle = c0; ctx.fillRect(0, 0, w, h);
+  } else {
+    const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, c0); sky.addColorStop(1, c1);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+    // mây mềm
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let i = 0; i < 3; i++) { const cx = ((s.t * 12 + i * w * 0.42) % (w + 160)) - 80, cy = h * (0.14 + i * 0.12); cloud(ctx, cx, cy, 26 + i * 6); }
+  }
 
   // cột "kẹo đường" (nội suy vị trí ngang → cuộn mượt tuyệt đối)
   for (const p of s.pipes) {

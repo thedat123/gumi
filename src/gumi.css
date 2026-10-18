@@ -112,6 +112,10 @@
 @keyframes bg-float { 0%, 100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(-10px); opacity: 0.9; } }
 .bg-twinkle { animation: bg-twinkle 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes bg-twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+/* Máy yếu + tầm trung: đóng băng hạt trang trí nền (giữ Gumi thở/chớp mắt) cho mượt. */
+html.gfx-low .bg-spin, html.gfx-mid .bg-spin,
+html.gfx-low .bg-float, html.gfx-mid .bg-float,
+html.gfx-low .bg-twinkle, html.gfx-mid .bg-twinkle { animation: none; }
 
 /* --- tạm dừng khi tab ẩn hoặc mascot ra ngoài màn hình (tiết kiệm pin) --- */
 .gumi[data-paused="true"] * { animation-play-state: paused !important; }

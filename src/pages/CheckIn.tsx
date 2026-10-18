@@ -13,6 +13,7 @@ import { playSfx } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { errorCode, messageFor } from '../lib/errors';
 import { copyText } from '../lib/shareCard';
+import { isSlowNetwork } from '../lib/quality';
 import type { VisionResult } from '../lib/vision';
 import type { VlmResult } from '../lib/vlm';
 import type { SugarLevel } from '../lib/sugar';
@@ -98,9 +99,7 @@ export function CheckIn() {
   // tránh ngốn data & làm khựng máy yếu ngay khi mở màn check-in.
   useEffect(() => {
     if (!needsStamp) return;
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-    const stingy = !!conn && (conn.saveData === true || /(^|-)2g$/.test(conn.effectiveType ?? ''));
-    if (stingy) return;
+    if (isSlowNetwork()) return; // 3G / 2G / tiết kiệm dữ liệu: KHÔNG pre-warm model ~21MB
     let cancel = false;
     (async () => {
       const [{ gcvAvailable }, { vlmAvailable }] = await Promise.all([import('../lib/gcv'), import('../lib/vlm')]);
@@ -144,7 +143,15 @@ export function CheckIn() {
       return;
     }
 
-    // 3) On-device: CLIP nhận diện đồ uống TRƯỚC (đã nạp sẵn → nhanh, dưới ~2s).
+    // 3) MẠNG CHẬM (3G/2G): KHÔNG tải model on-device ~21MB (sẽ treo) → gửi thẳng duyệt tay.
+    if (isSlowNetwork()) {
+      applyEvidence({ available: true, ran: false, ok: false, isDrink: false, drink: '',
+        sugarPercent: null, isUnsweetened: false, confidence: 0,
+        reason: 'Mạng đang chậm nên chưa nhận diện tự động được. Ảnh sẽ được gửi ban tổ chức duyệt tay.' });
+      return;
+    }
+
+    // 3b) On-device: CLIP nhận diện đồ uống TRƯỚC (đã nạp sẵn → nhanh, dưới ~2s).
     const { detectDrink, fileToImage } = await import('../lib/vision');
     let img: HTMLImageElement | null = null;
     try { img = await fileToImage(f); } catch { /* ảnh lỗi */ }

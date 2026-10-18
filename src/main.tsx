@@ -6,9 +6,10 @@ import './room.css';
 import './game.css';
 import { App } from './App';
 import { registerSW } from './pwa';
-import { applyGfxClass } from './lib/quality';
+import { applyGfxClass, isSlowNetwork, startAdaptiveQuality } from './lib/quality';
 
 applyGfxClass(); // gắn hạng đồ hoạ (gfx-low|mid|high) lên <html> để CSS + cảnh 3D hạ tải theo máy
+startAdaptiveQuality(); // tự hạ hạng nếu máy khựng thật (bắt cả máy dò nhầm là khoẻ)
 
 // Preconnect Supabase NGAY khi tải HTML → tiết kiệm DNS + TLS cho lần gọi auth/API đầu tiên.
 const sbUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -32,11 +33,15 @@ registerSW();
 
 // Lúc máy rảnh sau lần vẽ đầu: tải trước các chunk route hay dùng để ĐIỀU HƯỚNG trong app tức thì
 // (không tranh băng thông với màn đầu — chỉ chạy khi trình duyệt idle).
+// MẠNG 3G / tiết kiệm dữ liệu: BỎ prefetch → nhường toàn bộ băng thông cho màn đang mở,
+// các chunk sẽ tải đúng lúc điều hướng (có spinner ngắn, chấp nhận được trên 3G).
 const idle = (cb: () => void) =>
   (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback?.(cb)
   ?? setTimeout(cb, 1800);
-idle(() => {
-  void import('./pages/Dashboard');
-  void import('./pages/Leaderboard');
-  void import('./pages/GumiRoom');
-});
+if (!isSlowNetwork()) {
+  idle(() => {
+    void import('./pages/Dashboard');
+    void import('./pages/Leaderboard');
+    void import('./pages/GumiRoom');
+  });
+}

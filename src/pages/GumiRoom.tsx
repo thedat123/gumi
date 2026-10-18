@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
@@ -75,8 +75,13 @@ export function GumiRoom() {
   }, []);
   const gumiSize = useGumiSize();
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
-  const feedGumi = (food: string) => setFeed((f) => ({ food, key: (f?.key ?? 0) + 1 }));
-  const toggleMute = () => { const m = !muted; setMuted(m); setMutedState(m); };
+  const feedGumi = useCallback((food: string) => setFeed((f) => ({ food, key: (f?.key ?? 0) + 1 })), []);
+  // Callback ỔN ĐỊNH (useCallback) để các khối HUD/điều khiển/dock đã memo không re-render oan mỗi lần chạm.
+  const toggleMute = useCallback(() => setMutedState((m) => { const nv = !m; setMuted(nv); return nv; }), []);
+  const openPass = useCallback(() => setDialog(true), []);
+  const toggleDay = useCallback(() => setIsDay((v) => !v), []);
+  const startDecorate = useCallback(() => { setDecorate(true); setDrawerOpen(true); }, []);
+  const openWardrobe = useCallback(() => setWardrobe(true), []);
   const changeRoom = (dir: 1 | -1) => { setSlide(dir > 0 ? 'left' : 'right'); setRoomIdx((i) => (i + dir + ROOMS.length) % ROOMS.length); };
   const exitDecorate = () => { setDecorate(false); setDrawerOpen(false); };
 
@@ -113,39 +118,8 @@ export function GumiRoom() {
                 <div className="room-title"><span className="room-title-icon"><Icon name="paw" size={24} /></span><div><p>NGÔI NHÀ NHỎ CỦA BẠN</p><h1>Gumi Room<span>✦</span></h1></div></div>
                 <span className="room-collection"><Icon name="sofa" size={15} />{decor[room].length} món đã bày</span>
               </header>
-              {!decorate && <div className="room-status">                <div className="flex items-start justify-between gap-1.5 sm:gap-2">
-                  <span className="flex h-14 w-14 flex-col items-center justify-center rounded-card border-2 border-surface bg-primary text-on-primary shadow-pop sm:h-16 sm:w-16">
-                    <span className="text-[10px] font-semibold uppercase leading-none opacity-85 sm:text-caption">Ngày</span>
-                    <span className="text-title font-bold leading-none sm:text-headline">{Math.max(s.day, 0)}</span>
-                  </span>
-
-                  <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                    <div className="flex gap-1.5 sm:gap-2">
-                      <Stat icon="star" iconClass="text-accent" value={`${s.totalPoints}`} />
-                      <Stat icon="flame" iconClass="text-primary" value={`${s.streak}`} />
-                      <Stat icon="medal" iconClass="text-info" value={s.rank ? `#${s.rank}` : '—'} />
-                    </div>
-                    <button type="button" onClick={() => setDialog(true)} aria-label={`Bùa Hồi Sinh: còn ${s.passesLeft}. Bấm để xem`}
-                      className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur transition-transform hover:brightness-95 active:scale-95">
-                      {[0, 1].map((i) => <Icon key={i} name="heart" size={15} filled={i < s.passesLeft} className={i < s.passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
-                    </button>
-                  </div>
-
-                  <Link to="/me" className="flex h-14 w-14 items-center justify-center rounded-card border border-border bg-surface text-muted shadow-soft transition-transform active:scale-95 sm:h-16 sm:w-16" aria-label="Hồ sơ"><Icon name="paw" size={24} className="text-primary" /></Link>
-                </div>
-
-</div>}
-              {!decorate &&                 <div className="room-controls flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-pill bg-surface/85 px-3 py-1.5 text-small font-bold shadow-soft backdrop-blur">
-                    <Icon name={ROOMS[roomIdx]!.icon} size={17} className="text-primary" />{ROOMS[roomIdx]!.name}
-                    <span className="ml-1 flex gap-1">{ROOMS.map((_, i) => <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === roomIdx ? 'bg-primary' : 'bg-border-strong/30'}`} />)}</span>
-                  </span>
-                  <button type="button" onClick={() => { setDecorate(true); setDrawerOpen(true); }} aria-label={vi.furniture.decorate} title={vi.furniture.decorate} className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name="sofa" size={16} className="text-primary" />{vi.furniture.decorate}</button>
-                  <button type="button" onClick={() => setIsDay((v) => !v)} aria-label={isDay ? 'Chuyển sang ban đêm' : 'Chuyển sang ban ngày'} title={isDay ? 'Ban ngày' : 'Ban đêm'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={isDay ? 'sun' : 'moon'} size={18} className={isDay ? 'text-accent' : 'text-info'} /></button>
-                  <button type="button" onClick={toggleMute} aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={muted ? 'volume-off' : 'volume'} size={18} /></button>
-                </div>
-
-}
+              {!decorate && <RoomHud day={s.day} points={s.totalPoints} streak={s.streak} rank={s.rank} passesLeft={s.passesLeft} onOpenPass={openPass} />}
+              {!decorate && <RoomControls roomIdx={roomIdx} isDay={isDay} muted={muted} onDecorate={startDecorate} onToggleDay={toggleDay} onToggleMute={toggleMute} />}
               <div className="room-play-layout">
                 <section className="room-stage" aria-label={ROOMS[roomIdx]!.name}>
                   <div key={roomIdx} className={`room-world absolute inset-0 ${slide === 'left' ? 'room-in-left' : slide === 'right' ? 'room-in-right' : ''}`}>
@@ -206,12 +180,7 @@ export function GumiRoom() {
                     </button>
                   )}
 
-                  <div className="room-dock flex justify-center gap-2 sm:gap-2.5">
-                    <Dock to="/journey" icon="map" label="Bản đồ" badge={`${done}/${vi.journey.total}`} />
-                    <Dock to="/leaderboard" icon="trophy" label="Xếp hạng" badge={s.rank ? `#${s.rank}` : undefined} />
-                    <DockButton icon="shirt" label={vi.wardrobe.dock} onClick={() => setWardrobe(true)} />
-                    <Dock to="/summary" icon="camera" label="Card" />
-                  </div>
+                  <RoomDock done={done} rank={s.rank} onWardrobe={openWardrobe} />
                 </div>
 }
               </div>
@@ -249,6 +218,66 @@ export function GumiRoom() {
     </AsyncView>
   );
 }
+
+// ——— Shell tách thành component MEMO: chạm nút chỉ render lại khối liên quan, không re-render cả phòng ———
+// Markup giữ NGUYÊN như cũ, chỉ nhận props nguyên thuỷ + callback ổn định để memo có hiệu lực.
+
+/** HUD trên: badge Ngày, 3 chỉ số, bùa hồi sinh, nút hồ sơ. */
+const RoomHud = memo(function RoomHud({ day, points, streak, rank, passesLeft, onOpenPass }: {
+  day: number; points: number; streak: number; rank?: number | null; passesLeft: number; onOpenPass: () => void;
+}) {
+  return (
+    <div className="room-status">
+      <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+        <span className="flex h-14 w-14 flex-col items-center justify-center rounded-card border-2 border-surface bg-primary text-on-primary shadow-pop sm:h-16 sm:w-16">
+          <span className="text-[10px] font-semibold uppercase leading-none opacity-85 sm:text-caption">Ngày</span>
+          <span className="text-title font-bold leading-none sm:text-headline">{Math.max(day, 0)}</span>
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+          <div className="flex gap-1.5 sm:gap-2">
+            <Stat icon="star" iconClass="text-accent" value={`${points}`} />
+            <Stat icon="flame" iconClass="text-primary" value={`${streak}`} />
+            <Stat icon="medal" iconClass="text-info" value={rank ? `#${rank}` : '—'} />
+          </div>
+          <button type="button" onClick={onOpenPass} aria-label={`Bùa Hồi Sinh: còn ${passesLeft}. Bấm để xem`}
+            className="flex items-center gap-1 rounded-pill bg-surface/85 px-2.5 py-1 shadow-soft backdrop-blur transition-transform hover:brightness-95 active:scale-95">
+            {[0, 1].map((i) => <Icon key={i} name="heart" size={15} filled={i < passesLeft} className={i < passesLeft ? 'text-primary' : 'text-border-strong/40'} />)}
+          </button>
+        </div>
+        <Link to="/me" className="flex h-14 w-14 items-center justify-center rounded-card border border-border bg-surface text-muted shadow-soft transition-transform active:scale-95 sm:h-16 sm:w-16" aria-label="Hồ sơ"><Icon name="paw" size={24} className="text-primary" /></Link>
+      </div>
+    </div>
+  );
+});
+
+/** Thanh điều khiển: tên phòng + chấm, trang trí, ngày/đêm, âm thanh. */
+const RoomControls = memo(function RoomControls({ roomIdx, isDay, muted, onDecorate, onToggleDay, onToggleMute }: {
+  roomIdx: number; isDay: boolean; muted: boolean; onDecorate: () => void; onToggleDay: () => void; onToggleMute: () => void;
+}) {
+  return (
+    <div className="room-controls flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+      <span className="inline-flex items-center gap-2 rounded-pill bg-surface/85 px-3 py-1.5 text-small font-bold shadow-soft backdrop-blur">
+        <Icon name={ROOMS[roomIdx]!.icon} size={17} className="text-primary" />{ROOMS[roomIdx]!.name}
+        <span className="ml-1 flex gap-1">{ROOMS.map((_, i) => <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === roomIdx ? 'bg-primary' : 'bg-border-strong/30'}`} />)}</span>
+      </span>
+      <button type="button" onClick={onDecorate} aria-label={vi.furniture.decorate} title={vi.furniture.decorate} className="flex h-9 items-center gap-1.5 rounded-pill bg-surface/85 px-3 text-caption font-semibold text-muted shadow-soft backdrop-blur active:scale-90"><Icon name="sofa" size={16} className="text-primary" />{vi.furniture.decorate}</button>
+      <button type="button" onClick={onToggleDay} aria-label={isDay ? 'Chuyển sang ban đêm' : 'Chuyển sang ban ngày'} title={isDay ? 'Ban ngày' : 'Ban đêm'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={isDay ? 'sun' : 'moon'} size={18} className={isDay ? 'text-accent' : 'text-info'} /></button>
+      <button type="button" onClick={onToggleMute} aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} className="flex h-9 w-9 items-center justify-center rounded-pill bg-surface/85 text-muted shadow-soft backdrop-blur active:scale-90"><Icon name={muted ? 'volume-off' : 'volume'} size={18} /></button>
+    </div>
+  );
+});
+
+/** Dock dưới: Bản đồ, Xếp hạng, Tủ đồ, Card. */
+const RoomDock = memo(function RoomDock({ done, rank, onWardrobe }: { done: number; rank?: number | null; onWardrobe: () => void }) {
+  return (
+    <div className="room-dock flex justify-center gap-2 sm:gap-2.5">
+      <Dock to="/journey" icon="map" label="Bản đồ" badge={`${done}/${vi.journey.total}`} />
+      <Dock to="/leaderboard" icon="trophy" label="Xếp hạng" badge={rank ? `#${rank}` : undefined} />
+      <DockButton icon="shirt" label={vi.wardrobe.dock} onClick={onWardrobe} />
+      <Dock to="/summary" icon="camera" label="Card" />
+    </div>
+  );
+});
 
 function Stat({ icon, iconClass, value, label }: { icon: IconName; iconClass?: string; value: string; label?: string }) {
   return (
