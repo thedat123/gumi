@@ -175,8 +175,8 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
   for (const p of s.pipes) {
     const px = p.xPrev + (p.x - p.xPrev) * a;
     const top = p.gapY - d.gap / 2, bot = p.gapY + d.gap / 2;
-    pipe(ctx, px, 0, d.pipeW, top, true);
-    pipe(ctx, px, bot, d.pipeW, h - bot, false);
+    pipe(ctx, px, 0, d.pipeW, top, true, d.low);
+    pipe(ctx, px, bot, d.pipeW, h - bot, false, d.low);
   }
 
   // đất
@@ -188,12 +188,15 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
   ctx.save();
   ctx.translate(d.birdX, by); ctx.rotate(rot * .3);
   const r = d.birdR;
-  // Three thrusters brighten immediately on input, then cool down.
-  for (const offset of [-.65, 0, .65]) {
-    const length = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + offset) * .2));
-    const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + length);
-    glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
-    ctx.fillStyle = glow; ctx.beginPath(); ctx.moveTo(offset * r - r * .15, r * .4); ctx.quadraticCurveTo(offset * r - r * .22, r * .8, offset * r, r * .4 + length); ctx.quadraticCurveTo(offset * r + r * .22, r * .8, offset * r + r * .15, r * .4); ctx.fill();
+  // Lửa phụt (3 gradient + 3 đường cong mỗi khung) rất tốn — BỎ trên máy yếu, chỉ giữ ảnh UFO.
+  if (!d.low) {
+    // Three thrusters brighten immediately on input, then cool down.
+    for (const offset of [-.65, 0, .65]) {
+      const length = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + offset) * .2));
+      const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + length);
+      glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.moveTo(offset * r - r * .15, r * .4); ctx.quadraticCurveTo(offset * r - r * .22, r * .8, offset * r, r * .4 + length); ctx.quadraticCurveTo(offset * r + r * .22, r * .8, offset * r + r * .15, r * .4); ctx.fill();
+    }
   }
   if (ufoArt.complete && ufoArt.naturalWidth) ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
   ctx.restore();
@@ -203,7 +206,15 @@ function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
   ctx.arc(x, y, r, 0, 7); ctx.arc(x + r, y + r * 0.2, r * 0.8, 0, 7); ctx.arc(x - r, y + r * 0.2, r * 0.75, 0, 7); ctx.arc(x + r * 0.4, y - r * 0.5, r * 0.7, 0, 7);
   ctx.fill();
 }
-function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh: number, top: boolean) {
+function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh: number, top: boolean, low?: boolean) {
+  if (low) {
+    // Máy yếu: cột PHẲNG 1 màu + nắp, bỏ gradient + highlight → mỗi khung siêu nhẹ, 30fps ổn định.
+    ctx.fillStyle = '#EE7DA0'; round(ctx, x, y, w, hh, 8); ctx.fill();
+    ctx.fillStyle = '#C94E74';
+    const capHl = Math.min(18, w * 0.4);
+    round(ctx, x - 4, top ? y + hh - capHl : y, w + 8, capHl, 6); ctx.fill();
+    return;
+  }
   const body = ctx.createLinearGradient(x, 0, x + w, 0);
   body.addColorStop(0, '#F2A0B8'); body.addColorStop(0.5, '#EE7DA0'); body.addColorStop(1, '#D45E82');
   ctx.fillStyle = body; round(ctx, x, y, w, hh, 8); ctx.fill();

@@ -11,8 +11,15 @@ export function registerSW() {
     window.location.reload();
   });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
-      reg.update().catch(() => { /* chủ động kiểm tra bản mới mỗi lần mở app */ });
+    // updateViaCache:'none' → trình duyệt LUÔN tải sw.js từ mạng khi kiểm tra (bỏ qua HTTP cache)
+    // → phát hiện deploy mới ngay cả trên PWA ĐÃ CÀI. (sw.js cũng đã no-cache ở _headers.)
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => {
+      const check = () => reg.update().catch(() => { /* bỏ qua lỗi mạng */ });
+      check(); // kiểm tra ngay khi mở
+      // PWA đã cài thường KHÔNG tải lại trang → kiểm tra bản mới mỗi khi app QUAY LẠI TIỀN CẢNH.
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+      // Phiên mở lâu (để app chạy nền) → kiểm tra định kỳ 30 phút.
+      setInterval(check, 30 * 60 * 1000);
     }).catch(() => {
       // Không chặn app nếu SW lỗi.
     });

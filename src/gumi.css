@@ -116,6 +116,9 @@
 html.gfx-low .bg-spin, html.gfx-mid .bg-spin,
 html.gfx-low .bg-float, html.gfx-mid .bg-float,
 html.gfx-low .bg-twinkle, html.gfx-mid .bg-twinkle { animation: none; }
+/* Máy YẾU (vd Galaxy A32): mascot NGỪNG thở/chớp mắt. Mascot luôn hiện ở phòng → animation transform
+   của nó bắt GPU recomposite cả layer mỗi khung; tắt đi là phòng gần như KHÔNG còn repaint → siêu mượt. */
+html.gfx-low .g-breath, html.gfx-low .g-eyes-open, html.gfx-low .g-eyes-closed { animation: none !important; }
 
 /* --- tạm dừng khi tab ẩn hoặc mascot ra ngoài màn hình (tiết kiệm pin) --- */
 .gumi[data-paused="true"] * { animation-play-state: paused !important; }

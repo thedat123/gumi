@@ -9,6 +9,9 @@
 /icons/*
   Cache-Control: public, max-age=604800
 
+/
+  Cache-Control: no-cache
+
 /index.html
   Cache-Control: no-cache
 

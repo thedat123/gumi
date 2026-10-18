@@ -283,3 +283,12 @@ html.gfx-low .jroad-flow, html.gfx-low .jbeacon-glow, html.gfx-low .jbeacon-ring
 html.gfx-low .scene-far, html.gfx-low .scene-mid { transform: none !important; }
 html.gfx-low .scene-mist, html.gfx-low .scene-near, html.gfx-low .scene-cloud { animation: none !important; }
 html.gfx-low .scene-bit { display: none; }
+/* Còn sót chạy LIÊN TỤC trên gfx-low: node hôm nay nhấp nháy, vòng node, cây đung đưa → tắt nốt. */
+html.gfx-low .node-today, html.gfx-low .jn-ring, html.gfx-low .scene-decor { animation: none !important; }
+
+/* TẦM TRUNG (gfx-mid): bản đồ cũng nặng (15 đốm + tia + beacon + mote + nền cuộn) → áp dụng y như low. */
+html.gfx-mid .jrays, html.gfx-mid .jmote, html.gfx-mid .scene-bit { display: none; }
+html.gfx-mid .jroad-flow, html.gfx-mid .jbeacon-glow, html.gfx-mid .jbeacon-ring,
+html.gfx-mid .scene-mist, html.gfx-mid .scene-near, html.gfx-mid .scene-cloud,
+html.gfx-mid .node-today, html.gfx-mid .jn-ring, html.gfx-mid .scene-decor { animation: none !important; }
+html.gfx-mid .scene-far, html.gfx-mid .scene-mid { transform: none !important; }
