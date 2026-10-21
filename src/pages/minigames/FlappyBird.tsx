@@ -196,11 +196,12 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
 
   // --- Cột đường ---
   for (const p of s.pipes) {
-    const px = (p.xPrev + (p.x - p.xPrev) * d.alpha) | 0; // integer x → không bị subpixel
-    const topH = (p.gapY - d.gap / 2) | 0;
-    const botY = (p.gapY + d.gap / 2) | 0;
+    const px = (p.xPrev + (p.x - p.xPrev) * d.alpha) | 0;
+    // Clamp về [0, h] để tránh height âm khi gap gần mép canvas (gây IndexSizeError ở arcTo)
+    const topH = Math.max(0, (p.gapY - d.gap / 2) | 0);
+    const botY = Math.min(h, (p.gapY + d.gap / 2) | 0);
     pipe(ctx, px, 0, d.pipeW, topH, true, tier);
-    pipe(ctx, px, botY, d.pipeW, h - botY, false, tier);
+    pipe(ctx, px, botY, d.pipeW, Math.max(0, h - botY), false, tier);
   }
 
   // --- Đất ---
@@ -277,6 +278,7 @@ function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh
 }
 
 function round(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (w <= 0 || h <= 0) return; // guard: negative dimensions crash arcTo
   r = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
