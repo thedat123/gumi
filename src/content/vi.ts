@@ -334,7 +334,6 @@ export const vi = {
     bullets: [
       { icon: 'map', text: 'Đi qua 2 vùng đất, mỗi ngày một chương truyện và một thử thách nhỏ.' },
       { icon: 'flame', text: 'Tích điểm, giữ chuỗi, vượt cửa ải để leo bảng xếp hạng Sugar Slayer.' },
-      { icon: 'sparkle', text: 'Nuôi Gumi tiến hoá qua 4 nấc: Sleepy → Balanced → Charged → Master.' },
     ],
     stats: { days: '14 ngày', missions: '2 vùng đất' },
     ctaPrimary: 'Bắt đầu — nhận nuôi Gumi',
@@ -414,7 +413,7 @@ export const vi = {
   day3: {
     title: 'Ngày 3: Đuổi Hình Bắt Chữ',
     intro: 'Ghép 2 hình lại thành tên một đồ uống. Đoán đúng để mở khoá sự thật về đường & calo của ly đó!',
-    guessPrompt: 'Ghép 2 hình — đây là món gì?',
+    guessPrompt: 'Đây là món gì?',
     typeHint: 'Gõ tên món vào các ô (không cần bỏ dấu cũng được).',
     puzzleOf: (i: number, total: number) => `Hình ${i}/${total}`,
     wrong: 'Chưa đúng, nhìn kỹ 2 hình ghép lại nhé!',

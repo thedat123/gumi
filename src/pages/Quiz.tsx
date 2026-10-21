@@ -27,7 +27,7 @@ export function Quiz() {
   if (phase === 'result' && result) {
     // Trúng khoảng 12–15 → +10 (score 10); lệch → +2 điểm an ủi.
     const hit = result.score >= 10;
-    return <CompletionPanel day={DAY} points={result.score} note={hit ? vi.quiz.correct : vi.quiz.off}>
+    return <CompletionPanel day={DAY} points={result.score} note={hit ? vi.quiz.correct : undefined}>
       <Card className="text-left"><p className="text-small font-bold text-primary">{vi.quiz.answerWas}</p><p className="mt-1 text-small text-muted">{vi.quiz.explain}</p>{hit && <p className="mt-1 text-small text-muted">{vi.quiz.resultSub}</p>}</Card>
     </CompletionPanel>;
   }

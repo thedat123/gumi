@@ -37,6 +37,7 @@ export function CheckIn() {
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'reviewing' | 'success'>('idle');
+  const shareBlobRef = useRef<Blob | null>(null);
   const [pending, setPending] = useState(false); // ảnh gửi admin duyệt tay (chờ duyệt)
   const [error, setError] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
@@ -52,25 +53,43 @@ export function CheckIn() {
   const needsLevel = target !== null;
   const isShare = m?.kind === 'SHARE';
 
-  // Ngày SHARE: app TỰ TẠO ảnh poster 9:16 để chia sẻ → mobile mở khay OS có "Thêm vào Story"
-  // (không có ảnh thì IG/FB không cho đăng Story); desktop upload + mở FB kèm ảnh.
+  // Pre-generate poster trước khi user click để tránh mất user gesture trên iOS Web Share API.
+  useEffect(() => {
+    if (!isShare) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { renderSharePoster } = await import('../lib/shareCard');
+        const stats = await api.getSummary()
+          .then((s) => [
+            { label: 'thìa đường đã giảm', value: s.sugarCutSpoons },
+            { label: 'ly nước lành mạnh', value: s.healthyCount },
+            { label: 'ngày giữ chuỗi', value: s.streak },
+          ].filter((r) => r.value > 0).map((r) => ({ label: r.label, value: `${r.value}` })))
+          .catch(() => [] as { label: string; value: string }[]);
+        const blob = await renderSharePoster({
+          heading: 'THỬ THÁCH 14 NGÀY BỚT NGỌT',
+          big: `Ngày ${day}/14`,
+          subtitle: 'Mình đang bớt ngọt cùng Gumi 🐱 — bạn thử cùng mình nhé?',
+          brand: vi.app.name,
+          stats,
+        });
+        if (!cancelled) shareBlobRef.current = blob;
+      } catch { /* bỏ qua */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isShare, day]);
+
+  // Ngày SHARE: dùng blob đã render sẵn → gọi navigator.share() ngay trong user gesture, không bị chặn trên iOS.
   const doShare = async () => {
     try {
       const { renderSharePoster, shareImageToSocial } = await import('../lib/shareCard');
-      // Số liệu THẬT từ hành trình (chạy được giữa chừng); chỉ hiện ô có giá trị > 0.
-      const stats = await api.getSummary()
-        .then((s) => [
-          { label: 'thìa đường đã giảm', value: s.sugarCutSpoons },
-          { label: 'ly nước lành mạnh', value: s.healthyCount },
-          { label: 'ngày giữ chuỗi', value: s.streak },
-        ].filter((r) => r.value > 0).map((r) => ({ label: r.label, value: `${r.value}` })))
-        .catch(() => [] as { label: string; value: string }[]);
-      const blob = await renderSharePoster({
+      const blob = shareBlobRef.current ?? await renderSharePoster({
         heading: 'THỬ THÁCH 14 NGÀY BỚT NGỌT',
         big: `Ngày ${day}/14`,
         subtitle: 'Mình đang bớt ngọt cùng Gumi 🐱 — bạn thử cùng mình nhé?',
         brand: vi.app.name,
-        stats,
+        stats: [],
       });
       const r = await shareImageToSocial(blob, {
         caption: vi.checkin.share.caption,
@@ -80,8 +99,8 @@ export function CheckIn() {
         appUrl: window.location.origin,
         upload: api.uploadShareCard,
       });
-      if (r !== 'shared') setCopied(true); // desktop: đã copy caption (uploaded/downloaded)
-    } catch { /* huỷ / lỗi tạo ảnh → bỏ qua, người dùng vẫn copy caption thủ công được */ }
+      if (r !== 'shared') setCopied(true);
+    } catch { /* huỷ / lỗi tạo ảnh → bỏ qua */ }
   };
   const doCopy = async () => { if (await copyText(vi.checkin.share.caption)) setCopied(true); };
 

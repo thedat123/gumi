@@ -1,6 +1,6 @@
 /** Short, practical facts shown when a challenge ends. */
 export const SUGAR_FACTS: Record<number, { title: string; body: string }> = {
-  1: { title: 'Một nấc nhỏ cũng có ý nghĩa', body: 'Nếu cùng một cỡ ly, đổi từ 100% xuống 70% đường có thể giảm khoảng 30% lượng đường được thêm vào. Hãy giữ thói quen kiểm tra tem ly.' },
+  1: { title: 'Một nấc nhỏ cũng có ý nghĩa', body: 'Giảm từ 100% xuống 70% đường giúp cắt giảm ngay 30–50 calo mỗi ly thức uống mà vị giác của bạn gần như không nhận ra sự khác biệt quá rõ ràng. Trải nghiệm "ngọt đúng liều" luôn bắt đầu từ những sự điều chỉnh nhỏ nhất.' },
   2: { title: 'Đường trong ly dễ bị đánh giá thấp', body: 'Một thìa cà phê đường khoảng 4 g. Hãy thử quy đổi lượng đường trên nhãn ra số thìa để dễ hình dung hơn.' },
   3: { title: 'Tên món không nói hết độ ngọt', body: 'Trà, cà phê và nước trái cây có thể chứa nhiều đường khi thêm siro, sữa đặc hoặc topping. Thành phần và cỡ ly mới giúp bạn đánh giá đúng.' },
   4: { title: 'Chia sẻ để cùng giữ nhịp', body: 'Một lời rủ uống ít đường có thể giúp bạn bè thử lựa chọn lành hơn mà không cần bỏ hẳn món yêu thích.' },

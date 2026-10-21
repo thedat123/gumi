@@ -29,9 +29,9 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
   return a;
 }
 
-/** Ngày 6 — Đấu Trường Calo: KÉO-THẢ 5 ly xếp theo độ ngọt (ít → nhiều đường). */
+/** Ngày 5 — Đấu Trường Calo: KÉO-THẢ 5 ly xếp theo độ ngọt (ít → nhiều đường). */
 export function SortGame() {
-  const day = 6;
+  const day = 5;
   const [order, setOrder] = useState<string[]>(shuffled);
   const [warn, setWarn] = useState(false);
   const [shake, setShake] = useState(0);

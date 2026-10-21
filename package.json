@@ -18,6 +18,9 @@
     "vapid": "node scripts/gen-vapid.mjs",
     "admin:migration": "node scripts/gen-admin-migration.mjs",
     "db:seed": "bash scripts/seed-all.sh",
+    "db:push": "python3 scripts/migrate.py --force",
+    "db:push:from": "python3 scripts/migrate.py --from",
+    "db:status": "python3 scripts/migrate.py --status",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {

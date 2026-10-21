@@ -543,7 +543,7 @@ export function createMockApi(): Api {
     async submitQuiz(guesses): Promise<QuizResult> {
       requireSession();
       await delay(null, 500);
-      // 1 câu (trà sữa): trúng khoảng 12–15 = +10; sai = +2 điểm an ủi (theo brief).
+      // 1 câu (trà sữa): trúng khoảng 12–15 = +10; sai = +2 điểm an ủi.
       ensurePlayable(2);
       const guess = guesses[0] ?? 0;
       const lo = vi.quiz.correctMin, hi = vi.quiz.correctMax;
@@ -601,7 +601,7 @@ export function createMockApi(): Api {
         healthyCount: DRINK_DAYS.filter((d) => state.completed.includes(d)).length,
         healthyTotal: DRINK_DAYS.length,
         quizScore: state.quiz?.score ?? 0,
-        quizMax: 2,
+        quizMax: 10,
         streak: playStreakLive(),
         totalPoints: totalPoints(p, playStreakLive()),
         rank: rankFor(totalPoints(p, playStreakLive())),

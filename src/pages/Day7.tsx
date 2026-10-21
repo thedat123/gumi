@@ -109,7 +109,6 @@ export function Day7() {
                 />
               ))}
             </div>
-            <p className="text-center text-caption text-muted">{vi.day3.typeHint}</p>
           </>
         ) : (
           <Card className={`pop-in text-left ${good ? 'border-success! bg-success/8' : 'border-accent! bg-accent/8'}`}>

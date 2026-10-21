@@ -11,6 +11,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('database_url', nargs='?')
 parser.add_argument('--baseline', metavar='VERSION', help='Record files through VERSION without executing SQL (existing databases only)')
 parser.add_argument('--status', action='store_true')
+parser.add_argument('--force', action='store_true', help='Re-apply ALL migrations regardless of tracking table (idempotent SQL only)')
+parser.add_argument('--from', metavar='VERSION', dest='from_version', help='Re-apply migrations starting from VERSION (e.g. --from 0019)')
 args = parser.parse_args()
 url = args.database_url or os.getenv('DATABASE_URL') or os.getenv('SUPABASE_DB_URL')
 if not url:
@@ -47,6 +49,12 @@ elif args.status:
     for f in files:
         version = f.name.split('_')[0]
         sql += [f"SELECT {literal(f.name)} AS migration, CASE WHEN EXISTS (SELECT 1 FROM public.gumi_schema_migrations WHERE version={literal(version)}) THEN 'applied' ELSE 'pending' END AS status;"]
+elif args.force or args.from_version:
+    for f in files:
+        version = f.name.split('_')[0]
+        if args.from_version and version < args.from_version:
+            continue
+        sql += [f'\\echo Force-applying {f.name}', 'BEGIN;', f.read_text(), f'INSERT INTO public.gumi_schema_migrations(version,filename) VALUES ({literal(version)},{literal(f.name)}) ON CONFLICT(version) DO UPDATE SET applied_at=now();', 'COMMIT;']
 else:
     for f in files:
         version = f.name.split('_')[0]
