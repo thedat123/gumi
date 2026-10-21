@@ -323,7 +323,7 @@ export const vi = {
     { day: 9, kind: 'GAME', title: 'Truy Tìm Mật Khẩu', description: 'Wordsearch: tìm 5 cái tên đường ẩn trong ô chữ (+10/key).', points: 50 },
     { day: 10, kind: 'DRINK', title: 'DIY Drink', description: 'Tự chuẩn bị bình nước mang đi học hoặc đi làm: nước lọc thả lát trái cây, bạc hà hoặc trà túi lọc không đường. Tải ảnh bình nước lên.', points: 20 },
     { day: 11, kind: 'GAME', title: 'Gumi Bắt Chữ', description: 'Crossword: đoán từ khoá mỗi dòng (tên các loại đường ẩn) theo gợi ý, trong 3 phút (+5/câu).', points: 40 },
-    { day: 12, kind: 'GAME', title: 'Lật Thẻ Trí Nhớ', description: 'Lật 10 thẻ, ghép 5 cặp đường ↔ tên gọi trong 30 giây (+10/cặp).', points: 50 },
+    { day: 12, kind: 'GAME', title: 'Lật Thẻ Trí Nhớ', description: 'Lật 12 thẻ, ghép 6 cặp đường ↔ tên gọi trong 1 phút (+10/cặp).', points: 60 },
     { day: 13, kind: 'SHARE', title: 'Mẹo Nhỏ Cắt Đường', description: 'Chia sẻ một mẹo giúp bạn vượt qua cơn thèm ngọt lên Story, rồi tải ảnh chụp Story lên.', points: 20 },
     { day: 14, kind: 'FINAL', title: 'Hứng Nước & Lời Nhắn Tốt Nghiệp', description: 'CỬA ẢI cuối — hứng nước lành 💧🍵 hạ Boss Đường, rồi viết lời cảm nhận gửi lên Bức tường Gumi (+15). Có ảnh chia sẻ Story được cộng thêm 10 điểm.', points: 25 },
   ],
@@ -515,10 +515,10 @@ export const vi = {
       pairs: [
         { a: 'Glucose', b: 'Đường đơn' },
         { a: 'Fructose', b: 'Đường trái cây' },
-        { a: 'Sucrose', b: 'Đường mía / đường kính' },
+        { a: 'Sucrose', b: 'Đường mía/đường kính thông thường' },
         { a: 'Maltose', b: 'Đường mạch nha' },
         { a: 'Lactose', b: 'Đường sữa' },
-        { a: 'HFCS', b: 'Siro ngô (đường ẩn)' },
+        { a: 'Sorbitol', b: 'Đường ăn kiêng' },
       ],
     },
     memory18: {

@@ -157,22 +157,6 @@ export async function renderCard(d: CardData): Promise<Blob> {
   g.fillStyle = onP; g.globalAlpha = 0.85; g.font = `600 28px ${font}`; g.fillText(d.totalLabel, W / 2, gy + 44);
   g.globalAlpha = 1; g.font = `800 56px ${font}`; g.fillText(d.totalValue, W / 2, gy + 92);
 
-  // Ô TRỐNG (viền nét đứt) để người chơi dán ảnh của mình khi đăng Story.
-  const bX = 80, bW = W - 160, bY = gy + 134, bH = (H - 150) - (gy + 134);
-  g.save();
-  g.fillStyle = 'rgba(255,255,255,0.06)'; roundRect(g, bX, bY, bW, bH, 30); g.fill();
-  g.setLineDash([18, 14]); g.lineWidth = 4; g.strokeStyle = 'rgba(255,255,255,0.55)';
-  roundRect(g, bX, bY, bW, bH, 30); g.stroke();
-  g.restore();
-  const bCY = bY + bH / 2;
-  g.textAlign = 'center'; g.fillStyle = onP;
-  g.globalAlpha = 0.85; g.font = `400 64px ${font}`; g.fillText('📷', W / 2, bCY - 18);
-  g.globalAlpha = 0.9; g.font = `700 36px ${font}`; g.fillText('Dán ảnh của bạn', W / 2, bCY + 44);
-  g.globalAlpha = 0.7; g.font = `500 28px ${font}`; g.fillText('vào khoảng trống này nhé', W / 2, bCY + 86);
-  g.globalAlpha = 1;
-
-  // thương hiệu
-  g.globalAlpha = 0.9; g.font = `700 32px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 64); g.globalAlpha = 1;
 
   return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }
@@ -250,22 +234,6 @@ export async function renderSharePoster(d: {
   for (const ln of wrap(g, d.subtitle, W - 200)) { g.fillText(ln, W / 2, subY); subY += 50; }
   g.globalAlpha = 1;
 
-  // Ô TRỐNG (viền nét đứt) để người chơi dán ảnh ly nước của mình khi đăng Story.
-  const boxX = 70, boxW = W - 140;
-  const boxY = Math.max(subY + 24, 1260), boxBottom = H - 150, boxH = boxBottom - boxY;
-  g.save();
-  g.fillStyle = 'rgba(255,255,255,0.06)'; roundRect(g, boxX, boxY, boxW, boxH, 34); g.fill();
-  g.setLineDash([18, 14]); g.lineWidth = 4; g.strokeStyle = 'rgba(255,255,255,0.55)';
-  roundRect(g, boxX, boxY, boxW, boxH, 34); g.stroke();
-  g.restore();
-  const boxCY = boxY + boxH / 2;
-  g.textAlign = 'center'; g.fillStyle = onP;
-  g.globalAlpha = 0.85; g.font = `400 72px ${font}`; g.fillText('📷', W / 2, boxCY - 24);
-  g.globalAlpha = 0.9; g.font = `700 40px ${font}`; g.fillText('Dán ảnh ly nước của bạn', W / 2, boxCY + 48);
-  g.globalAlpha = 0.7; g.font = `500 30px ${font}`; g.fillText('vào khoảng trống này nhé', W / 2, boxCY + 96);
-  g.globalAlpha = 1;
-
-  g.fillStyle = onP; g.globalAlpha = 0.9; g.font = `700 34px ${font}`; g.fillText(`🐱 ${d.brand}`, W / 2, H - 70); g.globalAlpha = 1;
 
   return new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png', 0.95));
 }
