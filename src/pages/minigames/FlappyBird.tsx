@@ -73,6 +73,8 @@ export function FlappyBird() {
     return () => window.removeEventListener('keydown', onKey);
   }, [flap]);
 
+  // fpsCapOverride=0: native rAF, không throttle FPS → input lag ≤ 1 frame (~8ms@120fps, 16ms@60fps)
+  // Adaptive downgrade vẫn hạ DPR khi máy đuối, chỉ không cắt frameInterval như game 3D nặng.
   useArcadeLoop(boxRef, canvasRef, (ctx, w, h, dt) => {
     const s = g.current;
     if (s.w !== w || s.h !== h) { s.w = w; s.h = h; if (s.mode === 'ready') s.by = h * 0.42; }
@@ -124,14 +126,15 @@ export function FlappyBird() {
     if (s.mode === 'ready') s.by = h * 0.42 + Math.sin(s.t * 2.2) * h * 0.02;
 
     const target = clamp((s.vy / h) * 1.7, -0.5, 1.15);
-    s.rot += (target - s.rot) * Math.min(1, dt * 10);
+    // 1-exp(-dt*k): frame-rate independent smooth — cùng "tốc độ xoay/giây" ở 30/60/120fps
+    s.rot += (target - s.rot) * (1 - Math.exp(-dt * 10));
 
     let alpha = 1;
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
     draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, tier, skyCache: skyCache.current });
-  });
+  }, 0);
 
   if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
 
@@ -214,18 +217,22 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
   ctx.save();
   ctx.translate(d.birdX | 0, by); ctx.rotate(s.rot * .3);
 
-  // Thruster: high = 3 luồng (3 gradient + 3 bezier), mid = 1 luồng trung tâm, low = không có
+  // Thruster: high = 3 luồng gradient, mid = 1 luồng flat (bỏ createLinearGradient), low = không có
   if (tier !== 'low') {
     const offsets = tier === 'high' ? [-.65, 0, .65] : [0];
     for (const off of offsets) {
       const len = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + off) * .2));
-      const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + len);
-      glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
-      ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.moveTo(off * r - r * .15, r * .4);
       ctx.quadraticCurveTo(off * r - r * .22, r * .8, off * r, r * .4 + len);
       ctx.quadraticCurveTo(off * r + r * .22, r * .8, off * r + r * .15, r * .4);
+      if (tier === 'high') {
+        const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + len);
+        glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
+        ctx.fillStyle = glow;
+      } else {
+        ctx.fillStyle = '#65dbff'; // flat, no gradient object for mid tier
+      }
       ctx.fill();
     }
   }

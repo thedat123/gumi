@@ -14,6 +14,9 @@ export function useArcadeLoop(
   boxRef: RefObject<HTMLDivElement | null>,
   canvasRef: RefObject<HTMLCanvasElement | null>,
   onFrame: (ctx: CanvasRenderingContext2D, w: number, h: number, dt: number) => void,
+  /** Khoá FPS tối thiểu: 0 = native rAF (không throttle). Khi set, adaptive downgrade CHỈ hạ DPR,
+   *  không giảm frameInterval → tránh lag input do frame cũ bị bỏ qua trên game 2D đơn giản. */
+  fpsCapOverride?: number,
 ) {
   const frame = useRef(onFrame);
   frame.current = onFrame;
@@ -27,8 +30,10 @@ export function useArcadeLoop(
     // Game TOÀN MÀN vẽ lại 60 lần/s → DPR cao là phí fill-rate (nặng nhất trên GPU máy cũ như Galaxy A32).
     // Trần 1.25 vẫn nét cho game hoạt hình mà nhẹ hơn nhiều DPR2 → mượt từ khung đầu, rồi hạ tiếp nếu cần.
     let dprCap = Math.min(q.pixelRatio, 1.25);               // trần DPR hiện tại (hạ dần nếu máy đuối)
-    let targetFps = q.fpsCap > 0 ? q.fpsCap : 60;            // FPS mục tiêu để so sánh
-    let frameInterval = q.fpsCap > 0 ? 1000 / q.fpsCap : 0;  // ms giữa 2 khung; 0 = không giới hạn
+    const lockFps = fpsCapOverride !== undefined;
+    const initCap = lockFps ? fpsCapOverride : q.fpsCap;
+    let targetFps = initCap > 0 ? initCap : 60;              // FPS mục tiêu để so sánh
+    let frameInterval = initCap > 0 ? 1000 / initCap : 0;    // ms giữa 2 khung; 0 = không giới hạn
     let w = 1, h = 1;
     const fit = () => {
       const r = box.getBoundingClientRect();
@@ -47,8 +52,11 @@ export function useArcadeLoop(
       if (downgrades >= 4) return;
       downgrades++;
       dprCap = Math.max(0.6, dprCap * 0.75);   // giảm độ phân giải canvas (giảm pixel bậc hai)
-      targetFps = downgrades >= 2 ? 20 : 30;   // siết khung hình
-      frameInterval = 1000 / targetFps;
+      // lockFps: chỉ hạ DPR, không chạm frameInterval — giữ input lag thấp cho game 2D
+      if (!lockFps) {
+        targetFps = downgrades >= 2 ? 20 : 30; // siết khung hình (chỉ khi không có fpsCapOverride)
+        frameInterval = 1000 / targetFps;
+      }
       fit();
       markDeviceSlow();                         // tắt blur/hiệu ứng CSS + làm nhẹ các mount sau
     };
@@ -79,5 +87,6 @@ export function useArcadeLoop(
     document.addEventListener('visibilitychange', onVis);
     raf = requestAnimationFrame(loop);
     return () => { stop = true; cancelAnimationFrame(raf); ro.disconnect(); document.removeEventListener('visibilitychange', onVis); };
-  }, [boxRef, canvasRef]);
+  // fpsCapOverride bền (constant per component mount) → có thể an toàn đưa vào deps
+  }, [boxRef, canvasRef, fpsCapOverride]);
 }
