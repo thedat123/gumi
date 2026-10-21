@@ -1,7 +1,7 @@
 /* Service worker tự viết cho Mật Độ (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
    Chiến lược: điều hướng (navigate) network-first + rơi về vỏ app đã cache khi offline;
    tài nguyên tĩnh cùng miền dùng stale-while-revalidate. Không đụng tới request khác miền (Supabase). */
-const VERSION = 'ld-icons-20261014';
+const VERSION = 'ld-icons-20261021';
 const OFFLINE_URL = '/offline.html';
 const SHELL = ['/', OFFLINE_URL, '/manifest.webmanifest'];
 
@@ -106,8 +106,8 @@ self.addEventListener('fetch', (event) => {
           if (res && res.ok) cache.put(req, res.clone());
           return res;
         })
-        .catch(() => cached);
-      return cached || network;
+        .catch(() => null);
+      return cached || (await network) || Response.error();
     })(),
   );
 });
