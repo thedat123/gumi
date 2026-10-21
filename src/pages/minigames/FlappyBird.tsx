@@ -8,7 +8,7 @@ import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
 import { playSfx } from '../../lib/sfx';
 import { useArcadeLoop } from '../../lib/useArcadeLoop';
-import { getQuality } from '../../lib/quality';
+import { getQuality, type Tier } from '../../lib/quality';
 import { vi } from '../../content/vi';
 
 const PASS = 20;  // qua 20 cột = ĐẠT (tính streak) — pass rồi KHÔNG cho chơi lại
@@ -33,6 +33,8 @@ export function FlappyBird() {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const g = useRef<State>({ mode: 'ready', by: 0, byPrev: 0, vy: 0, pipes: [], score: 0, w: 1, h: 1, t: 0, best: 0, acc: 0, rot: 0, thrust: 0 });
+  // Cache gradient sky theo (w, h, act) — tránh tạo object mới mỗi frame
+  const skyCache = useRef<{ w: number; h: number; act: number; g: CanvasGradient | null }>({ w: 0, h: 0, act: 0, g: null });
   const [mode, setMode] = useState<Mode>('ready');
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
@@ -76,26 +78,29 @@ export function FlappyBird() {
     if (s.w !== w || s.h !== h) { s.w = w; s.h = h; if (s.mode === 'ready') s.by = h * 0.42; }
     s.t += dt; s.thrust = Math.max(0, s.thrust - dt * 2.8);
 
-    // Kích thước phụ thuộc khung
     const birdX = w * 0.3, birdR = clamp(h * 0.034, 12, 22);
     const gap = h * 0.34, pipeW = clamp(w * 0.13, 46, 80);
     const spacing = clamp(w * 0.56, 200, 380);
-    const speed = 235 * (h / 620);          // TỐC ĐỘ HẰNG SỐ như Flappy thật → cuộn đều, mượt
+    const speed = 235 * (h / 620);
+    const tier = getQuality().tier;
 
-    // Vật lý FIXED-TIMESTEP (1/120s): chuyển động luôn mượt & ổn định dù frame-rate dao động.
     const die = () => {
       if (s.mode !== 'play') return;
       s.best = Math.max(s.best, s.score);
-      if (s.score >= PASS) finish(milestone(s.score)); // đã ĐẠT → chốt điểm mốc, không chơi lại
-      else { to('dead'); playSfx('sleep'); }            // chưa đạt 20 cột → cho chơi lại
+      if (s.score >= PASS) finish(milestone(s.score));
+      else { to('dead'); playSfx('sleep'); }
     };
-    const STEP = 1 / 120;
-    s.acc = Math.min(s.acc + dt, 0.1);      // chống "spiral of death" khi tab bị nghẽn
+
+    // STEP 1/60: 2 bước/frame ở 30fps, 1 bước ở 60fps — đủ chính xác cho Flappy Bird.
+    // Accumulator cap = 3×STEP = 0.05s → tối đa 3 bước/frame, chống spike sau tab ẩn.
+    const STEP = 1 / 60;
+    s.acc = Math.min(s.acc + dt, 0.05);
+    let pendingScore = -1; // gom setScore/playSfx ra ngoài loop — tránh gọi React/Audio trong vòng lặp vật lý
     while (s.mode === 'play' && s.acc >= STEP) {
       s.acc -= STEP;
-      s.byPrev = s.by;                       // chốt vị trí bước TRƯỚC để nội suy khi vẽ (siêu mượt mọi tần số quét)
+      s.byPrev = s.by;
       for (const p of s.pipes) p.xPrev = p.x;
-      s.vy += 2.1 * h * STEP;               // trọng lực
+      s.vy += 2.1 * h * STEP;
       s.by += s.vy * STEP;
       if (s.by - birdR < 0) { s.by = birdR; s.vy = 0; }
       const last = s.pipes[s.pipes.length - 1];
@@ -103,27 +108,29 @@ export function FlappyBird() {
       for (const p of s.pipes) p.x -= speed * STEP;
       for (const p of s.pipes) {
         if (!p.scored && p.x + pipeW < birdX - birdR) {
-          p.scored = true; s.score = Math.min(MAX, s.score + 1); setScore(s.score); playSfx('sparkle');
-          if (s.score >= MAX) finish(MAX); // đạt trần 100 cột
+          p.scored = true; s.score = Math.min(MAX, s.score + 1);
+          pendingScore = s.score;          // defer: gọi sau khi thoát loop
+          if (s.score >= MAX) finish(MAX);
         }
       }
-      s.pipes = s.pipes.filter((p) => p.x + pipeW > -20);
+      // KHÔNG filter trong loop — tránh tạo array mới 2-4× / frame (GC pressure)
       for (const p of s.pipes) if (p.x < birdX + birdR && p.x + pipeW > birdX - birdR && (s.by - birdR < p.gapY - gap / 2 || s.by + birdR > p.gapY + gap / 2)) die();
       if (s.by + birdR >= h) { s.by = h - birdR; die(); }
     }
-    if (s.mode === 'ready') s.by = h * 0.42 + Math.sin(s.t * 2.2) * h * 0.02; // lơ lửng nhẹ
+    // Dọn pipe + cập nhật score MỘT LẦN / frame (không phải mỗi bước vật lý)
+    while (s.pipes.length && s.pipes[0].x + pipeW <= -20) s.pipes.shift();
+    if (pendingScore >= 0) { setScore(pendingScore); playSfx('sparkle'); }
 
-    // Xoay mượt: hất mũi lên khi bay, chúi xuống dần khi rơi (nội suy, không giật)
+    if (s.mode === 'ready') s.by = h * 0.42 + Math.sin(s.t * 2.2) * h * 0.02;
+
     const target = clamp((s.vy / h) * 1.7, -0.5, 1.15);
     s.rot += (target - s.rot) * Math.min(1, dt * 10);
 
-    // NỘI SUY khi vẽ: chỉ khi đang bay mới nội suy giữa 2 bước vật lý; các chế độ khác vẽ đúng vị trí hiện tại.
     let alpha = 1;
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
-    // Đọc 'low' THEO KHUNG: khi vòng lặp tự hạ xuống low (máy đuối) thì nền phẳng + bỏ mây bật NGAY.
-    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, low: getQuality().tier === 'low' });
+    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, tier, skyCache: skyCache.current });
   });
 
   if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
@@ -155,79 +162,123 @@ export function FlappyBird() {
 }
 
 /* ---- Vẽ ---- */
+type SkyCache = { w: number; h: number; act: number; g: CanvasGradient | null };
 const SKY: Record<1 | 2 | 3, [string, string]> = { 1: ['#BFE9FB', '#F6E8DC'], 2: ['#CDE7C6', '#EFE2C4'], 3: ['#CFE6FA', '#EAF2FB'] };
-function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act: 1 | 2 | 3, d: { birdX: number; birdR: number; gap: number; pipeW: number; alpha: number; low?: boolean }) {
-  const a = d.alpha;
-  const by = s.byPrev + (s.by - s.byPrev) * a;           // vị trí chim đã nội suy
+
+// Phân tầng đồ hoạ theo Tier — mỗi tier cắt đúng phần nặng nhất của nó:
+//   low : fillRect thuần, không path, không gradient, không cloud, không thruster
+//   mid : gradient sky cached, không cloud (12 arc/frame → 0), pipe flat, 1 thruster
+//   high: gradient sky cached, 3 cloud, pipe gradient, 3 thruster
+
+function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act: 1 | 2 | 3, d: { birdX: number; birdR: number; gap: number; pipeW: number; alpha: number; tier: Tier; skyCache: SkyCache }) {
+  const { tier } = d;
+  // Integer coords: `n | 0` fast-floor → tránh subpixel anti-aliasing trên mobile Canvas 2D
+  const by = (s.byPrev + (s.by - s.byPrev) * d.alpha) | 0;
   const [c0, c1] = SKY[act];
-  // Máy siêu yếu: tô nền MỘT MÀU (rẻ hơn gradient toàn màn mỗi khung) và BỎ mây trang trí.
-  if (d.low) {
+
+  // --- Nền ---
+  if (tier === 'low') {
     ctx.fillStyle = c0; ctx.fillRect(0, 0, w, h);
   } else {
-    const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, c0); sky.addColorStop(1, c1);
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
-    // mây mềm
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    for (let i = 0; i < 3; i++) { const cx = ((s.t * 12 + i * w * 0.42) % (w + 160)) - 80, cy = h * (0.14 + i * 0.12); cloud(ctx, cx, cy, 26 + i * 6); }
-  }
-
-  // cột "kẹo đường" (nội suy vị trí ngang → cuộn mượt tuyệt đối)
-  for (const p of s.pipes) {
-    const px = p.xPrev + (p.x - p.xPrev) * a;
-    const top = p.gapY - d.gap / 2, bot = p.gapY + d.gap / 2;
-    pipe(ctx, px, 0, d.pipeW, top, true, d.low);
-    pipe(ctx, px, bot, d.pipeW, h - bot, false, d.low);
-  }
-
-  // đất
-  ctx.fillStyle = act === 2 ? '#B98A5E' : act === 3 ? '#C9B79E' : '#E4C08C';
-  ctx.fillRect(0, h - h * 0.05, w, h * 0.05);
-
-  // chim Gumi (góc xoay đã nội suy mượt)
-  const rot = s.rot;
-  ctx.save();
-  ctx.translate(d.birdX, by); ctx.rotate(rot * .3);
-  const r = d.birdR;
-  // Lửa phụt (3 gradient + 3 đường cong mỗi khung) rất tốn — BỎ trên máy yếu, chỉ giữ ảnh UFO.
-  if (!d.low) {
-    // Three thrusters brighten immediately on input, then cool down.
-    for (const offset of [-.65, 0, .65]) {
-      const length = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + offset) * .2));
-      const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + length);
-      glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
-      ctx.fillStyle = glow; ctx.beginPath(); ctx.moveTo(offset * r - r * .15, r * .4); ctx.quadraticCurveTo(offset * r - r * .22, r * .8, offset * r, r * .4 + length); ctx.quadraticCurveTo(offset * r + r * .22, r * .8, offset * r + r * .15, r * .4); ctx.fill();
+    const sc = d.skyCache;
+    if (sc.w !== w || sc.h !== h || sc.act !== act || !sc.g) {
+      const sky = ctx.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, c0); sky.addColorStop(1, c1);
+      sc.g = sky; sc.w = w; sc.h = h; sc.act = act;
+    }
+    ctx.fillStyle = sc.g; ctx.fillRect(0, 0, w, h);
+    // Mây: chỉ high — 3 cloud × 4 arc = 12 arc/frame, bỏ ở mid để tiết kiệm CPU
+    if (tier === 'high') {
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      for (let i = 0; i < 3; i++) { const cx = ((s.t * 12 + i * w * 0.42) % (w + 160)) - 80, cy = h * (0.14 + i * 0.12); cloud(ctx, cx, cy, 26 + i * 6); }
     }
   }
-  if (ufoArt.complete && ufoArt.naturalWidth) ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
+
+  // --- Cột đường ---
+  for (const p of s.pipes) {
+    const px = (p.xPrev + (p.x - p.xPrev) * d.alpha) | 0; // integer x → không bị subpixel
+    const topH = (p.gapY - d.gap / 2) | 0;
+    const botY = (p.gapY + d.gap / 2) | 0;
+    pipe(ctx, px, 0, d.pipeW, topH, true, tier);
+    pipe(ctx, px, botY, d.pipeW, h - botY, false, tier);
+  }
+
+  // --- Đất ---
+  const groundY = (h * 0.95) | 0;
+  ctx.fillStyle = act === 2 ? '#B98A5E' : act === 3 ? '#C9B79E' : '#E4C08C';
+  ctx.fillRect(0, groundY, w, h - groundY);
+
+  // --- Chim (UFO Gumi) ---
+  const r = d.birdR;
+  ctx.save();
+  ctx.translate(d.birdX | 0, by); ctx.rotate(s.rot * .3);
+
+  // Thruster: high = 3 luồng (3 gradient + 3 bezier), mid = 1 luồng trung tâm, low = không có
+  if (tier !== 'low') {
+    const offsets = tier === 'high' ? [-.65, 0, .65] : [0];
+    for (const off of offsets) {
+      const len = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + off) * .2));
+      const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + len);
+      glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.moveTo(off * r - r * .15, r * .4);
+      ctx.quadraticCurveTo(off * r - r * .22, r * .8, off * r, r * .4 + len);
+      ctx.quadraticCurveTo(off * r + r * .22, r * .8, off * r + r * .15, r * .4);
+      ctx.fill();
+    }
+  }
+
+  if (ufoArt.complete && ufoArt.naturalWidth) {
+    if (tier === 'low') ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
+    if (tier === 'low') ctx.imageSmoothingEnabled = true;
+  }
   ctx.restore();
 }
+
 function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, 7); ctx.arc(x + r, y + r * 0.2, r * 0.8, 0, 7); ctx.arc(x - r, y + r * 0.2, r * 0.75, 0, 7); ctx.arc(x + r * 0.4, y - r * 0.5, r * 0.7, 0, 7);
+  ctx.arc(x, y, r, 0, 7); ctx.arc(x + r, y + r * 0.2, r * 0.8, 0, 7);
+  ctx.arc(x - r, y + r * 0.2, r * 0.75, 0, 7); ctx.arc(x + r * 0.4, y - r * 0.5, r * 0.7, 0, 7);
   ctx.fill();
 }
-function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh: number, top: boolean, low?: boolean) {
-  if (low) {
-    // Máy yếu: cột PHẲNG 1 màu + nắp, bỏ gradient + highlight → mỗi khung siêu nhẹ, 30fps ổn định.
-    ctx.fillStyle = '#EE7DA0'; round(ctx, x, y, w, hh, 8); ctx.fill();
-    ctx.fillStyle = '#C94E74';
-    const capHl = Math.min(18, w * 0.4);
-    round(ctx, x - 4, top ? y + hh - capHl : y, w + 8, capHl, 6); ctx.fill();
+
+function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh: number, top: boolean, tier: Tier) {
+  const capH = Math.min(18, w * 0.4) | 0;
+  const capY = top ? y + hh - capH : y;
+
+  if (tier === 'low') {
+    // fillRect thuần — không path, không gradient: nhanh nhất có thể
+    ctx.fillStyle = '#EE7DA0'; ctx.fillRect(x, y, w, hh);
+    ctx.fillStyle = '#C94E74'; ctx.fillRect(x - 4, capY, w + 8, capH);
     return;
   }
+
+  if (tier === 'mid') {
+    // Flat color + highlight — không createLinearGradient (bỏ 2 gradient object/pipe/frame)
+    // round() giữ rounded-corner đẹp hơn low nhưng không tốn gradient
+    ctx.fillStyle = '#EE7DA0'; round(ctx, x, y, w, hh, 8); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    round(ctx, x + w * 0.16, y, Math.max(3, w * 0.12), hh, 4); ctx.fill();
+    ctx.fillStyle = '#C94E74';
+    round(ctx, x - 4, capY, w + 8, capH, 6); ctx.fill();
+    return;
+  }
+
+  // High: gradient đầy đủ
   const body = ctx.createLinearGradient(x, 0, x + w, 0);
   body.addColorStop(0, '#F2A0B8'); body.addColorStop(0.5, '#EE7DA0'); body.addColorStop(1, '#D45E82');
   ctx.fillStyle = body; round(ctx, x, y, w, hh, 8); ctx.fill();
-  // highlight dọc mảnh bên trái cho thân ống có khối (thay cho sọc chéo cũ hay tràn ra ngoài)
   ctx.fillStyle = 'rgba(255,255,255,0.22)';
   round(ctx, x + w * 0.16, y, Math.max(3, w * 0.12), hh, 4); ctx.fill();
-  // nắp
   ctx.fillStyle = '#C94E74';
-  const capH = Math.min(18, w * 0.4);
-  round(ctx, x - 4, top ? y + hh - capH : y, w + 8, capH, 6); ctx.fill();
+  round(ctx, x - 4, capY, w + 8, capH, 6); ctx.fill();
 }
+
 function round(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   r = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
-  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
