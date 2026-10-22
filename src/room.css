@@ -365,6 +365,8 @@ html.gfx-low .gumi-prop { display: none; }
 .game-room .room-controls { position: relative; z-index: 5; }
 
 /* Full-screen room: floating game HUD and a single-tap furnishing dock. */
+/* Lock body scroll so the immersive layout has no empty space when pulling on any screen. */
+html:has(.full-room), body:has(.full-room) { overflow: hidden; height: 100dvh; overscroll-behavior: none; }
 .full-room.game-room { padding: 0; position: relative; height: calc(100dvh - var(--app-header, 64px)); min-height: 480px; overflow: hidden; background: #f3dedc; }
 .full-room .room-shell { width: 100%; height: 100%; max-width: none; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
 .full-room .room-game-header { display: none; }
@@ -598,24 +600,8 @@ html.gfx-low .fixed-piece { animation: none; }
  .full-room .room-controls > span { padding-inline: 8px; font-size: 9px; gap: 5px; }
  .full-room .room-controls > button, .full-room .room-controls > div > button { padding-inline: 8px; font-size: 9px; }
  .full-room .room-controls > button:last-child, .full-room .room-controls > button:nth-last-child(2) { width: 32px; height: 34px; padding: 0; min-height: 34px; }
- /* Kitchen phone: move cat to sink side (left 32%) — not dead-center on the stove.
-    Cap bottom: panel food+mission+dock can reach ~315 px; without a cap the cat floats
-    up to y≈57 % from top (above the counter surface). For short phones (h≤700) the
-    counter base sits at ~38 % from bottom so 37 % is safe. For tall phones the rule
-    below handles it separately. */
- .full-room[data-room="kitchen"] .room-mascot {
-   left: 32%;
-   bottom: min(calc(var(--room-actions-height, 160px) + 20px), 37%);
- }
-}
-/* Kitchen tall phones (h > 700 px): counter base is at ~32 % from bottom (spot-y 67 %).
-   The action panel can still push Gumi above it; use a tighter cap (30 %) so the cat
-   stays nearer to the lower cabinet/floor area, partially behind the panel if needed. */
-@media (max-width: 520px) and (min-height: 701px) {
- .full-room[data-room="kitchen"] .room-mascot {
-   left: 32%;
-   bottom: min(calc(var(--room-actions-height, 160px) + 20px), 33%);
- }
+ /* Kitchen phone: move cat to sink side so it doesn't stand on the stove. */
+ .full-room[data-room="kitchen"] .room-mascot { left: 32%; }
 }
 
 /* A readable character silhouette, with enough floor clearance above the HUD. */
