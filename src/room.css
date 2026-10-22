@@ -600,8 +600,11 @@ html.gfx-low .fixed-piece { animation: none; }
  .full-room .room-controls > span { padding-inline: 8px; font-size: 9px; gap: 5px; }
  .full-room .room-controls > button, .full-room .room-controls > div > button { padding-inline: 8px; font-size: 9px; }
  .full-room .room-controls > button:last-child, .full-room .room-controls > button:nth-last-child(2) { width: 32px; height: 34px; padding: 0; min-height: 34px; }
- /* Kitchen phone: move cat to sink side so it doesn't stand on the stove. */
- .full-room[data-room="kitchen"] .room-mascot { left: 32%; }
+ /* Kitchen phone: compact counter to left wall + fridge to right wall → opens a clear floor
+    lane in the centre. Counter 72%→42% wide so it no longer spans the whole screen. */
+ .full-room .fixed-piece[data-spot="counter"] { --spot-x: 22%; --piece-width: 42%; }
+ .full-room .fixed-piece[data-spot="fridge"] { --spot-x: 87%; }
+ .full-room[data-room="kitchen"] .room-mascot { left: 60%; }
 }
 
 /* A readable character silhouette, with enough floor clearance above the HUD. */
