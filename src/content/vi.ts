@@ -201,7 +201,7 @@ export const vi = {
         ], win: [ { who: 'gumi', text: 'Giải hết ô chữ! Rừng này hết chỗ cho đường ẩn trốn.' } ],
         tease: 'Lật thẻ trí nhớ: ghép đường với tên gọi trước khi hết giờ.' },
       { day: 12, intro: [
-          { who: 'gumi', text: '30 giây, ghép đủ 5 cặp. Trí nhớ vị giác của mình, thử thách nào!' },
+          { who: 'gumi', text: '1 phút, ghép đủ 6 cặp. Trí nhớ vị giác của mình, thử thách nào!' },
         ], win: [ { who: 'gumi', text: 'Ghép trọn bộ! Đầu mình giờ nhớ vị thật hơn vị ngọt.' } ],
         tease: 'Lan toả vị nhạt — kể cho cả rừng cùng nghe.' },
       { day: 13, intro: [
@@ -515,7 +515,7 @@ export const vi = {
       pairs: [
         { a: 'Glucose', b: 'Đường đơn' },
         { a: 'Fructose', b: 'Đường trái cây' },
-        { a: 'Sucrose', b: 'Đường mía/đường kính thông thường' },
+        { a: 'Sucrose', b: 'Đường mía' },
         { a: 'Maltose', b: 'Đường mạch nha' },
         { a: 'Lactose', b: 'Đường sữa' },
         { a: 'Sorbitol', b: 'Đường ăn kiêng' },

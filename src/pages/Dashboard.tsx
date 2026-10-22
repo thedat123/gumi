@@ -8,6 +8,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { JourneyMap } from '../components/JourneyMap';
 import { StreakBoard } from '../components/StreakBoard';
 import { SugarPassDialog } from '../components/SugarPassDialog';
+import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
 import { approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync } from '../app/useAsync';
@@ -19,6 +20,7 @@ export function Dashboard() {
   const [dialog, setDialog] = useState(false);
   const [passError, setPassError] = useState(false);
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
+  const [tab, setTab] = useState<'journey' | 'wall'>('journey');
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
 
   return (
@@ -65,7 +67,13 @@ export function Dashboard() {
 
                 <div className="mt-2.5"><StreakBoard days={days} today={today} streak={s.streak} /></div>
 
-                {anyBanner && (
+                {/* Tab switcher: Hành trình | Tường cộng đồng */}
+                <div className="mt-2.5 flex gap-1 rounded-xl bg-bg/60 p-1">
+                  <TabBtn active={tab === 'journey'} onClick={() => setTab('journey')} icon="map">Hành trình</TabBtn>
+                  <TabBtn active={tab === 'wall'} onClick={() => setTab('wall')} icon="sparkle">Tường cộng đồng</TabBtn>
+                </div>
+
+                {anyBanner && tab === 'journey' && (
                   <div className="mt-2 flex flex-col gap-2">
                     {s.phase === 'before' && <Banner kind="info">{vi.banners.before('01/10')}</Banner>}
                     {dying && <Banner kind="error" action={s.passAvailable ? <Button onClick={() => setDialog(true)} className="shrink-0">{vi.pass.button}</Button> : undefined}>{vi.banners.dying(s.passHoursLeft ?? 0)}</Banner>}
@@ -77,10 +85,21 @@ export function Dashboard() {
                </div>
               </div>
 
-              {/* ===== Bản đồ liền mạch 14 ngày — nền tràn full-width, lối đi ở lane giữa ===== */}
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
-                <JourneyMap days={days} today={today} replayAll={s.replayAll} />
-              </div>
+              {/* ===== Nội dung chính theo tab ===== */}
+              {tab === 'journey' ? (
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
+                  <JourneyMap days={days} today={today} replayAll={s.replayAll} />
+                </div>
+              ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-20">
+                  <div className="mx-auto max-w-[560px] px-3 pt-4">
+                    <p className="mb-3 flex items-center gap-1.5 text-caption font-bold uppercase tracking-widest text-muted">
+                      <Icon name="sparkle" size={13} filled className="text-accent" />Tường cộng đồng
+                    </p>
+                    <WallFeed />
+                  </div>
+                </div>
+              )}
             </div>
 
             {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />}
@@ -93,4 +112,13 @@ export function Dashboard() {
 
 function Chip({ icon, v, cls, wide }: { icon: IconName; v: string; cls?: string; wide?: boolean }) {
   return <span className={`flex items-center justify-center gap-1 rounded-pill bg-bg/75 px-2 py-1 text-caption font-extrabold shadow-soft ${wide ? 'w-full' : ''}`}><Icon name={icon} size={13} filled className={cls} />{v}</span>;
+}
+
+function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: IconName; children: string }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-small font-bold transition-colors ${active ? 'bg-surface shadow-soft text-primary' : 'text-muted'}`}>
+      <Icon name={icon} size={13} filled={active} />{children}
+    </button>
+  );
 }

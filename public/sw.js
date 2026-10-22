@@ -1,7 +1,7 @@
 /* Service worker tự viết cho Mật Độ (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
    Chiến lược: điều hướng (navigate) network-first + rơi về vỏ app đã cache khi offline;
    tài nguyên tĩnh cùng miền dùng stale-while-revalidate. Không đụng tới request khác miền (Supabase). */
-const VERSION = 'ld-icons-20261021';
+const VERSION = 'ld-facts-20261022';
 const OFFLINE_URL = '/offline.html';
 const SHELL = ['/', OFFLINE_URL, '/manifest.webmanifest'];
 
@@ -25,23 +25,34 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Nhận WEB PUSH từ server (chạy cả khi app ĐÃ ĐÓNG) → hiện thông báo ra khay HĐH.
+// Nhận WEB PUSH từ server (chạy cả khi app ĐÃ ĐÓNG).
+// Nếu app đang focused → postMessage in-app toast thay vì OS notification (tránh double-alert).
+// Nếu app đóng hoặc nền → hiện thông báo khay HĐH.
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; }
   catch { data = { body: event.data ? event.data.text() : '' }; }
   const title = data.title || 'Mật Độ';
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: data.body || '',
-      tag: data.tag || 'gumi-reminder',   // trùng tag → thay thế, không chồng thông báo
-      renotify: true,
-      requireInteraction: data.requireInteraction !== false, // bám lại đến khi người dùng tắt → dễ thấy, không tự ẩn sau ~5s
-      icon: '/icons/icon-192.png?v=20261014',
-      badge: '/icons/icon-192.png?v=20261014',
-      data: { url: data.url || '/' },
-      lang: 'vi',
-    }),
+    (async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const focused = clients.find((c) => c.focused);
+      if (focused) {
+        focused.postMessage({ type: 'push-inapp', title, body: data.body || '', url: data.url || '/' });
+        return;
+      }
+      await self.registration.showNotification(title, {
+        body: data.body || '',
+        tag: data.tag || 'gumi-reminder',
+        renotify: true,
+        // iOS ignores requireInteraction; Android keeps it visible until dismissed.
+        requireInteraction: data.requireInteraction !== false,
+        icon: '/icons/icon-192.png?v=20261014',
+        badge: '/icons/icon-192.png?v=20261014',
+        data: { url: data.url || '/' },
+        lang: 'vi',
+      });
+    })(),
   );
 });
 

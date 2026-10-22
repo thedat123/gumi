@@ -37,6 +37,7 @@ export function MemoryMatch() {
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [failed, setFailed] = useState(false);
+  const [failSaveError, setFailSaveError] = useState(false);
   const [preview, setPreview] = useState(true); // mở hết thẻ cho ghi nhớ trước khi tính giờ
 
   // Mở toàn bộ thẻ ~3 giây rồi úp lại, sau đó đồng hồ 1 phút mới bắt đầu.
@@ -48,7 +49,7 @@ export function MemoryMatch() {
     if (timeLeft <= 0) {
       setFailed(true);
       playSfx('wrong');
-      api.submitMinigame(day, matched.length * 10).catch(() => {});
+      api.submitMinigame(day, matched.length * 10).catch(() => setFailSaveError(true));
       return;
     }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
@@ -56,15 +57,24 @@ export function MemoryMatch() {
   }, [timeLeft, preview, done, failed, day, matched.length, cfg.pairs.length]);
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
-  if (done) return <MissionDone day={day} points={m.points} note={`Ghép xong trong ${moves} lượt lật! ${cfg.success}`} />;
+  if (done) return <MissionDone day={day} points={m.points} earnedPoints={m.points} note={`Ghép xong trong ${moves} lượt lật! ${cfg.success}`} />;
   if (failed) return (
-    <div className="flex flex-col items-center gap-3 pt-6 text-center">
-      <Gumi state="hap_hoi" size={140} />
-      <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
-      <p className="max-w-xs text-small text-muted">{vi.minigames.common.timeUpMemory(matched.length, cfg.pairs.length)}</p>
-      <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{matched.length * 10} điểm · {matched.length} cặp đúng</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
-    </div>
+    <GameShell act={actOfDay(day)} title={cfg.title}>
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <Gumi state="hap_hoi" size={140} />
+        <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
+        <p className="max-w-xs text-small text-muted">{vi.minigames.common.timeUpMemory(matched.length, cfg.pairs.length)}</p>
+        <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{matched.length * 10} điểm · {matched.length} cặp đúng</p>
+        {failSaveError && (
+          <div className="flex w-full max-w-xs flex-col gap-2">
+            <Banner kind="error">Chưa lưu được kết quả. Kiểm tra mạng.</Banner>
+            <button onClick={() => { setFailSaveError(false); api.submitMinigame(day, matched.length * 10).catch(() => setFailSaveError(true)); }}
+              className="inline-flex min-h-10 items-center justify-center rounded-[14px] border border-black/10 grad-brand px-5 text-small font-semibold text-on-primary">Thử lại lưu</button>
+          </div>
+        )}
+        <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      </div>
+    </GameShell>
   );
 
   const flip = (i: number) => {
@@ -83,7 +93,7 @@ export function MemoryMatch() {
         setMatched(nm);
         setFlipped([]);
         setBusy(false);
-        if (nm.length === cfg.pairs.length) { setBurst((n) => n + 1); api.submitMinigame(day, m.points).catch(() => {}); setTimeout(() => setDone(true), 1200); }
+        if (nm.length === cfg.pairs.length) { setBurst((n) => n + 1); setTimeout(() => setDone(true), 1200); }
       }, 480);
     } else {
       setTimeout(() => { setFlipped([]); setBusy(false); }, 820);
@@ -94,16 +104,16 @@ export function MemoryMatch() {
     <GameShell act={actOfDay(day)} title={cfg.title} intro={cfg.intro}
       hud={<><GameStat icon="clock" value={preview ? 'Xem' : `${timeLeft}s`} tone={!preview && timeLeft <= 5 ? 'accent' : 'info'} /><GameStat icon="sparkle" value={`${moves}`} tone="accent" /></>}
       footer={<p className={`text-center text-caption font-semibold ${preview ? 'text-primary' : 'text-muted'}`}>{preview ? cfg.previewHint : `Đã ghép ${matched.length}/${cfg.pairs.length} cặp`}</p>}>
-      <div className="grid flex-1 grid-cols-4 content-center gap-2 sm:grid-cols-6 sm:gap-3">
+      <div className="grid flex-1 grid-cols-3 content-center gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-6 md:gap-3">
         {cards.map((c, i) => {
           const isMatched = matched.includes(c.pairId);
           const up = preview || isMatched || flipped.includes(i);
           return (
             <button key={c.id} type="button" onClick={() => flip(i)} aria-label={up ? c.text : 'Thẻ úp — chạm để lật'}
-              className={`card3d aspect-[5/4] transition-transform active:scale-95 ${up ? 'flipped' : ''}`}>
+              className={`card3d aspect-square sm:aspect-[5/4] transition-transform active:scale-95 ${up ? 'flipped' : ''}`}>
               <span className="card3d-inner">
-                <span className="card3d-face grad-brand border-2 border-white/50 text-on-primary"><Icon name="paw" size={30} className="text-white/90" /></span>
-                <span className={`card3d-face card3d-front border-2 p-2 text-center text-small font-bold leading-tight shadow-soft ${isMatched ? 'border-success bg-success/15 text-success card-pop' : 'border-primary/50 bg-surface text-text'}`}>{c.text}</span>
+                <span className="card3d-face grad-brand border-2 border-white/50 text-on-primary"><Icon name="paw" size={22} className="text-white/90 sm:!text-[30px]" /></span>
+                <span className={`card3d-face card3d-front border-2 p-1 text-center text-[0.6rem] font-bold leading-tight shadow-soft sm:p-2 sm:text-small ${isMatched ? 'border-success bg-success/15 text-success card-pop' : 'border-primary/50 bg-surface text-text'}`}>{c.text}</span>
               </span>
             </button>
           );

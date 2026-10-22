@@ -643,13 +643,13 @@ html.gfx-low .fixed-piece { animation: none; }
  .full-room .room-decor-garden .fixed-piece[data-spot="table"] { --spot-y: 59%; }
 }
 
-/* Action cards have variable height; keep the pet and drop target clear of the tray. */
+/* Action cards have variable height; sit Gumi just above the panel = visual floor on all devices. */
 @media (max-width: 900px) and (min-height: 561px) {
- .full-room .room-mascot { bottom: max(29%, calc(var(--room-actions-height, 200px) + 28px)); }
- .full-room.is-dying .room-mascot { bottom: max(36%, calc(var(--room-actions-height, 200px) + 28px)); }
+ .full-room .room-mascot { bottom: calc(var(--room-actions-height, 160px) + 20px); }
+ .full-room.is-dying .room-mascot { bottom: calc(var(--room-actions-height, 160px) + 52px); }
 }
 @media (max-width: 599px) and (max-height: 560px) {
- .full-room .room-mascot { bottom: max(37%, calc(var(--room-actions-height, 160px) + 22px)); }
+ .full-room .room-mascot { bottom: calc(var(--room-actions-height, 120px) + 16px); }
 }
 @media (min-width: 901px) and (min-height: 561px) {
  .full-room .room-mascot { bottom: max(17%, calc(var(--room-actions-height, 120px) + 28px)); }

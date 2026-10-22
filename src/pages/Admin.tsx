@@ -5,6 +5,7 @@ import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
+import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
@@ -13,6 +14,7 @@ const TABS: AdminTab[] = [
   { id: 'overview', label: 'Tổng quan', icon: 'medal' },
   { id: 'review', label: 'Duyệt ảnh', icon: 'flag' },
   { id: 'players', label: 'Người chơi', icon: 'paw' },
+  { id: 'wall', label: 'Tường cộng đồng', icon: 'sparkle' },
 ];
 
 const st = vi.admin.stats;
@@ -23,6 +25,7 @@ export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
   if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
+  if (tab === 'wall')   return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><WallPanel /></AdminShell>;
   return (
     <AdminShell tabs={TABS} active={tab} onSelect={setTab}>
       <AsyncView state={stats}>
@@ -155,6 +158,47 @@ function ReviewCard({ c, busy, disabled, onAct }: {
         </div>}
       </div>
     </article>
+  );
+}
+
+/* ============================ TƯỜNG CỘNG ĐỒNG ============================ */
+function WallPanel() {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState<string[]>([]);
+
+  const handleDelete = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id); setErr(null);
+    try {
+      await api.admin.deleteWallPost(id);
+      setDeleted((prev) => [...prev, id]);
+    } catch { setErr('Không xoá được bài. Thử lại.'); }
+    finally { setDeletingId(null); }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section className="admin-welcome flex flex-wrap items-center justify-between gap-6 rounded-[24px] p-6 sm:p-8">
+        <div className="max-w-xl">
+          <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · CỘNG ĐỒNG</p>
+          <h2 className="text-[28px] font-extrabold leading-tight text-white sm:text-[34px]">Tiếng nói từ hành trình.</h2>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Bài chia sẻ của người chơi sau khi hoàn thành thử thách. Xoá bài vi phạm nếu cần.</p>
+        </div>
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-[#F2A9BC]">
+          <Icon name="sparkle" size={28} filled />
+        </span>
+      </section>
+      {err && <div role="alert"><Banner kind="error">{err}</Banner></div>}
+      <section className="overflow-hidden rounded-[24px] border border-border bg-surface shadow-soft">
+        <div className="border-b border-border px-5 py-3.5">
+          <p className="text-small font-bold">Tất cả bài đăng</p>
+        </div>
+        <div className="p-4 sm:p-5">
+          <WallFeed onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
+        </div>
+      </section>
+    </div>
   );
 }
 

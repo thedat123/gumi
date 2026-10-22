@@ -1,7 +1,6 @@
 import { bossArt, drawGumiCar } from '../../lib/arcadeArt';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../../api';
 import { ArcadeOverlay, ArcadeStage } from '../../components/ArcadeStage';
 import { Banner } from '../../components/Banner';
 import { Icon } from '../../components/Icon';
@@ -15,7 +14,7 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 /** Cấu hình boss theo ngày (khó tăng dần: HP nhiều hơn, rơi nhanh hơn, nhiều đường xấu hơn). */
 const CFG: Record<number, { title: string; hp: number; every: number; bad: number; fall: number; burst: number; win: string }> = {
-  14: { title: 'Đánh Bại Boss Đường', hp: 16, every: 0.62, bad: 0.34, fall: 190, burst: 0, win: 'Boss Hồi 2 tan chảy! Bạn đã pha loãng cơn nghiện ngọt.' },
+  14: { title: 'Đánh Bại Boss Đường', hp: 16, every: 0.38, bad: 0.34, fall: 190, burst: 0, win: 'Boss Hồi 2 tan chảy! Bạn đã pha loãng cơn nghiện ngọt.' },
   21: { title: 'Đại Chiến Boss Cuối', hp: 26, every: 0.5, bad: 0.44, fall: 235, burst: 3.4, win: 'BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Mật Độ 🎓' },
 };
 
@@ -86,7 +85,7 @@ export function BossBattle({ onWon }: { onWon?: () => void } = {}) {
       // Bắt / trượt
       s.drops = s.drops.filter((d) => {
         if (d.y >= py - catchR * 0.5 && d.y <= py + catchR && Math.abs(d.x - pxAbs) < catchR) {
-          if (d.good) { s.hp = Math.max(0, s.hp - 1); setHp(s.hp); s.hit = 0.18; playSfx('sip'); if (s.hp <= 0) { to('won'); playSfx('win'); if (onWon) setTimeout(onWon, 600); else { api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 800); } } }
+          if (d.good) { s.hp = Math.max(0, s.hp - 1); setHp(s.hp); s.hit = 0.18; playSfx('sip'); if (s.hp <= 0) { to('won'); playSfx('win'); if (onWon) setTimeout(onWon, 600); else setTimeout(() => setDone(true), 800); } }
           else { s.lives = Math.max(0, s.lives - 1); setLives(s.lives); playSfx('sleep'); if (s.lives <= 0) { to('dead'); } }
           return false;
         }

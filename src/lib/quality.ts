@@ -26,7 +26,7 @@ export interface Quality {
 const PRESET: Record<Tier, Omit<Quality, 'tier' | 'reduce' | 'particles'>> = {
   low:  { pixelRatio: 1,   antialias: false, shadows: false, shadowMap: 512,  bloom: false, fpsCap: 30, dust: 16, rain: 70,  snow: 90,  pixiCount: 0.4 },
   mid:  { pixelRatio: 1.5, antialias: true,  shadows: true,  shadowMap: 1024, bloom: false, fpsCap: 60, dust: 40, rain: 150, snow: 200, pixiCount: 0.7 },
-  high: { pixelRatio: 2,   antialias: true,  shadows: true,  shadowMap: 1024, bloom: true,  fpsCap: 0,  dust: 60, rain: 220, snow: 300, pixiCount: 1 },
+  high: { pixelRatio: 2,   antialias: true,  shadows: true,  shadowMap: 1024, bloom: true,  fpsCap: 60, dust: 60, rain: 220, snow: 300, pixiCount: 1 },
 };
 
 function gpuIsWeak(): boolean {

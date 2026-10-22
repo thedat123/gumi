@@ -10,13 +10,11 @@ import webpush from 'web-push';
 
 // ——— Bảng lịch nhắc (GIỮ ĐỒNG BỘ với src/lib/reminders.ts & edge function cũ) ———
 const REMINDERS = [
-  { minute: 0, text: '👻 Bạn có thấy bóng dáng ai đó vừa bỏ lỡ challenge hôm nay không? Chính là bạn đấyy!!!!, nhanh tay vào khôi phục lại chuỗi nào.' },
-  { minute: 8 * 60, text: 'Thử thách hôm nay đang chờ bạn chinh phục đấy, Dành ít phút cho Gumi trước khi bắt đầu một ngày bận rộn nào.' },
-  { minute: 15 * 60, text: 'Gumi nhớ bạn rồi đấy, vào thăm Gumi một xíu được hong' },
-  { minute: 16 * 60, text: 'Đến giờ giải lao òi, đừng quên giảm đường cùng Gumi nhé bạn ơi 🐱' },
-  { minute: 17 * 60, text: 'Hãy thực hiện thử thách hôm nay đi nhé, coi như là vì tớ đi☺️' },
-  { minute: 20 * 60, text: 'Biết là bận rồi nhưng mà để ý Gumi một tí đi🥲' },
-  { minute: 21 * 60, text: 'Cả ngày trôi qua rồi mà bạn vẫn chưa ghé thăm tôi? Đừng để tôi phải đến tận nhà gõ cửa nhé đấy nhé!' },
+  { minute: 0,            text: '👻 Bạn có thấy bóng dáng ai đó vừa bỏ lỡ challenge hôm nay không? Chính là bạn đấyy!!!!, nhanh tay vào khôi phục lại chuỗi nào.' },
+  { minute: 8 * 60,       text: 'Thử thách hôm nay đang chờ bạn chinh phục đấy, Dành ít phút cho Gumi trước khi bắt đầu một ngày bận rộn nào.' },
+  { minute: 15 * 60,      text: 'Đến giờ giải lao òi, đừng quên giảm đường cùng Gumi nhé bạn ơi 🐱' },
+  { minute: 18 * 60,      text: 'Biết là bận rồi nhưng mà để ý Gumi một tí đi🥲' },
+  { minute: 21 * 60,      text: 'Cả ngày trôi qua rồi mà bạn vẫn chưa ghé thăm tôi? Đừng để tôi phải đến tận nhà gõ cửa nhé đấy nhé!' },
   { minute: 23 * 60 + 30, text: 'Đừng hòng đi ngủ yên ổn nếu chưa hoàn thành challenge hôm nay. Hoàn thành ngay trước khi quá muộn!' },
 ];
 

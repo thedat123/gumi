@@ -43,7 +43,7 @@ export function Wall() {
       <div className="flex flex-col gap-3">
         <Card className="flex flex-col gap-2">
           <div className="rounded-control bg-primary/8 p-3 text-left">
-            <p className="text-xs font-black uppercase tracking-widest text-primary">BƯỚC CUỐI · +15 ĐIỂM</p>
+            <p className="text-xs font-black uppercase tracking-widest text-primary">BƯỚC CUỐI · +25 ĐIỂM</p>
             <p className="mt-1 text-small font-semibold">{vi.wall.formPrompt}</p>
           </div>
           <label htmlFor="wall-msg" className="sr-only">{vi.wall.formPrompt}</label>

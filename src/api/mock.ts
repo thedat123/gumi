@@ -370,6 +370,12 @@ export function createMockApi(): Api {
       await delay(null, 200);
     },
     async photoUrl() { return null; }, // mock dùng emoji, không có ảnh thật
+    async deleteWallPost(id) {
+      requireSession();
+      if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
+      state.wall = state.wall.filter((p) => p.id !== id);
+      await delay(null, 150);
+    },
   };
 
   return {
@@ -562,6 +568,10 @@ export function createMockApi(): Api {
       requireSession();
       await delay(null, 400);
       if (!MINIGAME_DAYS.includes(day)) throw new ApiError('server');
+      // Idempotent: đã lưu rồi → trả success ngay (giống submit_minigame_score idempotent trong DB)
+      if (state.completed.includes(day)) {
+        return { ok: true, points: state.earnedPoints[day] ?? vi.missions[day - 1]?.points ?? 0 };
+      }
       ensurePlayable(day);
       if (earnedPoints !== undefined) state.earnedPoints[day] = earnedPoints;
       advance(day);

@@ -115,6 +115,7 @@ const admin: AdminApi = {
     const { data } = await db().storage.from('checkins').createSignedUrl(path, 3600);
     return data?.signedUrl ?? null;
   },
+  deleteWallPost: (id) => rpc('admin_delete_wall_post', { p_id: id }),
 };
 
 export function createSupabaseApi(): Api {

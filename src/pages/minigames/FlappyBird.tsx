@@ -1,7 +1,6 @@
 import { ufoArt } from '../../lib/arcadeArt';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../../api';
 import { ArcadeOverlay, ArcadeStage } from '../../components/ArcadeStage';
 import { Banner } from '../../components/Banner';
 import { MissionDone } from '../../components/MissionDone';
@@ -44,7 +43,6 @@ export function FlappyBird() {
   // Chốt ván: trao điểm mốc rồi chuyển sang màn hoàn thành (không cho chơi lại).
   const finish = (pts: number) => {
     setAward(pts); to('won'); playSfx('win');
-    api.submitMinigame(day, pts).catch(() => {});
     setTimeout(() => setDone(true), 700);
   };
 
@@ -60,7 +58,7 @@ export function FlappyBird() {
     if (s.mode === 'dead') { reset(); }
     const s2 = g.current;
     if (s2.mode === 'ready') to('play');
-    s2.vy = -0.82 * s2.h; // lực vỗ cánh, tỉ lệ theo chiều cao khung
+    s2.vy = -0.68 * s2.h; // lực vỗ cánh, tỉ lệ theo chiều cao khung
     s2.thrust = 1;
     s2.rot = -0.18;        // hất mũi LÊN ngay khi vỗ (cảm giác nhạy như Flappy thật)
     playSfx('pop');
@@ -73,18 +71,20 @@ export function FlappyBird() {
     return () => window.removeEventListener('keydown', onKey);
   }, [flap]);
 
-  // fpsCapOverride=0: native rAF, không throttle FPS → input lag ≤ 1 frame (~8ms@120fps, 16ms@60fps)
-  // Adaptive downgrade vẫn hạ DPR khi máy đuối, chỉ không cắt frameInterval như game 3D nặng.
+  // Không truyền fpsCapOverride → quality system tự quyết: low=30fps, mid=60fps, high=60fps.
+  // Adaptive downgrade hạ cả DPR lẫn frameInterval khi máy đuối — bắt được mọi loại thiết bị.
   useArcadeLoop(boxRef, canvasRef, (ctx, w, h, dt) => {
     const s = g.current;
     if (s.w !== w || s.h !== h) { s.w = w; s.h = h; if (s.mode === 'ready') s.by = h * 0.42; }
-    s.t += dt; s.thrust = Math.max(0, s.thrust - dt * 2.8);
+    s.t += dt;
+    const tier = getQuality().tier;
+    // Thrust/rot chỉ dùng để vẽ hiệu ứng — skip tính toán trên máy yếu
+    if (tier !== 'low') s.thrust = Math.max(0, s.thrust - dt * 2.8);
 
     const birdX = w * 0.3, birdR = clamp(h * 0.034, 12, 22);
     const gap = h * 0.34, pipeW = clamp(w * 0.13, 46, 80);
     const spacing = clamp(w * 0.56, 200, 380);
     const speed = 235 * (h / 620);
-    const tier = getQuality().tier;
 
     const die = () => {
       if (s.mode !== 'play') return;
@@ -125,18 +125,19 @@ export function FlappyBird() {
 
     if (s.mode === 'ready') s.by = h * 0.42 + Math.sin(s.t * 2.2) * h * 0.02;
 
-    const target = clamp((s.vy / h) * 1.7, -0.5, 1.15);
-    // 1-exp(-dt*k): frame-rate independent smooth — cùng "tốc độ xoay/giây" ở 30/60/120fps
-    s.rot += (target - s.rot) * (1 - Math.exp(-dt * 10));
+    if (tier !== 'low') {
+      const target = clamp((s.vy / h) * 1.7, -0.5, 1.15);
+      s.rot += (target - s.rot) * (1 - Math.exp(-dt * 10));
+    }
 
     let alpha = 1;
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
     draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, tier, skyCache: skyCache.current });
-  }, 0);
+  });
 
-  if (done) return <MissionDone day={day} points={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
+  if (done) return <MissionDone day={day} points={award} earnedPoints={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
 
   const hud = (
     <span className="flex shrink-0 items-center gap-1.5 rounded-pill bg-surface/90 px-3 py-1.5 text-small font-extrabold text-primary shadow-soft backdrop-blur">
@@ -214,11 +215,17 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
 
   // --- Chim (UFO Gumi) ---
   const r = d.birdR;
-  ctx.save();
-  ctx.translate(d.birdX | 0, by); ctx.rotate(s.rot * .3);
-
-  // Thruster: high = 3 luồng gradient, mid = 1 luồng flat (bỏ createLinearGradient), low = không có
-  if (tier !== 'low') {
+  if (tier === 'low') {
+    // Bỏ save/translate/rotate/restore — vẽ thẳng integer coords, không subpixel, nhanh nhất có thể
+    if (ufoArt.complete && ufoArt.naturalWidth) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(ufoArt, (d.birdX - r * 1.5) | 0, (by - r * 1.05) | 0, (r * 3) | 0, (r * 1.85) | 0);
+      ctx.imageSmoothingEnabled = true;
+    }
+  } else {
+    ctx.save();
+    ctx.translate(d.birdX | 0, by); ctx.rotate(s.rot * .3);
+    // Thruster: high = 3 luồng gradient, mid = 1 luồng flat
     const offsets = tier === 'high' ? [-.65, 0, .65] : [0];
     for (const off of offsets) {
       const len = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + off) * .2));
@@ -231,18 +238,13 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act
         glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
         ctx.fillStyle = glow;
       } else {
-        ctx.fillStyle = '#65dbff'; // flat, no gradient object for mid tier
+        ctx.fillStyle = '#65dbff';
       }
       ctx.fill();
     }
+    if (ufoArt.complete && ufoArt.naturalWidth) ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
+    ctx.restore();
   }
-
-  if (ufoArt.complete && ufoArt.naturalWidth) {
-    if (tier === 'low') ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
-    if (tier === 'low') ctx.imageSmoothingEnabled = true;
-  }
-  ctx.restore();
 }
 
 function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {

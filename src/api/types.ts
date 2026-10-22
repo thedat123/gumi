@@ -206,6 +206,8 @@ export interface AdminApi {
   setCheckinStatus(id: string, status: CheckinStatus, reason?: string): Promise<void>;
   /** URL ký tạm để XEM ảnh check-in (bucket riêng tư). Trả null nếu không phải đường dẫn ảnh. */
   photoUrl(path: string): Promise<string | null>;
+  /** Xoá bài đăng Tường cộng đồng (chỉ admin). */
+  deleteWallPost(id: string): Promise<void>;
 }
 
 /** Một thông báo trong trung tâm thông báo (chuông) — nguồn: bảng public.notifications. */

@@ -49,6 +49,7 @@ export function Crossword() {
   const [burst, setBurst] = useState(0);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [failSaveError, setFailSaveError] = useState(false);
   const refs = useRef<Record<string, HTMLInputElement | null>>({});
   const dirRef = useRef<Dir>('across'); // hướng gõ hiện tại (đồng bộ, không lệ thuộc render)
 
@@ -63,7 +64,7 @@ export function Crossword() {
   // Đồng hồ 3 phút.
   useEffect(() => {
     if (done || failed || allSolved) return;
-    if (timeLeft <= 0) { setFailed(true); playSfx('wrong'); api.submitMinigame(day, solvedCount * 5).catch(() => {}); return; }
+    if (timeLeft <= 0) { setFailed(true); playSfx('wrong'); api.submitMinigame(day, solvedCount * 5).catch(() => setFailSaveError(true)); return; }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
   }, [timeLeft, done, failed, allSolved, day, solvedCount]);
@@ -75,20 +76,29 @@ export function Crossword() {
   // Thắng cả bảng.
   useEffect(() => {
     if (allSolved && !done && !failed) {
-      setBurst((b) => b + 1); api.submitMinigame(day, words.length * 5).catch(() => {}); const t = setTimeout(() => setDone(true), 900); return () => clearTimeout(t);
+      setBurst((b) => b + 1); const t = setTimeout(() => setDone(true), 900); return () => clearTimeout(t);
     }
   }, [allSolved, done, failed, day, words.length]);
 
   if (!m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
-  if (done) return <MissionDone day={day} points={m.points} note={cfg.success} />;
+  if (done) return <MissionDone day={day} points={m.points} earnedPoints={m.points} note={cfg.success} />;
   if (failed) return (
-    <div className="flex flex-col items-center gap-3 pt-6 text-center">
-      <Gumi state="hap_hoi" size={140} />
-      <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
-      <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, words.length)}</p>
-      <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{solvedCount * 5} điểm · {solvedCount} từ đúng</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
-    </div>
+    <GameShell act={actOfDay(day)} title={cfg.title}>
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <Gumi state="hap_hoi" size={140} />
+        <Banner kind="error">{vi.minigames.common.timeUp}</Banner>
+        <p className="max-w-xs text-small text-muted">{cfg.timeUp(solvedCount, words.length)}</p>
+        <p className="rounded-pill bg-accent/15 px-4 py-2 text-small font-extrabold text-primary">+{solvedCount * 5} điểm · {solvedCount} từ đúng</p>
+        {failSaveError && (
+          <div className="flex w-full max-w-xs flex-col gap-2">
+            <Banner kind="error">Chưa lưu được kết quả. Kiểm tra mạng.</Banner>
+            <button onClick={() => { setFailSaveError(false); api.submitMinigame(day, solvedCount * 5).catch(() => setFailSaveError(true)); }}
+              className="inline-flex min-h-10 items-center justify-center rounded-[14px] border border-black/10 grad-brand px-5 text-small font-semibold text-on-primary">Thử lại lưu</button>
+          </div>
+        )}
+        <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      </div>
+    </GameShell>
   );
 
   const pickDir = (key: string, prefer?: Dir): Dir => {

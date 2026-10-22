@@ -39,6 +39,7 @@ export function SortGame() {
   const [done, setDone] = useState(false);
   const [tries, setTries] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [failSaveError, setFailSaveError] = useState(false);
   const [earned, setEarned] = useState(20);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -50,12 +51,21 @@ export function SortGame() {
 
   if (done) return <MissionDone day={day} points={earned} note={vi.minigames.sort.success} />;
   if (failed) return (
-    <div className="flex flex-col items-center gap-3 pt-6 text-center">
-      <Gumi state="hap_hoi" size={140} />
-      <Banner kind="error">{vi.minigames.sort.outOfTries}</Banner>
-      <p className="max-w-xs text-small text-muted">{vi.minigames.sort.outOfTriesSub}</p>
-      <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
-    </div>
+    <GameShell act={actOfDay(day)} title={vi.minigames.sort.title}>
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <Gumi state="hap_hoi" size={140} />
+        <Banner kind="error">{vi.minigames.sort.outOfTries}</Banner>
+        <p className="max-w-xs text-small text-muted">{vi.minigames.sort.outOfTriesSub}</p>
+        {failSaveError && (
+          <div className="flex w-full max-w-xs flex-col gap-2">
+            <Banner kind="error">Chưa lưu được kết quả. Kiểm tra mạng.</Banner>
+            <button onClick={() => { setFailSaveError(false); api.submitMinigame(day, 0).catch(() => setFailSaveError(true)); }}
+              className="inline-flex min-h-10 items-center justify-center rounded-[14px] border border-black/10 grad-brand px-5 text-small font-semibold text-on-primary">Thử lại lưu</button>
+          </div>
+        )}
+        <Link to="/journey" className="mt-1 inline-flex min-h-11 items-center justify-center rounded-[16px] border border-black/10 grad-brand px-6 font-semibold text-on-primary shadow-pop">{vi.minigames.common.backHome}</Link>
+      </div>
+    </GameShell>
   );
 
   const onDown = (e: RPointerEvent<HTMLDivElement>, i: number) => {
@@ -113,7 +123,7 @@ export function SortGame() {
     playSfx('wrong');
     if (used >= MAX_TRIES) {
       setFailed(true);
-      api.submitMinigame(day, 0).catch(() => {});
+      api.submitMinigame(day, 0).catch(() => setFailSaveError(true));
     } else {
       setWarn(true);
       setShake((n) => n + 1);

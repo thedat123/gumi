@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import { api } from '../../api';
 import { Banner } from '../../components/Banner';
 import { Confetti, GameShell, GameStat } from '../../components/GameShell';
 import { Icon } from '../../components/Icon';
@@ -117,7 +116,7 @@ export function WordHunt() {
     const nf = found.map((f, i) => (i === hit ? true : f));
     setFound(nf);
     playSfx('pop');
-    if (nf.every(Boolean)) { playSfx('happy'); setBurst((n) => n + 1); api.submitMinigame(day).catch(() => {}); setTimeout(() => setDone(true), 1100); }
+    if (nf.every(Boolean)) { playSfx('happy'); setBurst((n) => n + 1); setTimeout(() => setDone(true), 1100); }
   };
 
   return (
