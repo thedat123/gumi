@@ -97,7 +97,7 @@ const Node = memo(function Node({ day, state, isToday, replayAll }: { day: numbe
   const style = { left: `${(xOf(day) / W) * 100}%`, top: `${yOf(day)}px` };
 
   const circle = (
-    <span className={`relative flex ${size} items-center justify-center rounded-full border-[3px] font-extrabold shadow-[0_5px_0_rgba(58,36,30,0.22)] ${look.face} ${mile ? 'ring-4 ring-[#F5C542]/70' : ''} ${active ? 'node-today' : ''} ${locked ? '' : 'transition-transform group-active:translate-y-0.5 group-active:shadow-[0_3px_0_rgba(58,36,30,0.22)]'}`}>
+    <span className={`jn-btn relative flex ${size} items-center justify-center rounded-full border-[3px] font-extrabold shadow-[0_5px_0_rgba(58,36,30,0.22)] ${look.face} ${mile ? 'ring-4 ring-[#F5C542]/70' : ''} ${active ? 'node-today' : ''} ${locked ? '' : 'transition-transform group-active:translate-y-0.5 group-active:shadow-[0_3px_0_rgba(58,36,30,0.22)]'}`}>
       <span aria-hidden="true" className="absolute left-1/2 top-1 h-2.5 w-6 -translate-x-1/2 rounded-full bg-white/45 blur-[1px]" />
       <span className="relative flex items-center justify-center"><Glyph day={day} state={replayAll && state === 'future' ? 'open' : state} mile={mile} /></span>
     </span>
@@ -169,24 +169,20 @@ export const JourneyMap = memo(function JourneyMap({ days, today, replayAll }: {
         );
       })}
 
-      {/* Con đường liền mạch — gfx-low dùng polyline đơn giản thay bezier để nhẹ hơn */}
-      <svg className="absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
-        {!lowGfx && <defs>
-          <linearGradient id="road" gradientUnits="userSpaceOnUse" x1="0" y1={H} x2="0" y2="0">
-            <stop offset="0" stopColor="#FA990A" /><stop offset="0.5" stopColor="#B83556" /><stop offset="1" stopColor="#55768C" />
-          </linearGradient>
-        </defs>}
-        {lowGfx ? (
-          <polyline points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        ) : (
-          <>
-            <path d={pathThrough(pts)} fill="none" stroke="rgba(24,30,44,0.3)" strokeWidth="23" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-            <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="15" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-            <path d={pathThrough(pts)} fill="none" stroke="rgba(91,70,72,0.26)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 15" vectorEffect="non-scaling-stroke" />
-            {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
-          </>
-        )}
-      </svg>
+      {/* Con đường liền mạch — gfx-low ẩn SVG hoàn toàn để tiết kiệm bộ nhớ GPU rasterization */}
+      {!lowGfx && (
+        <svg className="absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="road" gradientUnits="userSpaceOnUse" x1="0" y1={H} x2="0" y2="0">
+              <stop offset="0" stopColor="#FA990A" /><stop offset="0.5" stopColor="#B83556" /><stop offset="1" stopColor="#55768C" />
+            </linearGradient>
+          </defs>
+          <path d={pathThrough(pts)} fill="none" stroke="rgba(24,30,44,0.3)" strokeWidth="23" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="15" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <path d={pathThrough(pts)} fill="none" stroke="rgba(91,70,72,0.26)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 15" vectorEffect="non-scaling-stroke" />
+          {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
+        </svg>
+      )}
 
       {/* Cờ ĐÍCH ở đỉnh */}
       <div className="absolute left-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-pill bg-primary px-4 py-1.5 text-on-primary shadow-pop" style={{ top: 34 }}>

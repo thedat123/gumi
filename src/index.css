@@ -55,6 +55,12 @@ html.gfx-mid *, html.gfx-mid *::before, html.gfx-mid *::after {
   -webkit-backdrop-filter: none !important;
 }
 html.gfx-low body { background: var(--color-bg); }
+/* gfx-low: header/nav dùng nền đặc để giảm alpha blending overhead khi compositor gộp layer.
+   sticky header + fixed nav vẫn là 2 GPU layer riêng (không tránh được), nhưng nền đặc giúp
+   compositor bỏ qua bước đọc layer phía dưới khi render. */
+html.gfx-low .app-header { background-color: var(--color-bg) !important; }
+html.gfx-low .nav-pill { background-color: var(--color-surface) !important; box-shadow: none !important; }
+html.gfx-low .journey-hud { background-color: var(--color-surface) !important; }
 
 /* Khu vận hành là một sản phẩm riêng: nền, navigation và độ tương phản tách hẳn thế giới game. */
 .admin-portal { background: radial-gradient(130% 90% at 100% 0%, #eef1f8 0%, #f4f6fa 45%, #eef0f6 100%); }

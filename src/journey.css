@@ -303,13 +303,20 @@ html.gfx-low .node-today, html.gfx-low .jn-ring, html.gfx-low .scene-decor { ani
    contain:layout style trên journey-world cô lập reflow/repaint bên trong.
    Bóng đổ nhiều lớp trên .jn × 21 nút = nặng GPU → thay bằng bóng đơn giản. */
 html.gfx-low .jnode { will-change: auto; }
-/* 21 gloss span trong Node dùng blur-[1px] → filter:blur(1px) → 21 GPU layer → OOM crash Helio G80.
+/* Gloss span trong Node dùng blur-[1px] → filter:blur(1px) → GPU layer mỗi node → OOM crash Helio G80.
    Global rule chỉ cover backdrop-filter, không cover filter thông thường. */
 html.gfx-low .journey-world [class*="blur-"] { filter: none !important; }
 html.gfx-low .jn { box-shadow: 0 2px 6px rgba(0,0,0,.28) !important; }
 html.gfx-low .jn-shadow { display: none; }
 html.gfx-low .jn-ring { display: none; }
 html.gfx-low .jland, html.gfx-low .jflag--start { box-shadow: none !important; backdrop-filter: none !important; }
+/* Bóng phức tạp + ring vàng trên nút node → đơn giản hoá để giảm chi phí paint trên gfx-low. */
+html.gfx-low .jn-btn {
+  box-shadow: 0 1px 3px rgba(0,0,0,.22) !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  transition: none !important;
+}
 
 /* TẦM TRUNG (gfx-mid): bản đồ cũng nặng (15 đốm + tia + beacon + mote + nền cuộn) → áp dụng y như low. */
 html.gfx-mid .jrays, html.gfx-mid .jmote, html.gfx-mid .scene-bit { display: none; }

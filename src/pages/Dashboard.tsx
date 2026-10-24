@@ -47,7 +47,7 @@ export function Dashboard() {
             return (
               <>
                 {/* ===== Header cố định: HUD + banner (nội dung căn giữa dù nền tràn ngang) ===== */}
-                <div className="relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
+                <div className="journey-hud relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
                  <div className="mx-auto w-full max-w-[560px]">
                   <div className="flex items-center gap-2.5">
                     <Gumi state={s.gumi} size={46} faceOnly progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />

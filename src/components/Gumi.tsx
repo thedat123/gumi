@@ -343,6 +343,7 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
   const style = {
     '--gumi-size': `${size}px`,
     '--hop-delay': `${hopDelay}s`,
+    ...(faceOnly ? { aspectRatio: '144 / 112' } : {}),
   } as CSSProperties;
 
   return (

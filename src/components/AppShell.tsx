@@ -47,7 +47,7 @@ export function AppShell() {
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Header dính trên — thanh chuẩn: chiều cao cố định, nội dung căn giữa, có max-width */}
-      <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
+      <header className="app-header safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
           <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
             <img src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-[11px] object-cover shadow-pop ring-2 ring-surface" />
@@ -97,7 +97,7 @@ export function AppShell() {
       {/* Thanh điều hướng dưới (nổi) — ẩn ở màn Phòng Gumi, màn chơi & onboarding (chưa có hồ sơ) */}
       {session && !immersive && !isOnboarding && (
         <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-4 pb-3" aria-label="Điều hướng chính">
-          <div className="flex gap-1 rounded-pill border border-border bg-surface/95 p-1.5 shadow-soft backdrop-blur">
+          <div className="nav-pill flex gap-1 rounded-pill border border-border bg-surface/95 p-1.5 shadow-soft backdrop-blur">
             {items.map((i) => (
               <NavLink key={i.to} to={i.to} end={i.end} className={barLink}>{i.label}</NavLink>
             ))}
