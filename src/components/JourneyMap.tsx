@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone, TOTAL_DAYS, ACT_STARTS } from '../lib/scoring';
+import { getQuality } from '../lib/quality';
 import { Gumi } from './Gumi';
 import { Icon } from './Icon';
 import type { DayState } from '../api/types';
@@ -101,6 +102,7 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
   const meRef = useRef<HTMLDivElement>(null);
   useEffect(() => { meRef.current?.scrollIntoView({ block: 'center' }); }, []);
 
+  const lowGfx = getQuality().tier === 'low';
   const pts = days.map((_, i) => ({ x: xOf(i + 1), y: yOf(i + 1) }));
   let frontier = 0;
   days.forEach((s, i) => { if (reached(s)) frontier = i + 1; });
@@ -108,7 +110,7 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
   const charState = days[charDay - 1] ?? 'future';
 
   return (
-    <div className="journey-world relative w-full overflow-hidden border border-white/50 shadow-soft" style={{ height: H }}>
+    <div className="journey-world relative w-full overflow-hidden" style={{ height: H }}>
       {/* Nền 2 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax) */}
       {BANDS.map((b) => (
         <div key={b.act} aria-hidden="true" className="absolute inset-x-0" style={{ top: b.top, height: b.height, background: BAND_BG[b.act] }} />
@@ -126,17 +128,23 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
         );
       })}
 
-      {/* Con đường liền mạch */}
+      {/* Con đường liền mạch — gfx-low dùng polyline đơn giản thay bezier để nhẹ hơn */}
       <svg className="absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
-        <defs>
+        {!lowGfx && <defs>
           <linearGradient id="road" gradientUnits="userSpaceOnUse" x1="0" y1={H} x2="0" y2="0">
             <stop offset="0" stopColor="#FA990A" /><stop offset="0.5" stopColor="#B83556" /><stop offset="1" stopColor="#55768C" />
           </linearGradient>
-        </defs>
-        <path d={pathThrough(pts)} fill="none" stroke="rgba(24,30,44,0.3)" strokeWidth="23" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="15" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={pathThrough(pts)} fill="none" stroke="rgba(91,70,72,0.26)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 15" vectorEffect="non-scaling-stroke" />
-        {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
+        </defs>}
+        {lowGfx ? (
+          <polyline points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        ) : (
+          <>
+            <path d={pathThrough(pts)} fill="none" stroke="rgba(24,30,44,0.3)" strokeWidth="23" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            <path d={pathThrough(pts)} fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="15" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            <path d={pathThrough(pts)} fill="none" stroke="rgba(91,70,72,0.26)" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 15" vectorEffect="non-scaling-stroke" />
+            {frontier >= 2 && <path className="jroad-flow" d={pathThrough(pts.slice(0, frontier))} fill="none" stroke="url(#road)" strokeWidth="14" strokeLinecap="round" strokeDasharray="1 13" vectorEffect="non-scaling-stroke" />}
+          </>
+        )}
       </svg>
 
       {/* Cờ ĐÍCH ở đỉnh */}
@@ -147,10 +155,12 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
       {/* Các chặng */}
       {days.map((state, i) => <Node key={i + 1} day={i + 1} state={state} isToday={i + 1 === today} replayAll={replayAll} />)}
 
-      {/* Gumi đang đứng trên đường tại chặng hiện tại — to gấp đôi (≈1/2 mèo phòng khách) cho rõ;
-          offset top theo tỉ lệ size để CHÂN vẫn chạm đúng mốc. */}
-      <div ref={meRef} className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
+      {/* Vị trí Gumi trên bản đồ: SVG đầy đủ (máy khoẻ) hoặc emoji nhẹ (gfx-low — tránh crash) */}
+      <div ref={meRef} className="journey-gumi-pin pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
         <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
+      </div>
+      <div className="journey-gumi-emoji pointer-events-none absolute z-30 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px` }}>
+        <span className="text-[32px] leading-none drop-shadow" aria-hidden="true">🐱</span>
       </div>
 
       {/* Vạch xuất phát ở chân núi */}

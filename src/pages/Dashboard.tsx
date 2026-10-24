@@ -25,8 +25,9 @@ export function Dashboard() {
 
   return (
     <>
-      {/* Nền kem xanh luôn hiển thị kể cả khi đang tải — tránh nhấp nháy trắng/đen khi điều hướng */}
-      <div aria-hidden className="fixed inset-0 -z-10" style={{ background: 'radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%)' }} />
+      {/* Nền luôn hiển thị kể cả khi đang tải — tránh nhấp nháy trắng/đen khi điều hướng.
+          gfx-low dùng màu đặc (không gradient) để tránh layer phức tạp trên GPU kém. */}
+      <div aria-hidden className="fixed inset-0 -z-10 journey-bg-fixed" />
 
       {/* Bản đồ tràn viền: mobile = 1 cột; desktop = full width (cinematic full-bleed) */}
       <div className="journey-viewport relative mx-auto flex w-full flex-col overflow-hidden">

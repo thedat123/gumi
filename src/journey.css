@@ -1,5 +1,9 @@
 /* Hành trình: bản đồ chương + chuyển cảnh + BỐI CẢNH VÙNG ĐẤT. Ưu tiên animate transform/opacity. */
 
+/* Nền cố định phía sau bản đồ — gradient đẹp cho máy khoẻ, màu đặc cho máy yếu (không có GPU layer phức tạp). */
+.journey-bg-fixed { background: radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%); }
+html.gfx-low .journey-bg-fixed { background: #D8C8ED; }
+
 /* Khung bản đồ toàn màn hình — dùng dvh để điền vừa vùng nhìn thấy trên điện thoại, vh là dự phòng
    cho Samsung Browser / Chrome cũ chưa hỗ trợ dvh. Hai khai báo height: trình duyệt cũ dùng dòng 1. */
 .journey-viewport {
@@ -293,9 +297,24 @@ html.gfx-low .scene-bit { display: none; }
 /* Còn sót chạy LIÊN TỤC trên gfx-low: node hôm nay nhấp nháy, vòng node, cây đung đưa → tắt nốt. */
 html.gfx-low .node-today, html.gfx-low .jn-ring, html.gfx-low .scene-decor { animation: none !important; }
 
+/* GFX-LOW: BẢN ĐỒ CỰC NHẸ — ngăn Galaxy A32 crash khi mở /journey.
+   will-change:transform trên 21 .jnode = 21 GPU compositing layer → xóa hết để tiết kiệm VRAM.
+   contain:layout style trên journey-world cô lập reflow/repaint bên trong.
+   Bóng đổ nhiều lớp trên .jn × 21 nút = nặng GPU → thay bằng bóng đơn giản. */
+html.gfx-low .jnode { will-change: auto; }
+html.gfx-low .journey-world { contain: layout style; }
+html.gfx-low .jn { box-shadow: 0 2px 6px rgba(0,0,0,.28) !important; }
+html.gfx-low .jn-shadow { display: none; }
+html.gfx-low .jn-ring { display: none; }
+html.gfx-low .jland, html.gfx-low .jflag--start { box-shadow: none !important; backdrop-filter: none !important; }
+html.gfx-low .journey-gumi-pin { display: none; }  /* ẩn Gumi SVG 61 paths trên bản đồ, dùng emoji thay */
+html.gfx-low .journey-gumi-emoji { display: flex; }
+
 /* TẦM TRUNG (gfx-mid): bản đồ cũng nặng (15 đốm + tia + beacon + mote + nền cuộn) → áp dụng y như low. */
 html.gfx-mid .jrays, html.gfx-mid .jmote, html.gfx-mid .scene-bit { display: none; }
 html.gfx-mid .jroad-flow, html.gfx-mid .jbeacon-glow, html.gfx-mid .jbeacon-ring,
 html.gfx-mid .scene-mist, html.gfx-mid .scene-near, html.gfx-mid .scene-cloud,
 html.gfx-mid .node-today, html.gfx-mid .jn-ring, html.gfx-mid .scene-decor { animation: none !important; }
 html.gfx-mid .scene-far, html.gfx-mid .scene-mid { transform: none !important; }
+html.gfx-mid .jnode { will-change: auto; }
+html.gfx-mid .journey-world { contain: layout style; }
