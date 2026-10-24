@@ -129,7 +129,7 @@ function WallTab() {
   );
   if (desktop) return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24">
-      <div className="mx-auto max-w-[640px] px-3 pt-4">{title}<WallFeed pageSize={8} /></div>
+      <div className="mx-auto max-w-[640px] px-3 pt-4">{title}<WallFeed pageSize={10} pageSizes={[5, 10, 20, 50]} storageKey="wall" /></div>
     </div>
   );
   return (

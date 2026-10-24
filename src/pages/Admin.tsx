@@ -10,7 +10,7 @@ import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
-import { Pagination, usePagination } from '../components/Pagination';
+import { ADMIN_PAGE_SIZES, Pagination, usePagination } from '../components/Pagination';
 
 const TABS: AdminTab[] = [
   { id: 'event', label: 'Sự kiện trực tiếp', icon: 'medal' },
@@ -27,7 +27,7 @@ const TOTAL = vi.journey.total;
 export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
-  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults tone="light" /></AdminShell>;
+  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults tone="light" pageSizes={ADMIN_PAGE_SIZES} /></AdminShell>;
   if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
   if (tab === 'wall')   return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><WallPanel /></AdminShell>;
   return (
@@ -108,7 +108,7 @@ function ReviewPanel() {
 
 /** Lưới ảnh chờ duyệt, 12 ảnh/trang (duyệt xong ảnh biến mất, trang tự lùi nếu trống). */
 function ReviewGrid<T>({ items, resetKey, render }: { items: T[]; resetKey: string; render: (c: T) => ReactNode }) {
-  const pg = usePagination(items, 12, resetKey);
+  const pg = usePagination(items, 12, resetKey, { sizes: [12, 24, 48, 96], storageKey: 'admin-review' });
   return (
     <div className="flex flex-col">
       <div className="grid items-start gap-5 bg-bg/40 p-4 min-[700px]:grid-cols-2 sm:p-5 min-[1600px]:grid-cols-3">{pg.slice.map(render)}</div>
@@ -208,7 +208,7 @@ function WallPanel() {
           <p className="text-small font-bold">Tất cả bài đăng</p>
         </div>
         <div className="p-4 sm:p-5">
-          <WallFeed pageSize={10} hiddenIds={deleted} onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
+          <WallFeed pageSize={10} pageSizes={ADMIN_PAGE_SIZES} storageKey="admin-wall" hiddenIds={deleted} onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
         </div>
       </section>
     </div>
@@ -430,7 +430,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
             : b.points - a.points);
   }, [s.players, q, sort, status]);
 
-  const pg = usePagination(rows, 20, `${q}|${sort}|${status}`);
+  const pg = usePagination(rows, 20, `${q}|${sort}|${status}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-players' });
   const offset = pg.from - 1; // số thứ tự liên tục qua các trang
 
   const SORTS: { k: SortKey; label: string }[] = [

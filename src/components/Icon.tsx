@@ -7,7 +7,7 @@ import type { SVGProps } from 'react';
 export type IconName =
   | 'star' | 'flame' | 'medal' | 'heart' | 'paw' | 'volume' | 'volume-off'
   | 'map' | 'trophy' | 'shirt' | 'camera' | 'gamepad' | 'sofa' | 'utensils' | 'leaf'
-  | 'chevron-left' | 'chevron-right' | 'arrow-right' | 'logout' | 'sparkle' | 'lock'
+  | 'chevron-left' | 'chevron-right' | 'chevron-down' | 'arrow-right' | 'logout' | 'sparkle' | 'lock'
   | 'check' | 'bowl' | 'drop' | 'x' | 'clock' | 'play' | 'flag' | 'shield' | 'undo'
   | 'sun' | 'cloud' | 'moon' | 'plus' | 'minus' | 'trash' | 'flip'
   | 'hat' | 'glasses' | 'scarf' | 'palette';
@@ -62,6 +62,8 @@ export function Icon({ name, size = 22, filled = false, strokeWidth = 1.75, ...r
       return <svg {...common} strokeWidth={2.2}><path d="M14.5 6L9 12l5.5 6" /></svg>;
     case 'chevron-right':
       return <svg {...common} strokeWidth={2.2}><path d="M9.5 6L15 12l-5.5 6" /></svg>;
+    case 'chevron-down':
+      return <svg {...common} strokeWidth={2.2}><path d="M6 9.5l6 5.5 6-5.5" /></svg>;
     case 'arrow-right':
       return <svg {...common}><path d="M4 12h15M13 6l6 6-6 6" /></svg>;
     case 'logout':

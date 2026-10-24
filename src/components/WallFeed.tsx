@@ -22,7 +22,7 @@ function timeAgo(iso: string | null | undefined): string {
 
 /** Feed bài đăng Tường cộng đồng — dùng trong Dashboard (read-only) và Admin (có nút xoá).
  *  `pageSize` có → chia trang (desktop, admin); không có → hiện hết, khung cha tự cuộn (điện thoại). */
-export function WallFeed({ onDelete, hiddenIds, pageSize }: { onDelete?: (id: string) => void; hiddenIds?: readonly string[]; pageSize?: number }) {
+export function WallFeed({ onDelete, hiddenIds, pageSize, pageSizes, storageKey }: { onDelete?: (id: string) => void; hiddenIds?: readonly string[]; pageSize?: number; pageSizes?: readonly number[]; storageKey?: string }) {
   const posts = useAsync(() => api.getWallPosts(), [], 'wall');
 
   return (
@@ -31,14 +31,14 @@ export function WallFeed({ onDelete, hiddenIds, pageSize }: { onDelete?: (id: st
         const visible = hiddenIds?.length ? list.filter((p) => !hiddenIds.includes(p.id)) : list;
         return visible.length === 0
           ? <Banner kind="info">{vi.wall.empty}</Banner>
-          : <WallList posts={visible} onDelete={onDelete} pageSize={pageSize} />;
+          : <WallList posts={visible} onDelete={onDelete} pageSize={pageSize} pageSizes={pageSizes} storageKey={storageKey} />;
       }}
     </AsyncView>
   );
 }
 
-function WallList({ posts, onDelete, pageSize }: { posts: WallPost[]; onDelete?: (id: string) => void; pageSize?: number }) {
-  const pg = usePagination(posts, pageSize ?? Math.max(posts.length, 1));
+function WallList({ posts, onDelete, pageSize, pageSizes, storageKey }: { posts: WallPost[]; onDelete?: (id: string) => void; pageSize?: number; pageSizes?: readonly number[]; storageKey?: string }) {
+  const pg = usePagination(posts, pageSize ?? Math.max(posts.length, 1), null, { sizes: pageSizes, storageKey });
   const top = useRef<HTMLDivElement>(null);
   const shown = pageSize ? pg.slice : posts;
   const setPage = (n: number) => { pg.setPage(n); top.current?.scrollIntoView({ block: 'nearest' }); };
