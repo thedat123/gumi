@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { vi, type Line } from '../content/vi';
 import { Gumi } from './Gumi';
 
 const FACE: Record<Line['who'], string> = { gumi: '🐱', boss: '🧋', narrator: '' };
 
 /** Một dòng thoại trong chương. Gumi bên trái, Boss Đường bên phải, người kể ở giữa. */
-export function DialogueLine({ line }: { line: Line }) {
+export const DialogueLine = memo(function DialogueLine({ line }: { line: Line }) {
   if (line.who === 'narrator') {
     return <p className="line-in mx-auto max-w-[90%] rounded-pill bg-surface/80 px-4 py-1.5 text-center text-small italic text-muted shadow-soft backdrop-blur">{line.text}</p>;
   }
@@ -23,4 +24,4 @@ export function DialogueLine({ line }: { line: Line }) {
       </div>
     </div>
   );
-}
+});

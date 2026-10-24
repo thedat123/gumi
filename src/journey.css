@@ -303,13 +303,13 @@ html.gfx-low .node-today, html.gfx-low .jn-ring, html.gfx-low .scene-decor { ani
    contain:layout style trên journey-world cô lập reflow/repaint bên trong.
    Bóng đổ nhiều lớp trên .jn × 21 nút = nặng GPU → thay bằng bóng đơn giản. */
 html.gfx-low .jnode { will-change: auto; }
-html.gfx-low .journey-world { contain: layout style; }
+/* 21 gloss span trong Node dùng blur-[1px] → filter:blur(1px) → 21 GPU layer → OOM crash Helio G80.
+   Global rule chỉ cover backdrop-filter, không cover filter thông thường. */
+html.gfx-low .journey-world [class*="blur-"] { filter: none !important; }
 html.gfx-low .jn { box-shadow: 0 2px 6px rgba(0,0,0,.28) !important; }
 html.gfx-low .jn-shadow { display: none; }
 html.gfx-low .jn-ring { display: none; }
 html.gfx-low .jland, html.gfx-low .jflag--start { box-shadow: none !important; backdrop-filter: none !important; }
-html.gfx-low .journey-gumi-pin { display: none; }  /* ẩn Gumi SVG 61 paths trên bản đồ, dùng emoji thay */
-html.gfx-low .journey-gumi-emoji { display: flex; }
 
 /* TẦM TRUNG (gfx-mid): bản đồ cũng nặng (15 đốm + tia + beacon + mote + nền cuộn) → áp dụng y như low. */
 html.gfx-mid .jrays, html.gfx-mid .jmote, html.gfx-mid .scene-bit { display: none; }
@@ -318,4 +318,5 @@ html.gfx-mid .scene-mist, html.gfx-mid .scene-near, html.gfx-mid .scene-cloud,
 html.gfx-mid .node-today, html.gfx-mid .jn-ring, html.gfx-mid .scene-decor { animation: none !important; }
 html.gfx-mid .scene-far, html.gfx-mid .scene-mid { transform: none !important; }
 html.gfx-mid .jnode { will-change: auto; }
-html.gfx-mid .journey-world { contain: layout style; }
+/* gfx-mid: cũng xoá filter:blur(1px) trong journey-world (21 gloss spans × GPU layer = OOM) */
+html.gfx-mid .journey-world [class*="blur-"] { filter: none !important; }

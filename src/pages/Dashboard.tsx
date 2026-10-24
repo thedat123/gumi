@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
@@ -21,7 +21,7 @@ export function Dashboard() {
   const [passError, setPassError] = useState(false);
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
   const [tab, setTab] = useState<'journey' | 'wall'>('journey');
-  const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
+  const fire = useCallback((name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 })), []);
 
   return (
     /* Bản đồ tràn viền — nền đặt trực tiếp trên container (không dùng position:fixed -z-10

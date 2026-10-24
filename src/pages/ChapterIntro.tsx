@@ -56,7 +56,7 @@ export function ChapterIntro() {
 
         {/* Mascot ở giữa (co gọn ở màn chiều cao nhỏ để chừa chỗ hội thoại) */}
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center [@media(max-height:560px)]:flex-none [@media(max-height:560px)]:gap-1 [@media(max-height:560px)]:py-1 [@media(max-height:560px)]:[&_svg]:!h-[88px] [@media(max-height:560px)]:[&_svg]:!w-[88px]">
-          <Gumi state="bo_pho" size={140} interactive progress={(day - 1) / TOTAL_DAYS} />
+          <Gumi state="bo_pho" size={140} interactive faceOnly progress={(day - 1) / TOTAL_DAYS} />
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1 text-caption font-bold text-on-primary shadow-pop">
             {big && <Icon name={day === TOTAL_DAYS ? 'trophy' : 'flag'} size={14} filled />}
             {big ? (day === TOTAL_DAYS ? 'TỐT NGHIỆP' : 'CỬA ẢI') : `Ngày ${day}`} · {m.title}

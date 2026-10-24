@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Icon } from './Icon';
 import { StreakFlame } from './StreakFlame';
 import { STREAK_BONUS } from '../lib/scoring';
@@ -12,12 +13,15 @@ const isDone = (s: DayState) => s === 'checked' || s === 'passed';
  * Ô đã hoàn thành sáng màu lửa (chuỗi liền mạch nhìn thấy được), đỉnh chuỗi có ngọn 🔥,
  * ngày mốc thưởng có ngôi sao, hôm nay có viền nhấp nháy.
  */
-export function StreakBoard({ days, today, streak }: { days: DayState[]; today: number; streak: number }) {
-  // Đỉnh chuỗi = ô hoàn thành cuối cùng → gắn ngọn lửa.
-  let tip = -1;
-  days.forEach((s, i) => { if (isDone(s)) tip = i; });
-  const doneCount = days.filter(isDone).length;
-  const next = STREAK_BONUS.find((b) => b.n > streak);
+export const StreakBoard = memo(function StreakBoard({ days, today, streak }: { days: DayState[]; today: number; streak: number }) {
+  const { tip, doneCount } = useMemo(() => {
+    let tip = -1;
+    let doneCount = 0;
+    days.forEach((s, i) => { if (isDone(s)) { tip = i; doneCount++; } });
+    return { tip, doneCount };
+  }, [days]);
+
+  const next = useMemo(() => STREAK_BONUS.find((b) => b.n > streak), [streak]);
 
   return (
     <div>
@@ -69,4 +73,4 @@ export function StreakBoard({ days, today, streak }: { days: DayState[]; today: 
       </div>
     </div>
   );
-}
+});

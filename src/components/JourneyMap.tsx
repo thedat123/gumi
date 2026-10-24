@@ -1,5 +1,5 @@
 import { canEnterMission } from '../lib/missionAccess';
-import { Component, useEffect, useRef, type ReactNode } from 'react';
+import { Component, memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone, TOTAL_DAYS, ACT_STARTS } from '../lib/scoring';
@@ -46,6 +46,8 @@ const BAND_BG: Record<1 | 2, string> = {
   1: 'linear-gradient(180deg, #4FB08C 0%, #1E8069 55%, #0E4F41 100%)', // Đầm Lầy Ngọt (xanh lá)
   2: 'linear-gradient(180deg, #8B6FB0 0%, #5B4E90 55%, #2C2456 100%)', // Rừng Đường Ẩn (tím)
 };
+// Màu đặc cho gfx-low: tránh GPU rasterize 2 lớp gradient 2000px+
+const BAND_BG_LOW: Record<1 | 2, string> = { 1: '#1E8069', 2: '#5B4E90' };
 
 const NODE: Record<DayState, { face: string; text: string }> = {
   checked: { face: 'border-white bg-gradient-to-b from-[#33A96B] to-[#1F7A4D] text-white', text: vi.day.checked },
@@ -58,7 +60,7 @@ const NODE: Record<DayState, { face: string; text: string }> = {
 };
 
 /** Biểu tượng trong nút chặng: mốc (cửa ải/đích/khoá) hoặc trạng thái; ngày thường chưa tới thì hiện số. */
-function Glyph({ day, state, mile }: { day: number; state: DayState; mile: boolean }) {
+const Glyph = memo(function Glyph({ day, state, mile }: { day: number; state: DayState; mile: boolean }) {
   if (mile) {
     if (state === 'future') return <Icon name="lock" size={22} />;
     return day === TOTAL_DAYS ? <Icon name="trophy" size={26} filled /> : <Icon name="star" size={24} filled />;
@@ -72,7 +74,7 @@ function Glyph({ day, state, mile }: { day: number; state: DayState; mile: boole
     case 'dying': return <span>!</span>;
     default: return <span>{day}</span>;
   }
-}
+});
 
 function pathThrough(pts: { x: number; y: number }[]): string {
   if (pts.length < 2) return '';
@@ -84,7 +86,7 @@ function pathThrough(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-function Node({ day, state, isToday, replayAll }: { day: number; state: DayState; isToday: boolean; replayAll?: boolean }) {
+const Node = memo(function Node({ day, state, isToday, replayAll }: { day: number; state: DayState; isToday: boolean; replayAll?: boolean }) {
   const mile = isMilestone(day);
   const m = vi.missions[day - 1] ?? { title: `Ngày ${day}`, kind: 'GAME' as const }; // guard: không bao giờ crash nếu lệch ngày
   const look = NODE[replayAll && state === 'future' ? 'open' : state];
@@ -110,25 +112,49 @@ function Node({ day, state, isToday, replayAll }: { day: number; state: DayState
   // Giữ trạng thái tiến độ khi hiển thị, quyền vào màn được tính riêng.
   if (!active) return <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2 opacity-90" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)} aria-disabled="true">{circle}{label}</div>;
   return <Link to={`/chapter/${day}`} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-label={vi.map.nodeAria(day, m.title, look.text)}>{circle}{label}</Link>;
-}
+});
 
-/** Bản đồ hành trình — con đường leo dốc 2D NHẸ: nền gradient PHẲNG TĨNH, không hạt/sương/parallax. */
-export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
+/** Bản đồ hành trình — con đường leo dốc 2D NHẸ: nền gradient PHẲNG TĨNH, không hạt/sương/parallax.
+ * memo với custom comparator: ngăn 21 Node re-render khi Dashboard đổi tab/dialog/event mà data không thay đổi. */
+export const JourneyMap = memo(function JourneyMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
   const meRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { meRef.current?.scrollIntoView({ block: 'center' }); }, []);
+  // Gumi SVG (61 paths) render SAU khi map đã paint xong — không chặn frame đầu tiên.
+  // Placeholder emoji hiện ngay, rIC swap sang Gumi thật khi browser rảnh (≤ 2s).
+  const [gumiMounted, setGumiMounted] = useState(false);
+
+  useEffect(() => {
+    const el = meRef.current;
+    if (!el) return;
+    // Dùng rAF để đợi layout xong, bọc try-catch phòng Android Chrome cũ throw
+    requestAnimationFrame(() => {
+      try { el.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior }); } catch { /* safe */ }
+    });
+  }, []);
+
+  useEffect(() => {
+    // Defer Gumi SVG đến khi browser rảnh để không block paint map
+    const cb = () => setGumiMounted(true);
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(cb, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(cb, 0);
+    return () => clearTimeout(id);
+  }, []);
 
   const lowGfx = getQuality().tier === 'low';
-  const pts = days.map((_, i) => ({ x: xOf(i + 1), y: yOf(i + 1) }));
-  let frontier = 0;
-  days.forEach((s, i) => { if (reached(s)) frontier = i + 1; });
+  // useMemo: pts + frontier chỉ tính lại khi nội dung days thực sự thay đổi
+  const pts = useMemo(() => days.map((_, i) => ({ x: xOf(i + 1), y: yOf(i + 1) })), [days]);
+  const frontier = useMemo(() => { let f = 0; days.forEach((s, i) => { if (reached(s)) f = i + 1; }); return f; }, [days]);
   const charDay = Math.min(Math.max(today, 1), N);
   const charState = days[charDay - 1] ?? 'future';
 
   return (
     <div className="journey-world relative w-full overflow-hidden" style={{ height: H }}>
-      {/* Nền 2 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax) */}
+      {/* Nền 2 vùng đất — gradient PHẲNG TĨNH (nhẹ, không hạt/sương/parallax)
+          gfx-low dùng màu đặc để tránh GPU rasterize 2 lớp gradient 2000px+ trên máy Helio G80 */}
       {BANDS.map((b) => (
-        <div key={b.act} aria-hidden="true" className="absolute inset-x-0" style={{ top: b.top, height: b.height, background: BAND_BG[b.act] }} />
+        <div key={b.act} aria-hidden="true" className="absolute inset-x-0" style={{ top: b.top, height: b.height, background: lowGfx ? BAND_BG_LOW[b.act] : BAND_BG[b.act] }} />
       ))}
 
       {/* Nhãn vùng đất */}
@@ -170,12 +196,16 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
       {/* Các chặng */}
       {days.map((state, i) => <Node key={i + 1} day={i + 1} state={state} isToday={i + 1 === today} replayAll={replayAll} />)}
 
-      {/* Vị trí Gumi trên bản đồ: SVG đầy đủ (máy khoẻ) hoặc emoji nhẹ (gfx-low — tránh crash) */}
-      <div ref={meRef} className="journey-gumi-pin pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
-        <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
-      </div>
-      <div className="journey-gumi-emoji pointer-events-none absolute z-30 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px` }}>
-        <span className="text-[32px] leading-none drop-shadow" aria-hidden="true">🐱</span>
+      {/* Anchor scroll — LUÔN visible, scrollIntoView cuộn đúng giữa màn */}
+      <div ref={meRef} aria-hidden="true" className="pointer-events-none absolute" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px`, width: 1, height: 1 }} />
+
+      {/* Gumi trên bản đồ — async deferred: emoji placeholder hiện ngay, SVG 61 paths swap vào
+          sau khi browser rảnh (requestIdleCallback) để không chặn paint frame đầu của map. */}
+      <div className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
+        {gumiMounted
+          ? <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
+          : <span className="flex h-[120px] w-[120px] items-center justify-center text-[52px] leading-none drop-shadow-md" aria-hidden="true">🐱</span>
+        }
       </div>
 
       {/* Vạch xuất phát ở chân núi */}
@@ -184,4 +214,10 @@ export function JourneyMap({ days, today, replayAll }: { days: DayState[]; today
       </div>
     </div>
   );
-}
+// Custom comparator: so sánh từng phần tử của days để tránh re-render khi Dashboard tạo array mới nhưng nội dung y hệt
+}, (prev, next) =>
+  prev.today === next.today &&
+  prev.replayAll === next.replayAll &&
+  prev.days.length === next.days.length &&
+  prev.days.every((s, i) => s === next.days[i])
+);
