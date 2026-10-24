@@ -159,7 +159,7 @@ export function SugarRun() {
     const alpha = s.mode === 'play' ? clamp(s.acc / STEP, 0, 1) : 1;
 
     draw(ctx, w, h, s, act, { ground, runnerX, bodyR, alpha });
-  }, 0);
+  });
 
   if (done) return <MissionDone day={day} points={points} note={`Bạn băng qua cơn thèm với ${TARGET} mốc — Boss Hồi 2 tan chảy!`} />;
 

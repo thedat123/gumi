@@ -1,6 +1,9 @@
 /* ===== Khung minigame nhập vai + hiệu ứng "juice" (pop, rung, confetti, nền động) ===== */
 
 .game-shell { position: relative; }
+/* Chiều cao toàn màn hình cho khung game — dvh điền vừa vùng nhìn thấy, vh là dự phòng cho trình duyệt cũ */
+.game-h-full { height: calc(100vh - var(--app-header, 3.5rem)); height: calc(100dvh - var(--app-header, 3.5rem)); }
+.game-minh-full { min-height: calc(100vh - var(--app-header, 3.5rem)); min-height: calc(100dvh - var(--app-header, 3.5rem)); }
 /* Nền động theo vùng đất (act) — gradient ấm + đốm sáng nổi lơ lửng cho có sức sống. */
 .game-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .game-bg::before {

@@ -24,89 +24,91 @@ export function Dashboard() {
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
 
   return (
-    <AsyncView state={state}>
-      {(s) => {
-        // Phòng thủ: chỉ lấy đúng số ngày của hành trình (bỏ ngày thừa nếu backend trả > total).
-        const days = s.days.slice(0, vi.journey.total);
-        const today = Math.min(s.day, vi.journey.total);
-        const finished = days[vi.journey.total - 1] === 'checked';
-        const dying = s.streakFreezeAvailable;
-        const rejected = days.includes('rejected');
-        const done = approvedCount(days);
-        const progress = Math.min(1, done / vi.journey.total);
+    <>
+      {/* Nền kem xanh luôn hiển thị kể cả khi đang tải — tránh nhấp nháy trắng/đen khi điều hướng */}
+      <div aria-hidden className="fixed inset-0 -z-10" style={{ background: 'radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%)' }} />
 
-        const usePass = async () => {
-          try { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); }
-          catch { setPassError(true); }
-        };
+      {/* Bản đồ tràn viền: mobile = 1 cột; desktop = full width (cinematic full-bleed) */}
+      <div className="journey-viewport relative mx-auto flex w-full flex-col overflow-hidden">
+        <AsyncView state={state}>
+          {(s) => {
+            // Phòng thủ: chỉ lấy đúng số ngày của hành trình (bỏ ngày thừa nếu backend trả > total).
+            const days = s.days.slice(0, vi.journey.total);
+            const today = Math.min(s.day, vi.journey.total);
+            const finished = days[vi.journey.total - 1] === 'checked';
+            const dying = s.streakFreezeAvailable;
+            const rejected = days.includes('rejected');
+            const done = approvedCount(days);
+            const progress = Math.min(1, done / vi.journey.total);
 
-        const anyBanner = s.phase === 'before' || dying || rejected || (finished && s.phase !== 'ended') || (s.phase === 'ended' && !finished);
-        return (
-          <>
-            {/* Nền tràn viền phía sau cột — desktop không còn khoảng trống chết */}
-            <div aria-hidden className="fixed inset-0 -z-10" style={{ background: 'radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%)' }} />
+            const usePass = async () => {
+              try { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); }
+              catch { setPassError(true); }
+            };
 
-            {/* Bản đồ tràn viền: mobile = 1 cột; desktop = full width (cinematic full-bleed) */}
-            <div className="relative mx-auto flex h-[calc(100dvh-var(--app-header))] w-full flex-col overflow-hidden">
-              {/* ===== Header cố định: HUD + banner (nội dung căn giữa dù nền tràn ngang) ===== */}
-              <div className="relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
-               <div className="mx-auto w-full max-w-[560px]">
-                <div className="flex items-center gap-2.5">
-                  <Gumi state={s.gumi} size={46} faceOnly progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-body font-extrabold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(days)]}</p>
-                    <p className="truncate text-caption font-semibold text-muted">
-                      <span className="tabular-nums" data-testid="journey-progress">{done}/{vi.journey.total}</span> ngày hoàn thành
-                    </p>
+            const anyBanner = s.phase === 'before' || dying || rejected || (finished && s.phase !== 'ended') || (s.phase === 'ended' && !finished);
+            return (
+              <>
+                {/* ===== Header cố định: HUD + banner (nội dung căn giữa dù nền tràn ngang) ===== */}
+                <div className="relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
+                 <div className="mx-auto w-full max-w-[560px]">
+                  <div className="flex items-center gap-2.5">
+                    <Gumi state={s.gumi} size={46} faceOnly progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-body font-extrabold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(days)]}</p>
+                      <p className="truncate text-caption font-semibold text-muted">
+                        <span className="tabular-nums" data-testid="journey-progress">{done}/{vi.journey.total}</span> ngày hoàn thành
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Chip icon="star" cls="text-accent" v={`${s.totalPoints}`} />
+                      <Chip icon="medal" cls="text-info" v={s.rank ? `#${s.rank}` : '—'} />
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <Chip icon="star" cls="text-accent" v={`${s.totalPoints}`} />
-                    <Chip icon="medal" cls="text-info" v={s.rank ? `#${s.rank}` : '—'} />
+
+                  <div className="mt-2.5"><StreakBoard days={days} today={today} streak={s.streak} /></div>
+
+                  {/* Tab switcher: Hành trình | Tường cộng đồng (chỉ hiện wall sau khi hoàn thành) */}
+                  <div className="mt-2.5 flex gap-1 rounded-xl bg-bg/60 p-1">
+                    <TabBtn active={tab === 'journey'} onClick={() => setTab('journey')} icon="map">Hành trình</TabBtn>
+                    {finished && <TabBtn active={tab === 'wall'} onClick={() => setTab('wall')} icon="sparkle">Tường cộng đồng</TabBtn>}
                   </div>
+
+                  {anyBanner && tab === 'journey' && (
+                    <div className="mt-2 flex flex-col gap-2">
+                      {s.phase === 'before' && <Banner kind="info">{vi.banners.before('01/10')}</Banner>}
+                      {dying && <Banner kind="error" action={s.passAvailable ? <Button onClick={() => setDialog(true)} className="shrink-0">{vi.pass.button}</Button> : undefined}>{vi.banners.dying(s.passHoursLeft ?? 0)}</Banner>}
+                      {rejected && <Banner kind="error">{vi.banners.rejected(s.rejectedReason ?? 'không hợp lệ')}</Banner>}
+                      {finished && s.phase !== 'ended' && <Banner kind="success">{vi.banners.finished}</Banner>}
+                      {s.phase === 'ended' && !finished && <Banner kind="info">{vi.banners.ended}</Banner>}
+                    </div>
+                  )}
+                 </div>
                 </div>
 
-                <div className="mt-2.5"><StreakBoard days={days} today={today} streak={s.streak} /></div>
-
-                {/* Tab switcher: Hành trình | Tường cộng đồng (chỉ hiện wall sau khi hoàn thành) */}
-                <div className="mt-2.5 flex gap-1 rounded-xl bg-bg/60 p-1">
-                  <TabBtn active={tab === 'journey'} onClick={() => setTab('journey')} icon="map">Hành trình</TabBtn>
-                  {finished && <TabBtn active={tab === 'wall'} onClick={() => setTab('wall')} icon="sparkle">Tường cộng đồng</TabBtn>}
-                </div>
-
-                {anyBanner && tab === 'journey' && (
-                  <div className="mt-2 flex flex-col gap-2">
-                    {s.phase === 'before' && <Banner kind="info">{vi.banners.before('01/10')}</Banner>}
-                    {dying && <Banner kind="error" action={s.passAvailable ? <Button onClick={() => setDialog(true)} className="shrink-0">{vi.pass.button}</Button> : undefined}>{vi.banners.dying(s.passHoursLeft ?? 0)}</Banner>}
-                    {rejected && <Banner kind="error">{vi.banners.rejected(s.rejectedReason ?? 'không hợp lệ')}</Banner>}
-                    {finished && s.phase !== 'ended' && <Banner kind="success">{vi.banners.finished}</Banner>}
-                    {s.phase === 'ended' && !finished && <Banner kind="info">{vi.banners.ended}</Banner>}
+                {/* ===== Nội dung chính theo tab ===== */}
+                {tab === 'journey' ? (
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
+                    <JourneyMap days={days} today={today} replayAll={s.replayAll} />
+                  </div>
+                ) : (
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-20">
+                    <div className="mx-auto max-w-[560px] px-3 pt-4">
+                      <p className="mb-3 flex items-center gap-1.5 text-caption font-bold uppercase tracking-widest text-muted">
+                        <Icon name="sparkle" size={13} filled className="text-accent" />Tường cộng đồng
+                      </p>
+                      <WallFeed />
+                    </div>
                   </div>
                 )}
-               </div>
-              </div>
 
-              {/* ===== Nội dung chính theo tab ===== */}
-              {tab === 'journey' ? (
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
-                  <JourneyMap days={days} today={today} replayAll={s.replayAll} />
-                </div>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-20">
-                  <div className="mx-auto max-w-[560px] px-3 pt-4">
-                    <p className="mb-3 flex items-center gap-1.5 text-caption font-bold uppercase tracking-widest text-muted">
-                      <Icon name="sparkle" size={13} filled className="text-accent" />Tường cộng đồng
-                    </p>
-                    <WallFeed />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />}
-          </>
-        );
-      }}
-    </AsyncView>
+                {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />}
+              </>
+            );
+          }}
+        </AsyncView>
+      </div>
+    </>
   );
 }
 
