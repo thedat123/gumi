@@ -15,3 +15,45 @@
 @media(max-height:800px) and (min-width:1000px){.event-shell{padding-top:18px}.event-header{padding-bottom:16px}.event-content{margin-top:20px}.event-stage-heading h1{font-size:34px;margin:8px 0 18px}.event-game{padding:20px 28px}.event-hud{min-height:48px;padding-bottom:12px}.event-game>p{margin:12px 0 6px}.drink-card{min-height:175px;padding:16px;margin:16px auto;gap:8px}.event-drink-art{width:38px;height:52px}.drink-card strong{font-size:26px}.event-answers{margin-top:16px}.event-answers button{min-height:86px;padding:14px 20px;font-size:26px}.memory-grid button{min-height:150px}.event-game blockquote{min-height:210px;margin:18px 0;font-size:31px;padding:25px 40px}.event-lobby{padding:14px 0 26px}.event-lobby-copy h1{font-size:48px}.event-lobby-stats{margin-top:20px}.event-shell .game-shell{height:calc(100dvh - 230px);min-height:360px}}
 @media(prefers-reduced-motion:reduce){.event-shell *{animation:none!important;transition:none!important}.event-game.correct{border-color:var(--ev-lime)}.event-game.wrong{border-color:#ff8990}}
 .event-shell .game-bg::before,.event-shell .game-premium-header::before{display:none}.event-shell .game-shell [class*="backdrop-blur"]{backdrop-filter:none}.event-pending-label{display:block;margin-top:4px;color:#bd9355;font-size:8px;letter-spacing:1px}
+
+/* ===== Chỉnh sau cùng (đặt cuối file để thắng mọi rule trên) ===== */
+/* Chữ tiếng Việt có dấu TRÊN và DƯỚI (Ậ, Ợ…) → line-height 1.14 làm dấu 2 dòng dính nhau. */
+.event-shell h1{line-height:1.3;letter-spacing:-.6px}
+.event-lobby-copy h1{line-height:1.32;letter-spacing:-.8px}
+.event-lobby-copy h1 em{display:inline-block;margin-top:.06em}
+/* Màn chơi TO, phần tiêu đề/điểm GỌN: tiêu đề chặng 1 dòng nhỏ, HUD mỏng, khung game chiếm phần còn lại. */
+.event-stage-heading{align-items:baseline}
+.event-stage-heading h1{font-size:clamp(20px,2.2vw,30px);margin:4px 0 10px;line-height:1.25}
+.event-hud{min-height:0;padding-bottom:10px;font-size:13px;gap:12px}
+.event-timer,.event-points{font-size:clamp(20px,2vw,26px)}
+.event-shell .game-shell{height:calc(100vh - 150px);height:calc(100dvh - 150px);min-height:420px}
+@media(max-width:700px){.event-shell .game-shell{height:calc(100vh - 170px);height:calc(100dvh - 170px);min-height:380px}}
+/* Flappy trong sự kiện: header thành 1 thanh mỏng (lượt · mục tiêu | điểm | âm), sân bay chiếm hết. */
+.flight-event .flight-header{min-height:0;padding-top:8px;padding-bottom:8px;gap:12px}
+.flight-event .flight-rules{display:flex;align-items:baseline;gap:10px}
+.flight-event .flight-rules b{font-size:15px;font-weight:900;color:#e5fff8}
+.flight-event .flight-rules small{font-size:11px;letter-spacing:.5px}
+.flight-event .flight-score strong{font-size:26px}
+.flight-event .flight-sound{min-height:34px;padding:6px 10px}
+.flight-event .flight-field{margin-bottom:12px}
+.event-shell .flight-stage.flight-event{height:calc(100vh - 150px);height:calc(100dvh - 150px);min-height:420px}
+@media(max-width:700px){.event-shell .flight-stage.flight-event{height:calc(100vh - 170px);height:calc(100dvh - 170px);min-height:380px}}
+/* Cân chữ cho dễ nhìn: không còn chữ 6–9px; nhãn phụ tối thiểu 11px, chữ hướng dẫn 13–14px. */
+.event-header nav small{font-size:11px!important;line-height:1.3}
+.event-controls .event-signout,.event-connection{font-size:12px!important}
+.event-brand small{font-size:10px}
+.event-stage-tag{font-size:11px!important;max-width:none!important;white-space:nowrap;text-align:right}
+.event-hud small,.event-timer small,.event-points small{font-size:11px!important}
+.event-game>p{font-size:14px}
+.event-note{font-size:13px!important;line-height:1.5;opacity:.85}
+.drink-card small{font-size:11px;letter-spacing:1.5px}
+.event-answers small{font-size:11px!important}
+.memory-grid button small{font-size:10px!important}
+.event-game-roster small{font-size:12px}
+.event-scorecards article{font-size:13px}
+.event-eyebrow{font-size:11px}
+@media(max-width:700px){
+  .event-game>p{font-size:13px}
+  .event-note{font-size:12px!important}
+  .event-header nav small{font-size:10px!important}
+}

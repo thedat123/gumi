@@ -1,5 +1,5 @@
 import { canEnterMission } from '../lib/missionAccess';
-import { Component, memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Component, memo, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone, TOTAL_DAYS, ACT_STARTS } from '../lib/scoring';
@@ -118,28 +118,17 @@ const Node = memo(function Node({ day, state, isToday, replayAll }: { day: numbe
  * memo với custom comparator: ngăn 21 Node re-render khi Dashboard đổi tab/dialog/event mà data không thay đổi. */
 export const JourneyMap = memo(function JourneyMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
   const meRef = useRef<HTMLDivElement>(null);
-  // Gumi SVG (61 paths) render SAU khi map đã paint xong — không chặn frame đầu tiên.
-  // Placeholder emoji hiện ngay, rIC swap sang Gumi thật khi browser rảnh (≤ 2s).
-  const [gumiMounted, setGumiMounted] = useState(false);
-
-  useEffect(() => {
+  // Cuộn tới "hôm nay" TRƯỚC khi trình duyệt vẽ frame đầu (layout effect) → map hiện thẳng đúng chỗ,
+  // không vẽ ở đỉnh rồi mới giật xuống.
+  useLayoutEffect(() => {
     const el = meRef.current;
     if (!el) return;
-    // Dùng rAF để đợi layout xong, bọc try-catch phòng Android Chrome cũ throw
-    requestAnimationFrame(() => {
-      try { el.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior }); } catch { /* safe */ }
-    });
-  }, []);
-
-  useEffect(() => {
-    // Defer Gumi SVG đến khi browser rảnh để không block paint map
-    const cb = () => setGumiMounted(true);
-    if (typeof requestIdleCallback !== 'undefined') {
-      const id = requestIdleCallback(cb, { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    }
-    const id = setTimeout(cb, 0);
-    return () => clearTimeout(id);
+    // Chỉ cuộn KHUNG bản đồ (không dùng scrollIntoView: nó cuộn luôn cả trang đang khoá → lộ mép).
+    let sc = el.parentElement;
+    while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    if (!sc) return;
+    const delta = el.getBoundingClientRect().top - sc.getBoundingClientRect().top - sc.clientHeight / 2;
+    sc.scrollTop += delta;
   }, []);
 
   const lowGfx = getQuality().tier === 'low';
@@ -195,13 +184,9 @@ export const JourneyMap = memo(function JourneyMap({ days, today, replayAll }: {
       {/* Anchor scroll — LUÔN visible, scrollIntoView cuộn đúng giữa màn */}
       <div ref={meRef} aria-hidden="true" className="pointer-events-none absolute" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay)}px`, width: 1, height: 1 }} />
 
-      {/* Gumi trên bản đồ — async deferred: emoji placeholder hiện ngay, SVG 61 paths swap vào
-          sau khi browser rảnh (requestIdleCallback) để không chặn paint frame đầu của map. */}
+      {/* Gumi trên bản đồ — giờ chỉ là 1 ảnh sprite (nhẹ) nên vẽ luôn, không đổi emoji → Gumi (đỡ nháy). */}
       <div className="pointer-events-none absolute z-30 -translate-x-1/2" style={{ left: `${(xOf(charDay) / W) * 100}%`, top: `${yOf(charDay) - 144}px` }}>
-        {gumiMounted
-          ? <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
-          : <span className="flex h-[120px] w-[120px] items-center justify-center text-[52px] leading-none drop-shadow-md" aria-hidden="true">🐱</span>
-        }
+        <Gumi state={charState === 'dying' ? 'hap_hoi' : 'bo_pho'} size={120} />
       </div>
 
       {/* Vạch xuất phát ở chân núi */}

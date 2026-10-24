@@ -10,16 +10,17 @@ import { SugarPassDialog } from '../components/SugarPassDialog';
 import { SkinPicker } from '../components/SkinPicker';
 import { StreakFlame } from '../components/StreakFlame';
 import { RoomDecorLayer } from '../components/RoomDecorLayer';
+// Cảnh phòng luôn cần → nạp chung với màn (không tách chunk lazy → không nháy placeholder rồi mới hiện phòng).
+import { RoomScene as RoomScene2D } from '../components/RoomScene';
 
 import { useRoomDecor } from '../app/room-decor';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
 import { vi } from '../content/vi';
 import { actOfDay, approvedCount, gumiStage } from '../lib/scoring';
-import { useAsync } from '../app/useAsync';
+import { useAsync, useIdlePrefetch } from '../app/useAsync';
 import type { GumiEvent } from '../api/types';
 import type { Weather } from '../components/RoomScene3D';
 
-const RoomScene2D = lazy(() => import('../components/RoomScene').then((m) => ({ default: m.RoomScene })));
 const FurnitureDrawer = lazy(() => import('../components/FurnitureDrawer').then((m) => ({ default: m.FurnitureDrawer })));
 
 // Đã bỏ hẳn hệ thời tiết. Chỉ còn ngày/đêm, điều khiển bằng chính nút sáng/tối (sun/moon) trên HUD.
@@ -50,7 +51,8 @@ function useGumiSize() {
 
 /** S05 — MÀN CHÍNH kiểu thú cưng ảo: Gumi sống trong phòng, nhiệm vụ là các nút quanh nhân vật. */
 export function GumiRoom() {
-  const state = useAsync(() => api.getJourney(), []);
+  const state = useAsync(() => api.getJourney(), [], 'journey');
+  useIdlePrefetch([['leaderboard', () => api.getLeaderboard()], ['summary', () => api.getSummary()]]);
   const { decor } = useRoomDecor();
   const nav = useNavigate();
   const [wardrobe, setWardrobe] = useState(false);
@@ -125,9 +127,7 @@ export function GumiRoom() {
               <div className="room-play-layout">
                 <section className="room-stage" aria-label={ROOMS[roomIdx]!.name}>
                   <div key={roomIdx} className={`room-world absolute inset-0 ${slide === 'left' ? 'room-in-left' : slide === 'right' ? 'room-in-right' : ''}`}>
-                    <Suspense fallback={<div className="room-scene-placeholder absolute inset-0" />}>
-                      <RoomScene2D act={roomAct} variant={room} weather={weather} lights={isDay} />
-                    </Suspense>
+                    <RoomScene2D act={roomAct} variant={room} weather={weather} lights={isDay} />
                     <RoomDecorLayer room={room} act={roomAct} edit={decorate} brightness={Math.max(0.85, roomBrightness)} lightsOn={isDay} />
                   </div>
                   {!decorate && <>

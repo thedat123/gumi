@@ -15,7 +15,7 @@ import { messageFor } from '../lib/errors';
 
 /** S10 — Day 14: lời nhắn tốt nghiệp + bức tường cộng đồng. */
 export function Wall() {
-  const posts = useAsync(() => api.getWallPosts(), []);
+  const posts = useAsync(() => api.getWallPosts(), [], 'wall');
   const [text, setText] = useState('');
   const [touched, setTouched] = useState(false);
   const [posted, setPosted] = useState(false);

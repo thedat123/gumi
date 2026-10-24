@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useLayoutEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { Icon } from './Icon';
@@ -25,6 +25,24 @@ export function AppShell() {
   const isJourney = pathname === '/journey'; // bản đồ hành trình chạy rộng hơn trên desktop
   const isOnboarding = pathname === '/onboarding'; // chưa có hồ sơ → không hiện nav (các mục cần hồ sơ)
   const immersive = isRoom || isGame;
+  const locked = immersive || isJourney;
+
+  // Màn nhập vai: khoá trang đúng bằng chiều cao nhìn thấy (đo thật, cập nhật khi xoay/ẩn thanh địa chỉ).
+  useLayoutEffect(() => {
+    if (!locked) return;
+    const root = document.documentElement;
+    const fit = () => root.style.setProperty('--vh100', `${window.innerHeight}px`);
+    fit();
+    root.classList.add('screen-lock');
+    window.scrollTo(0, 0);
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    return () => {
+      root.classList.remove('screen-lock');
+      window.removeEventListener('resize', fit);
+      window.removeEventListener('orientationchange', fit);
+    };
+  }, [locked]);
 
   // Bề rộng khung nội dung dùng CHUNG cho header + main (+ thanh nav dưới cùng max-w-md).
   // Trang nội dung sau đăng nhập (Hồ sơ/Xếp hạng/Tổng kết) được NỚI RỘNG để desktop dàn nhiều cột
@@ -45,9 +63,9 @@ export function AppShell() {
     `flex min-h-11 flex-1 items-center justify-center rounded-control px-2 text-small font-semibold transition-colors ${isActive ? 'bg-primary text-on-primary shadow-pop' : 'text-muted'}`;
 
   return (
-    <div className="min-h-app flex flex-col">
+    <div className="app-frame min-h-app flex flex-col">
       {/* Header dính trên — thanh chuẩn: chiều cao cố định, nội dung căn giữa, có max-width */}
-      <header className="app-header safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
+      <header className="app-header safe-top sticky top-0 z-30 shrink-0 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
           <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
             <img src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-[11px] object-cover shadow-pop ring-2 ring-surface" />
@@ -85,11 +103,14 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : session ? 'px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] pt-1' : 'px-4 pb-4 pt-1'}`}>
-        <div key={pathname} className={`mx-auto w-full ${columnLayout ? 'my-auto' : ''} ${immersive || isJourney ? '' : 'page-in'} ${contentMax}`}>
-          {/* Giữ header + nav khi trang con (chunk lazy) đang tải, chỉ vùng nội dung hiện spinner. */}
-          <Suspense fallback={<Loading />}><Outlet /></Suspense>
-        </div>
+      <main className={`app-main flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney || isGame ? '' : isOnboarding ? 'px-4 pb-6 pt-1' : session ? 'px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] pt-1' : 'px-4 pb-4 pt-1'}`}>
+        {/* Suspense đặt NGOÀI khối có key: chuyển màn là transition (React Router) → màn CŨ đứng yên tới khi
+            màn mới tải xong code, không chớp spinner/nền trắng giữa 2 màn. Chỉ lần mở app đầu tiên mới thấy spinner. */}
+        <Suspense fallback={<Loading />}>
+          <div key={pathname} className={`mx-auto w-full ${columnLayout ? 'my-auto' : ''} ${immersive || isJourney ? '' : 'page-in'} ${contentMax}`}>
+            <Outlet />
+          </div>
+        </Suspense>
       </main>
 
       <ReminderNotifier />

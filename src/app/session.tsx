@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '../api';
 import type { Profile, Session } from '../api/types';
+import { clearAsyncCache } from './useAsync';
 
 interface SessionCtx {
   session: Session | null;
@@ -46,24 +47,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    clearAsyncCache();
     const s = await api.auth.signIn(email, password);
     setSession(s);
     await loadProfile(s);
   }, [loadProfile]);
 
   const signUp = useCallback(async (email: string, password: string) => {
+    clearAsyncCache();
     const s = await api.auth.signUp(email, password);
     setSession(s);
     await loadProfile(s);
   }, [loadProfile]);
 
   const signInWithGoogle = useCallback(async () => {
+    clearAsyncCache();
     const s = await api.auth.signInWithGoogle();
     if (s) { setSession(s); await loadProfile(s); }
   }, [loadProfile]);
 
   const signOut = useCallback(async () => {
     await api.auth.signOut();
+    clearAsyncCache(); // người sau đăng nhập không thấy dữ liệu của người trước
     setSession(null);
     setProfile(null);
   }, []);

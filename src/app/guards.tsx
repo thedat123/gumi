@@ -33,7 +33,7 @@ export function RequireProfile({ children }: { children: ReactNode }) {
  */
 export function RequireToday({ children }: { children: ReactNode }) {
   const { day } = useParams();
-  const { data, loading, error } = useAsync(() => api.getJourney(), []);
+  const { data, loading, error } = useAsync(() => api.getJourney(), [], 'journey');
   if (loading) return <Loading />;
   if (error || !data) return <Navigate to="/journey" replace />;
   const st = data.days[Number(day) - 1];

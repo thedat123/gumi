@@ -4,12 +4,17 @@ import { vi } from '../content/vi';
 import { useSession } from '../app/session';
 
 /** Nút "Tiếp tục với Google" — dùng ở màn Đăng nhập & Đăng ký. */
-export function GoogleButton({ onError }: { onError?: (msg: string) => void }) {
+export function GoogleButton({ onError, beforeStart }: {
+  onError?: (msg: string) => void;
+  /** Trả về false để chặn (vd: chưa tick đồng ý dữ liệu ở màn Đăng ký). */
+  beforeStart?: () => boolean;
+}) {
   const nav = useNavigate();
   const { signInWithGoogle } = useSession();
   const [busy, setBusy] = useState(false);
 
   const click = async () => {
+    if (beforeStart && !beforeStart()) return;
     setBusy(true);
     try {
       await signInWithGoogle();

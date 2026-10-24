@@ -10,7 +10,7 @@ const MEDAL_TINT = ['text-[#E0A800]', 'text-[#9AA6B0]', 'text-[#C08457]']; // v�
 
 /** S12 — Bảng xếp hạng Sugar Slayer. */
 export function Leaderboard() {
-  const state = useAsync(() => api.getLeaderboard(), []);
+  const state = useAsync(() => api.getLeaderboard(), [], 'leaderboard');
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-2">

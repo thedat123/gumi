@@ -14,7 +14,7 @@ export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, over
   const mission = vi.missions[day - 1];
   const [hintOpen, setHintOpen] = useState(false);
   return (
-    <div className={`game-shell game-h-full act-${act} relative -mx-4 -mb-6 -mt-1 flex flex-col overflow-hidden`}>
+    <div className={`game-shell game-h-full act-${act} relative flex flex-col overflow-hidden`}>
       <div className="game-bg" aria-hidden="true" />
       <header className="game-premium-header relative z-20 mx-3 mt-3 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:mx-6 sm:p-4 [@media(max-height:520px)]:mx-2 [@media(max-height:520px)]:mt-1.5 [@media(max-height:520px)]:gap-2 [@media(max-height:520px)]:rounded-2xl [@media(max-height:520px)]:p-2">
         <Link to="/journey" aria-label="Thoát" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-border bg-surface/85 text-muted shadow-soft backdrop-blur transition-transform active:scale-90 [@media(max-height:520px)]:h-8 [@media(max-height:520px)]:w-8">

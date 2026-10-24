@@ -9,9 +9,11 @@ import { Input } from '../components/Input';
 import { vi } from '../content/vi';
 import { errorCode } from '../lib/errors';
 import { useSession } from '../app/session';
+import { rememberDataConsent } from '../lib/consent';
+
 
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-type ErrKey = 'email' | 'passwordShort' | 'passwordMismatch' | 'emailExists' | 'consent' | null;
+type ErrKey = 'email' | 'passwordShort' | 'passwordMismatch' | 'emailExists' | 'consent' | 'dataConsent' | null;
 
 /** S02 — Đăng ký. Kiểm tra email/mật khẩu/đồng ý; xong thì sang onboarding. */
 export function Signup() {
@@ -21,11 +23,14 @@ export function Signup() {
   const [pw, setPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [consent, setConsent] = useState(false);
+  const [dataConsent, setDataConsent] = useState(false);
   const [err, setErr] = useState<ErrKey>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!dataConsent) return setErr('dataConsent');
+    rememberDataConsent();
     if (!emailOk(email)) return setErr('email');
     if (pw.length < 8) return setErr('passwordShort');
     if (pw !== confirm) return setErr('passwordMismatch');
@@ -52,8 +57,15 @@ export function Signup() {
         <p className="mt-1 max-w-xs text-small text-muted">{vi.signup.subtitle}</p>
       </div>
       <Card>
+        {/* Đồng ý dữ liệu — BẮT BUỘC trước mọi cách đăng ký (email lẫn Google) nên đặt trên cùng. */}
+        <label className={`mb-3 flex items-start gap-2.5 rounded-control border-2 p-3 text-small leading-snug ${err === 'dataConsent' ? 'border-danger bg-danger/5' : dataConsent ? 'border-primary/50 bg-primary/5' : 'border-border bg-surface'}`}>
+          <input type="checkbox" checked={dataConsent} onChange={(e) => { setDataConsent(e.target.checked); if (e.target.checked && err === 'dataConsent') setErr(null); }}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-primary" aria-invalid={err === 'dataConsent' ? true : undefined} aria-describedby={err === 'dataConsent' ? 'data-consent-err' : undefined} />
+          <span>{vi.signup.dataConsentLabel}</span>
+        </label>
+        {err === 'dataConsent' && <p id="data-consent-err" role="alert" className="-mt-1 mb-3 text-caption text-danger">⚠ {vi.signup.dataConsentError}</p>}
         <div className="mb-3 flex flex-col gap-3">
-          <GoogleButton />
+          <GoogleButton beforeStart={() => { if (dataConsent) { rememberDataConsent(); return true; } setErr('dataConsent'); return false; }} />
           <div className="flex items-center gap-3 text-caption text-muted"><span className="h-px flex-1 bg-border" />{vi.auth.or}<span className="h-px flex-1 bg-border" /></div>
         </div>
         <form onSubmit={submit} className="flex flex-col gap-3" noValidate>

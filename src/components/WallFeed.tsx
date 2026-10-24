@@ -19,7 +19,7 @@ function timeAgo(iso: string | null | undefined): string {
 
 /** Feed bài đăng Tường cộng đồng — dùng trong Dashboard (read-only) và Admin (có nút xoá). */
 export function WallFeed({ onDelete }: { onDelete?: (id: string) => void }) {
-  const posts = useAsync(() => api.getWallPosts(), []);
+  const posts = useAsync(() => api.getWallPosts(), [], 'wall');
 
   return (
     <AsyncView state={posts} empty={<Banner kind="info">{vi.wall.empty}</Banner>}>

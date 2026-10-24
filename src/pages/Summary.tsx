@@ -12,7 +12,7 @@ import type { CardData } from '../lib/shareCard';
 
 /** S11 — Card Sugar Journey 9:16 để chia sẻ Story / Facebook / Instagram. Số liệu từ get_my_summary. */
 export function Summary() {
-  const state = useAsync(() => api.getSummary(), []);
+  const state = useAsync(() => api.getSummary(), [], 'summary');
   const M = vi.summary.metrics;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);

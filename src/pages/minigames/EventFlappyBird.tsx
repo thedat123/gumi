@@ -157,11 +157,14 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
   return <section className={`flight-stage game-shell ${eventFinish ? 'flight-event' : 'flight-day7'}`} aria-label="Flappy Gumi">
     <header className="flight-header">
       {!eventFinish && <Link to="/journey" className="flight-exit" aria-label="Thoát về hành trình">←</Link>}
-      <div className="flight-title"><small>{eventFinish ? 'LIVE EVENT' : `CHẶNG ${day} / 14`}</small><h1>Flappy Gumi</h1></div>
+      {/* Sự kiện: tên game đã có ở tiêu đề chặng → không lặp lại; thay bằng 1 dòng luật gọn. */}
+      {eventFinish
+        ? <div className="flight-title flight-rules"><b>Lượt {Math.min(attempts.current + 1, 5)}/5</b><small>Mục tiêu 40 cột</small></div>
+        : <div className="flight-title"><small>{`CHẶNG ${day} / 14`}</small><h1>Flappy Gumi</h1></div>}
       <div className="flight-score" aria-label={`${score} cột đã vượt qua`}><strong>{score}</strong><small>/ {target} CỘT</small></div>
       <button className="flight-sound" onClick={() => setQuiet(q => !q)} aria-label={quiet ? 'Bật âm thanh' : 'Tắt âm thanh'} aria-pressed={quiet}>{quiet ? 'Âm tắt' : 'Âm bật'}</button>
     </header>
-    <div className="flight-goals">{eventFinish ? <span><b>Tối đa 5 lượt</b> · Mục tiêu 40 cột</span> : [20,50,100].map(n => <span key={n} className={score >= n ? 'reached' : ''}><b>{n} cột</b><small>+{n} điểm</small></span>)}</div>
+    {!eventFinish && <div className="flight-goals">{[20,50,100].map(n => <span key={n} className={score >= n ? 'reached' : ''}><b>{n} cột</b><small>+{n} điểm</small></span>)}</div>}
     <div className="flight-field" ref={field} onPointerDown={e => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if ((e.target as Element).closest('button, a') || engine.current.mode !== 'play') return;
@@ -177,6 +180,6 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
         {!paused && mode !== 'won' && <button className="flight-start" disabled={!spriteReady && !spriteError} aria-busy={!spriteReady && !spriteError} onClick={spriteError ? () => setLoadAttempt(n => n + 1) : flap}>{spriteError ? 'Tải lại hình ảnh' : !spriteReady ? 'Đang tải hình ảnh…' : mode === 'dead' ? vi.minigames.common.retry : vi.minigames.common.start}<span aria-hidden="true">→</span></button>}
       </div></div>}
     </div>
-    <footer className="flight-footer"><span>CHẠM / SPACE / ↑ ĐỂ BAY</span><span>{eventFinish ? `Lượt ${Math.min(attempts.current + 1, 5)}/5` : 'Qua 20 cột là đạt'}</span></footer>
+    {!eventFinish && <footer className="flight-footer"><span>CHẠM / SPACE / ↑ ĐỂ BAY</span><span>Qua 20 cột là đạt</span></footer>}
   </section>;
 }

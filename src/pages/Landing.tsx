@@ -17,7 +17,7 @@ const STATS: { icon: IconName; value: string; tint: string }[] = [
 /** S01 — Trang giới thiệu công khai (trước đăng nhập). Đã đăng nhập thì về hành trình. */
 export function Landing() {
   const { session, loading } = useSession();
-  const state = useAsync(() => api.getCampaignState(), []);
+  const state = useAsync(() => api.getCampaignState(), [], 'campaign');
   if (!loading && session) return <Navigate to="/" replace />;
 
   return (

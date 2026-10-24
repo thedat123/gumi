@@ -31,9 +31,18 @@
     <meta name="twitter:description" content="Cùng Gumi reset vị giác trong 14 ngày." />
     <meta name="twitter:image" content="/og-image.png" />
     <title>Mật Độ — Nuôi mèo Gumi, 14 ngày bớt ngọt</title>
+    <!-- Nền + màn chờ có NGAY trong HTML (trước khi CSS/JS tải) → mở app không bao giờ thấy nền trắng/đen. -->
+    <style>
+      html, body { margin: 0; background: #F6E9DF; }
+      #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #F6E9DF; }
+      #boot img { width: 88px; height: 88px; border-radius: 24px; box-shadow: 0 6px 18px rgba(184, 53, 86, .22); }
+      #boot i { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #ead3d4; border-top-color: #B83556; animation: boot-spin .9s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #boot i { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="boot" aria-label="Đang tải"><img src="/icons/icon-192.png?v=20261014" alt="" /><i></i></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

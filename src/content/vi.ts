@@ -357,6 +357,8 @@ export const vi = {
     },
     consentLabel: 'Tôi đồng ý với điều khoản và việc xử lý ảnh check-in.',
     consentError: 'Bạn cần đồng ý điều khoản để tiếp tục.',
+    dataConsentLabel: 'Tôi đồng ý sử dụng tên, email để lưu trữ kết quả hành trình, liên hệ trao giải; mọi dữ liệu sẽ được bảo mật và xóa sau khi chiến dịch kết thúc.',
+    dataConsentError: 'Bạn cần tick đồng ý sử dụng dữ liệu để đăng ký.',
     readTerms: 'Đọc điều khoản đầy đủ',
   },
   terms: {

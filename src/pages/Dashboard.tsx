@@ -10,13 +10,14 @@ import { StreakBoard } from '../components/StreakBoard';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
-import { approvedCount, gumiStage } from '../lib/scoring';
-import { useAsync } from '../app/useAsync';
+import { ACT_STARTS, approvedCount, gumiStage } from '../lib/scoring';
+import { useAsync, useIdlePrefetch } from '../app/useAsync';
 import type { DayState, GumiEvent } from '../api/types';
 
 /** S05 — Trang chủ = BẢN ĐỒ HÀNH TRÌNH kiểu game: MỘT con đường liền mạch, Ngày 1 dưới chân → Ngày 14 trên đỉnh, 2 hồi nối đuôi nhau. */
 export function Dashboard() {
-  const state = useAsync(() => api.getJourney(), []);
+  const state = useAsync(() => api.getJourney(), [], 'journey');
+  useIdlePrefetch([['leaderboard', () => api.getLeaderboard()], ['summary', () => api.getSummary()]]);
   const [dialog, setDialog] = useState(false);
   const [passError, setPassError] = useState(false);
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
@@ -118,9 +119,8 @@ function DeferredMap({ days, today, replayAll }: { days: DayState[]; today: numb
     const id = setTimeout(() => setReady(true), 0);
     return () => clearTimeout(id);
   }, []);
-  if (!ready) return (
-    <div className="flex items-center justify-center py-16 text-[40px]" aria-hidden="true">🗺️</div>
-  );
+  // Chờ 1 nhịp: tô sẵn đúng màu dải bản đồ của hồi đang chơi → không nháy nền tối/trắng trước khi map hiện.
+  if (!ready) return <div className="h-full min-h-[60vh]" style={{ background: today >= ACT_STARTS[1]! ? '#5B4E90' : '#1E8069' }} aria-hidden="true" />;
   return <JourneyMap days={days} today={today} replayAll={replayAll} />;
 }
 

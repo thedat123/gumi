@@ -10,6 +10,7 @@ import { vi } from '../content/vi';
 import { messageFor } from '../lib/errors';
 import { gramsToSpoons, weeklySugarGrams, type SugarLevel } from '../lib/sugar';
 import { useSession } from '../app/session';
+import { DATA_CONSENT_KEY, rememberDataConsent } from '../lib/consent';
 
 const AVATARS = ['🐱', '🦊', '🐰', '🐻', '🐼', '🐯', '🐨', '🦁'];
 const LEVELS: SugarLevel[] = [100, 70, 50];
@@ -25,13 +26,17 @@ export function Onboarding() {
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  // Ai chưa tick đồng ý dữ liệu lúc đăng ký (vd: tạo tài khoản bằng Google ở màn Đăng nhập) thì phải tick ở đây.
+  const [askConsent] = useState(() => { try { return localStorage.getItem(DATA_CONSENT_KEY) !== '1'; } catch { return true; } });
+  const [dataConsent, setDataConsent] = useState(false);
 
   const nameOk = name.trim().length >= 2 && name.trim().length <= 30;
   const grams = level !== null ? weeklySugarGrams(level, drinks) : null;
 
   const submit = async () => {
     setTouched(true);
-    if (!nameOk || level === null) return;
+    if (!nameOk || level === null || (askConsent && !dataConsent)) return;
+    if (askConsent) rememberDataConsent();
     setBusy(true);
     setServerError(null);
     try {
@@ -95,6 +100,16 @@ export function Onboarding() {
           ))}
         </div>
       </fieldset>
+
+      {askConsent && (
+        <div>
+          <label className={`flex items-start gap-2.5 rounded-control border-2 p-3 text-small leading-snug ${touched && !dataConsent ? 'border-danger bg-danger/5' : dataConsent ? 'border-primary/50 bg-primary/5' : 'border-border bg-surface'}`}>
+            <input type="checkbox" checked={dataConsent} onChange={(e) => setDataConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" aria-invalid={touched && !dataConsent ? true : undefined} />
+            <span>{vi.signup.dataConsentLabel}</span>
+          </label>
+          {touched && !dataConsent && <p role="alert" className="mt-1 text-caption text-danger">⚠ {vi.signup.dataConsentError}</p>}
+        </div>
+      )}
 
       <Button onClick={submit} loading={busy} block>{vi.onboarding.submit}</Button>
     </div>

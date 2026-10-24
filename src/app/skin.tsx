@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_OUTFIT, type Outfit, type Slot } from '../lib/wardrobe';
 
 // Outfit đang mặc của Gumi (phối tự do), lưu ở localStorage (prototype).
@@ -23,10 +23,16 @@ function load(): Outfit {
 
 export function SkinProvider({ children }: { children: ReactNode }) {
   const [outfit, setState] = useState<Outfit>(load);
-  const persist = (o: Outfit) => { setState(o); try { localStorage.setItem(KEY, JSON.stringify(o)); } catch { /* bỏ qua */ } };
-  const setPiece = (slot: Slot, id: string) => persist({ ...outfit, [slot]: id });
-  const reset = () => persist({ ...DEFAULT_OUTFIT });
-  return <OutfitContext.Provider value={{ outfit, setPiece, reset }}>{children}</OutfitContext.Provider>;
+  // Callback + value ỔN ĐỊNH: mọi <Gumi> đọc context này → chỉ render lại khi outfit THẬT SỰ đổi.
+  const persist = useCallback((o: Outfit) => { setState(o); try { localStorage.setItem(KEY, JSON.stringify(o)); } catch { /* bỏ qua */ } }, []);
+  const setPiece = useCallback((slot: Slot, id: string) => setState((cur) => {
+    const next = { ...cur, [slot]: id };
+    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* bỏ qua */ }
+    return next;
+  }), []);
+  const reset = useCallback(() => persist({ ...DEFAULT_OUTFIT }), [persist]);
+  const value = useMemo(() => ({ outfit, setPiece, reset }), [outfit, setPiece, reset]);
+  return <OutfitContext.Provider value={value}>{children}</OutfitContext.Provider>;
 }
 
 export const useOutfit = () => useContext(OutfitContext);

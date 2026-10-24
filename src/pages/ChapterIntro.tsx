@@ -9,6 +9,7 @@ import { RegionScene } from '../components/RegionScene';
 import { vi } from '../content/vi';
 import { useNarration } from '../lib/narration';
 import { actOfDay, isMilestone, TOTAL_DAYS } from '../lib/scoring';
+import { preloadMission } from './missionGames';
 
 /** Nhịp MỞ CHƯƠNG: kể chuyện Gumi/Boss Đường rồi dẫn vào nhiệm vụ thật (/mission/:day). */
 export function ChapterIntro() {
@@ -20,6 +21,13 @@ export function ChapterIntro() {
 
   // "Bắt đầu chơi": vào màn hôm nay là điểm danh streak (idempotent — chỉ tính 1 lần/ngày).
   useEffect(() => { void api.markPlayed().catch(() => {}); }, []);
+
+  // Người chơi đọc truyện → tải nền code minigame hôm nay; bấm "Bắt đầu" là vào ngay.
+  useEffect(() => {
+    if (!(day >= 1 && day <= TOTAL_DAYS)) return;
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(() => preloadMission(day), { timeout: 1500 }); else setTimeout(() => preloadMission(day), 300);
+  }, [day]);
 
   // Không tự đọc cốt truyện nữa — người chơi tự bấm nút loa nếu muốn nghe. Vẫn tắt tiếng khi rời trang.
   useEffect(() => () => stop(), [day, stop]);
@@ -38,7 +46,7 @@ export function ChapterIntro() {
   const big = isMilestone(day);
 
   return (
-    <div className="relative -mx-4 -mb-6 -mt-1 game-minh-full flex flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
+    <div className="relative game-minh-full flex flex-col overflow-hidden px-4 pb-5 pt-3 lg:px-8">
       <RegionScene act={act} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">

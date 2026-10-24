@@ -35,7 +35,7 @@ export function GameShell({ act = 1, title, intro, hud, footer, children, wide =
   const mission = vi.missions[day - 1];
   const [introOpen, setIntroOpen] = useState(false);
   return (
-    <div className={`game-shell game-minh-full act-${act} relative -mx-4 -mb-6 -mt-1 flex flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
+    <div className={`game-shell game-minh-full act-${act} relative flex flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6`}>
       <div className="game-bg" aria-hidden="true"><Bubbles /></div>
       <div className={`relative z-10 mx-auto flex w-full flex-1 flex-col ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}>
         <header className="game-premium-header mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-white/65 bg-surface/90 p-3 shadow-pop backdrop-blur-xl sm:p-4 [@media(max-height:520px)]:mb-2 [@media(max-height:520px)]:gap-2 [@media(max-height:520px)]:p-2">

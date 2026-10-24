@@ -9,7 +9,7 @@ html.gfx-low .journey-bg-fixed, html.gfx-mid .journey-bg-fixed { background: #D8
    cho Samsung Browser / Chrome cũ chưa hỗ trợ dvh. Hai khai báo height: trình duyệt cũ dùng dòng 1. */
 .journey-viewport {
   height: calc(100vh - var(--app-header, 3.5rem));
-  height: calc(100dvh - var(--app-header, 3.5rem));
+  height: calc(var(--vh100, 100dvh) - var(--app-header, 3.5rem));
 }
 
 /* Đường mòn nối các chặng (trang trí, vẽ tĩnh). */

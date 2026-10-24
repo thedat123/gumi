@@ -261,6 +261,17 @@ const SKIN: Record<string, string> = {
   pink: gumiRose, gray: gumiBrown, mint: gumiCream, gold: gumiGold,
 };
 
+// Tải + GIẢI MÃ ảnh Gumi ở nền ngay khi module được nạp (img.decode chạy ngoài main thread) →
+// lúc màn vẽ Gumi, ảnh đã sẵn: không có frame trống rồi mới "bụp" hiện ra.
+if (typeof window !== 'undefined') {
+  let color = 'default';
+  try { color = (JSON.parse(localStorage.getItem('ld_gumi_outfit') || '{}') as { color?: string }).color ?? 'default'; } catch { /* bỏ qua */ }
+  const warm = new Image();
+  warm.decoding = 'async';
+  warm.src = SKIN[color] ?? gumiGold;
+  warm.decode?.().catch(() => { /* ảnh lỗi: <image> tự tải lại */ });
+}
+
 // Kho "hành động" khi chạm vào Gumi (kiểu màn hình thú cưng trên smartwatch).
 type ActionName = 'roll' | 'flip' | 'jump' | 'spin' | 'dance' | 'shake' | 'nod' | 'eat' | 'drink' | 'love' | 'music' | 'sleep' | 'ball' | 'cheer';
 const TAP_ACTIONS: ActionName[] = ['roll', 'flip', 'jump', 'spin', 'dance', 'shake', 'nod', 'eat', 'drink', 'love', 'music', 'sleep', 'ball', 'cheer'];
