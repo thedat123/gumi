@@ -1,5 +1,5 @@
 import { canEnterMission } from '../lib/missionAccess';
-import { useEffect, useRef } from 'react';
+import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { vi } from '../content/vi';
 import { isMilestone, TOTAL_DAYS, ACT_STARTS } from '../lib/scoring';
@@ -7,6 +7,21 @@ import { getQuality } from '../lib/quality';
 import { Gumi } from './Gumi';
 import { Icon } from './Icon';
 import type { DayState } from '../api/types';
+
+export class MapErrorBoundary extends Component<{ children: ReactNode }, { err: boolean }> {
+  state = { err: false };
+  static getDerivedStateFromError() { return { err: true }; }
+  render() {
+    if (this.state.err) return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center text-white/80">
+        <span className="text-[32px]">🗺️</span>
+        <p className="text-small font-semibold">Không tải được bản đồ.</p>
+        <button className="rounded-pill bg-white/20 px-5 py-2 text-small font-bold" onClick={() => this.setState({ err: false })}>Thử lại</button>
+      </div>
+    );
+    return this.state.err ? null : this.props.children;
+  }
+}
 
 /* ---- Con đường leo núi: Ngày 1 ở DƯỚI (xuất phát) → Ngày cuối ở TRÊN (đích). Một con đường liền mạch. ---- */
 const W = 420;

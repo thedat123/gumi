@@ -1,8 +1,9 @@
 /* Hành trình: bản đồ chương + chuyển cảnh + BỐI CẢNH VÙNG ĐẤT. Ưu tiên animate transform/opacity. */
 
-/* Nền cố định phía sau bản đồ — gradient đẹp cho máy khoẻ, màu đặc cho máy yếu (không có GPU layer phức tạp). */
+/* Nền container bản đồ — đặt trực tiếp trên div (không dùng position:fixed -z-10 gây artifact Android).
+   gradient đẹp cho máy khoẻ, màu đặc cho máy yếu (tránh GPU layer). */
 .journey-bg-fixed { background: radial-gradient(120% 80% at 50% 0%, #EAF3FB 0%, #DDE7F4 40%, #D8C8ED 68%, #EDDcc8 100%); }
-html.gfx-low .journey-bg-fixed { background: #D8C8ED; }
+html.gfx-low .journey-bg-fixed, html.gfx-mid .journey-bg-fixed { background: #D8C8ED; }
 
 /* Khung bản đồ toàn màn hình — dùng dvh để điền vừa vùng nhìn thấy trên điện thoại, vh là dự phòng
    cho Samsung Browser / Chrome cũ chưa hỗ trợ dvh. Hai khai báo height: trình duyệt cũ dùng dòng 1. */

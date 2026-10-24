@@ -5,7 +5,7 @@ import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Gumi } from '../components/Gumi';
 import { Icon, type IconName } from '../components/Icon';
-import { JourneyMap } from '../components/JourneyMap';
+import { JourneyMap, MapErrorBoundary } from '../components/JourneyMap';
 import { StreakBoard } from '../components/StreakBoard';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { WallFeed } from '../components/WallFeed';
@@ -24,13 +24,9 @@ export function Dashboard() {
   const fire = (name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 }));
 
   return (
-    <>
-      {/* Nền luôn hiển thị kể cả khi đang tải — tránh nhấp nháy trắng/đen khi điều hướng.
-          gfx-low dùng màu đặc (không gradient) để tránh layer phức tạp trên GPU kém. */}
-      <div aria-hidden className="fixed inset-0 -z-10 journey-bg-fixed" />
-
-      {/* Bản đồ tràn viền: mobile = 1 cột; desktop = full width (cinematic full-bleed) */}
-      <div className="journey-viewport relative mx-auto flex w-full flex-col overflow-hidden">
+    /* Bản đồ tràn viền — nền đặt trực tiếp trên container (không dùng position:fixed -z-10
+       vì trên Android gây GPU compositing artifact → nhấp nháy vô hạn). */
+    <div className="journey-viewport journey-bg-fixed relative mx-auto flex w-full flex-col overflow-hidden">
         <AsyncView state={state}>
           {(s) => {
             // Phòng thủ: chỉ lấy đúng số ngày của hành trình (bỏ ngày thừa nếu backend trả > total).
@@ -89,8 +85,10 @@ export function Dashboard() {
 
                 {/* ===== Nội dung chính theo tab ===== */}
                 {tab === 'journey' ? (
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0E4F41] pb-20">
-                    <JourneyMap days={days} today={today} replayAll={s.replayAll} />
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-none bg-[#0E4F41] pb-20">
+                    <MapErrorBoundary>
+                      <JourneyMap days={days} today={today} replayAll={s.replayAll} />
+                    </MapErrorBoundary>
                   </div>
                 ) : (
                   <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-20">
@@ -108,8 +106,7 @@ export function Dashboard() {
             );
           }}
         </AsyncView>
-      </div>
-    </>
+    </div>
   );
 }
 
