@@ -81,8 +81,9 @@ export function gumiStateOf(days: DayState[]): GumiState {
 }
 
 /** Số ngày check-in được duyệt thật (không tính Pass) — dùng cho "All Finishers" (D5). */
+/** Số NGÀY đã hoàn thành trong hành trình — chỉ tính 14 ngày đầu (server có thể trả thừa ngày) → tối đa 14/14. */
 export function approvedCount(days: DayState[]): number {
-  return days.filter((d) => d === 'checked').length;
+  return days.slice(0, TOTAL_DAYS).filter((d) => d === 'checked').length;
 }
 
 /** Vùng đất (hồi) theo ngày: 1 = Đầm Lầy Ngọt (1–7), 2 = Rừng Đường Ẩn (8–14). */

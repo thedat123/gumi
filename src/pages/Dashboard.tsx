@@ -20,7 +20,6 @@ export function Dashboard() {
   const state = useAsync(() => api.getJourney(), [], 'journey');
   useIdlePrefetch([['leaderboard', () => api.getLeaderboard()], ['summary', () => api.getSummary()]]);
   const [dialog, setDialog] = useState(false);
-  const [passError, setPassError] = useState(false);
   const [event, setEvent] = useState<{ name: GumiEvent; key: number } | null>(null);
   const [tab, setTab] = useState<'journey' | 'wall'>('journey');
   const fire = useCallback((name: GumiEvent) => setEvent((e) => ({ name, key: (e?.key ?? 0) + 1 })), []);
@@ -40,10 +39,8 @@ export function Dashboard() {
             const done = approvedCount(days);
             const progress = Math.min(1, done / vi.journey.total);
 
-            const usePass = async () => {
-              try { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); }
-              catch { setPassError(true); }
-            };
+            // Lỗi (chưa lỡ ngày / hết Bùa / mạng) do hộp thoại tự hiển thị → ở đây chỉ xử lý khi THÀNH CÔNG.
+            const usePass = async () => { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); };
 
             const anyBanner = s.phase === 'before' || dying || rejected || (finished && s.phase !== 'ended') || (s.phase === 'ended' && !finished);
             return (
@@ -96,7 +93,7 @@ export function Dashboard() {
                   <WallTab />
                 )}
 
-                {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />}
+                {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} passesLeft={s.passesLeft} canUse={s.streakFreezeAvailable} onCancel={() => setDialog(false)} onConfirm={usePass} />}
               </>
             );
           }}

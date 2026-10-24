@@ -394,7 +394,8 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
         </defs>
         {outfit.background !== 'none' && <Backdrop id={outfit.background} />}
         {!faceOnly && <ellipse className="g-shadow" cx="100" cy="199" rx={fit ? 34 : 42} ry="5" />}
-        <g clipPath={faceOnly ? `url(#${headClipId}-face)` : undefined}>
+        {/* Thân mèo trong ảnh gốc lệch trái (tâm x≈92) → dời 8 đơn vị để đứng GIỮA nhãn và bóng đổ (cx=100). */}
+        <g clipPath={faceOnly ? `url(#${headClipId}-face)` : undefined} transform={faceOnly ? undefined : 'translate(8 0)'}>
         <g className="g-actor" key={`${poke}-${eventKey}`}>
           <g className="g-breath">
             {/* Áo choàng phải nằm sau cơ thể; các phụ kiện khác nằm trên sprite. */}

@@ -119,7 +119,10 @@ export const vi = {
     emptyHint: 'Chọn nội thất để tạo căn phòng của bạn',
   },
 
-  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 2 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).', count: (n: number) => `Còn ${n}/2 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
+  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 2 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).',
+    noMiss: 'Bạn chưa lỡ ngày nào nên chưa cần dùng Bùa. Bùa được giữ nguyên — chỉ dùng được khi bạn lỡ đúng 1 ngày.',
+    noneLeft: 'Bạn đã dùng hết Bùa Hồi Sinh cho hành trình này.',
+    using: 'Đang dùng Bùa…', count: (n: number) => `Còn ${n}/2 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
     warnTitle: 'Gumi đang hấp hối! 😿',
     warnBody: (n: number) => `Bạn đang lỡ 1 ngày — vào chơi ngay sẽ MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh để giữ chuỗi nhé!`,
     warnBodyNoPass: 'Bạn đang lỡ 1 ngày và đã hết Bùa. Vào chơi sẽ bắt đầu lại chuỗi từ đầu.',

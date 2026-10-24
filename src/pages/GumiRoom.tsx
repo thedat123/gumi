@@ -194,7 +194,7 @@ export function GumiRoom() {
                 passesLeft={s.passesLeft}
                 canUse={s.streakFreezeAvailable}
                 hoursLeft={s.passHoursLeft}
-                onConfirm={() => { setDialog(false); void useFreeze(); }}
+                onConfirm={async () => { await api.useStreakFreeze(); setDialog(false); fire('revive'); state.reload(); }}
                 onCancel={() => setDialog(false)}
               />
             )}

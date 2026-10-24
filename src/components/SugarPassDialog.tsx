@@ -1,20 +1,36 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { errorCode } from '../lib/errors';
 import { createPortal } from 'react-dom';
 import { vi } from '../content/vi';
-import { Banner } from './Banner';
 import { Button } from './Button';
 import { Icon } from './Icon';
 
 /**
  * Hộp Bùa Hồi Sinh — phong cách "premium" đồng bộ app: hero gradient brand + huy hiệu tim,
  * chip số Bùa còn lại, phần giải thích & trạng thái (cứu được / để dành) rõ ràng.
- * `canUse` = đang hấp hối và còn Bùa → cho bấm dùng; ngược lại chỉ thông tin.
- * Đóng bằng Esc, tự đưa focus vào nút đầu tiên. `error`: lần dùng trước lỗi.
+ * Nút "Dùng Bùa" LUÔN phản hồi rõ ràng:
+ *   - `canUse` (lỡ đúng 1 ngày + còn Bùa) → gọi `onConfirm` (dùng thật; lỗi server hiện ngay trong hộp).
+ *   - chưa lỡ ngày nào → báo "chưa cần dùng", Bùa giữ nguyên; hết Bùa → báo hết.
+ * Đóng bằng Esc, tự đưa focus vào nút đầu tiên.
  */
-export function SugarPassDialog({ hoursLeft, passesLeft, canUse = true, onConfirm, onCancel, error = false }: {
-  hoursLeft: number | null; passesLeft?: number; canUse?: boolean; onConfirm: () => void; onCancel: () => void; error?: boolean;
+export function SugarPassDialog({ hoursLeft, passesLeft, canUse = false, onConfirm, onCancel }: {
+  hoursLeft: number | null; passesLeft?: number; canUse?: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
 }) {
   const first = useRef<HTMLButtonElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const noneLeft = passesLeft === 0;
+  const use = async () => {
+    if (busy) return;
+    if (noneLeft) { setNote({ kind: 'info', text: vi.pass.noneLeft }); return; }
+    if (!canUse) { setNote({ kind: 'info', text: vi.pass.noMiss }); return; }
+    setBusy(true); setNote(null);
+    try { await onConfirm(); }
+    catch (e) {
+      const c = errorCode(e);
+      setNote(c === 'not_today' ? { kind: 'info', text: vi.pass.noMiss } : c === 'no_pass' ? { kind: 'info', text: vi.pass.noneLeft } : { kind: 'error', text: vi.errors.server });
+    } finally { setBusy(false); }
+  };
   useEffect(() => {
     first.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
@@ -26,7 +42,7 @@ export function SugarPassDialog({ hoursLeft, passesLeft, canUse = true, onConfir
     <div className="fixed inset-0 z-[3000] flex items-end justify-center bg-[#1C1029]/70 p-4 backdrop-blur-md sm:items-center"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div role="dialog" aria-modal="true" aria-labelledby="pass-title"
-        className="safe-bottom relative w-full max-w-sm overflow-hidden rounded-[28px] border border-white/70 bg-surface shadow-[0_28px_90px_rgba(20,7,30,.42)]">
+        className="safe-bottom relative w-full max-w-[26rem] overflow-hidden rounded-[28px] border border-white/70 bg-surface shadow-[0_28px_90px_rgba(20,7,30,.42)]">
 
         {/* Hero gradient brand — huy hiệu tim + tiêu đề + chip số Bùa */}
         <div className="grad-brand relative overflow-hidden px-6 pb-5 pt-6 text-center text-on-primary">
@@ -52,22 +68,20 @@ export function SugarPassDialog({ hoursLeft, passesLeft, canUse = true, onConfir
               <Icon name="clock" size={16} /> Còn {hoursLeft} giờ để cứu chuỗi
             </div>
           )}
-          {!canUse && (
+          {!canUse && !note && (
             <div className="mt-3 flex items-start gap-2 rounded-control border border-info/30 bg-info/8 px-3 py-2 text-caption leading-relaxed text-info">
-              <Icon name="lock" size={14} className="mt-0.5 shrink-0" /> {vi.pass.locked}
+              <Icon name="lock" size={14} className="mt-0.5 shrink-0" /> {noneLeft ? vi.pass.noneLeft : vi.pass.locked}
             </div>
           )}
-          {error && <div className="mt-3"><Banner kind="error">{vi.errors.server}</Banner></div>}
+          {note && (
+            <div role="status" aria-live="polite" className={`mt-3 flex items-start gap-2 rounded-control border px-3 py-2 text-small font-semibold leading-relaxed ${note.kind === 'error' ? 'border-danger/30 bg-danger/8 text-danger' : 'border-info/30 bg-info/8 text-info'}`}>
+              <Icon name={note.kind === 'error' ? 'x' : 'lock'} size={15} className="mt-0.5 shrink-0" /> {note.text}
+            </div>
+          )}
 
           <div className="mt-5 flex gap-3">
-            {canUse ? (
-              <>
-                <Button ref={first} onClick={onConfirm} block>{error ? vi.errors.retry : vi.pass.confirm}</Button>
-                <Button variant="secondary" onClick={onCancel} block>{vi.pass.cancel}</Button>
-              </>
-            ) : (
-              <Button ref={first} variant="secondary" onClick={onCancel} block>{vi.pass.gotIt}</Button>
-            )}
+            <Button ref={first} onClick={use} loading={busy} disabled={busy} block className="whitespace-nowrap">{busy ? vi.pass.using : note?.kind === 'error' ? vi.errors.retry : vi.pass.confirm}</Button>
+            <Button variant="secondary" onClick={onCancel} block className="whitespace-nowrap">{note?.kind === 'info' ? vi.pass.gotIt : vi.pass.cancel}</Button>
           </div>
         </div>
       </div>
