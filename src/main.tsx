@@ -6,10 +6,15 @@ import './room.css';
 import './game.css';
 import { App } from './App';
 import { registerSW } from './pwa';
-import { applyGfxClass, isSlowNetwork, startAdaptiveQuality } from './lib/quality';
+import { applyGfxClass, isSlowNetwork, startAdaptiveQuality, startCrashGuard } from './lib/quality';
+import { RootErrorBoundary, reloadOnce } from './components/RootErrorBoundary';
 
 applyGfxClass(); // gắn hạng đồ hoạ (gfx-low|mid|high) lên <html> để CSS + cảnh 3D hạ tải theo máy
 startAdaptiveQuality(); // tự hạ hạng nếu máy khựng thật (bắt cả máy dò nhầm là khoẻ)
+startCrashGuard(); // lần trước bị crash → lần này tự vào chế độ nhẹ nhất
+
+// Deploy mới xoá chunk cũ → import() lỗi → tải lại trang 1 lần thay vì trắng màn.
+window.addEventListener('vite:preloadError', (e) => { if (reloadOnce()) e.preventDefault(); });
 
 // Preconnect Supabase NGAY khi tải HTML → tiết kiệm DNS + TLS cho lần gọi auth/API đầu tiên.
 const sbUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -23,9 +28,11 @@ if (sbUrl) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <RootErrorBoundary>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </RootErrorBoundary>
   </StrictMode>,
 );
 

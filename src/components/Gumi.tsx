@@ -6,6 +6,7 @@ import { useAnimationPause } from '../hooks/useAnimationPause';
 import { useOutfit } from '../app/skin';
 import { type Outfit } from '../lib/wardrobe';
 import { playSfx, type Sfx } from '../lib/sfx';
+import { getQuality } from '../lib/quality';
 import gumiCream from '../assets/gumi-cream.webp';
 import gumiBlue from '../assets/gumi-blue.webp';
 import gumiGold from '../assets/gumi-gold.webp';
@@ -17,7 +18,7 @@ import type { GumiEvent, GumiState } from '../api/types';
 interface Props {
   state: GumiState;
   size?: number;
-  /** Cắt SVG chỉ hiện vùng mặt/đầu (dùng cho avatar nhỏ). */
+  /** Cắt SVG chỉ hiện vùng mặt/đầu, sát cằm, không lộ cổ (dùng cho avatar nhỏ). */
   faceOnly?: boolean;
   /** Sự kiện chạy một lần (nhảy mừng, hồi sinh, tiến hoá). Đổi eventKey để chạy lại. */
   event?: GumiEvent | null;
@@ -339,11 +340,12 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
   // Sprite theo màu lông (recolor sẵn) + bóng đổ mềm bám hình + biến sắc nhẹ theo trạng thái → "sống".
   const skinSrc = SKIN[outfit.color] ?? gumiGold;
   const stateFx = shown === 'hap_hoi' ? 'saturate(0.55) brightness(0.96) ' : shown === 'tien_hoa' ? 'brightness(1.05) drop-shadow(0 0 5px rgba(245,197,66,0.85)) ' : '';
-  const imgFilter = `${stateFx}drop-shadow(0 6px 5px rgba(40,26,20,0.24))`;
+  // Máy yếu: bỏ drop-shadow (filter trên <image> phải vẽ lại bằng CPU mỗi khung).
+  const imgFilter = getQuality().tier === 'low' ? (stateFx.trim() || undefined) : `${stateFx}drop-shadow(0 6px 5px rgba(40,26,20,0.24))`;
   const style = {
     '--gumi-size': `${size}px`,
     '--hop-delay': `${hopDelay}s`,
-    ...(faceOnly ? { aspectRatio: '144 / 112', overflow: 'hidden' } : {}),
+    ...(faceOnly ? { aspectRatio: '112 / 90', overflow: 'hidden' } : {}),
   } as CSSProperties;
 
   return (
@@ -356,7 +358,7 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
       onClick={onPoke}
       onAnimationEnd={(e) => { if (e.target instanceof Element && e.target.classList.contains('g-actor')) onEventEnd?.(); }}
     >
-      <svg viewBox={faceOnly ? '28 18 144 112' : '0 0 200 220'} aria-hidden="true" focusable="false">
+      <svg viewBox={faceOnly ? '44 24 112 90' : '0 0 200 220'} aria-hidden="true" focusable="false">
         <defs>
           <clipPath id={headClipId}><path d="M40 30 H140 V112 H120 Q112 124 96 125 Q79 124 69 112 H40 Z" /></clipPath>
           <radialGradient id="gHi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffffff" stopOpacity="0.6" /><stop offset="1" stopColor="#ffffff" stopOpacity="0" /></radialGradient>

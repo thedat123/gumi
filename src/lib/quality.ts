@@ -74,13 +74,16 @@ function detect(): Tier {
   const cores = nav.hardwareConcurrency ?? 4;
   const mobile = isMobile();
 
-  // Mạng chậm / tiết kiệm dữ liệu / GPU ảo / RAM-CPU thấp → hạng THẤP NHẤT (phòng 2D, không hạt WebGL).
-  if (isSlowNetwork() || gpuIsWeak() || mem <= 2 || cores <= 2) return 'low';
+  // Mạng chậm / RAM-CPU thấp → hạng THẤP NHẤT. Điện thoại KHÔNG dò GPU bằng WebGL lúc khởi động:
+  // tạo context WebGL ngay lúc mở app làm GPU process máy Mali yếu (Galaxy A32…) chết → app "die".
+  if (isSlowNetwork() || mem <= 2 || cores <= 2) return 'low';
+  if (!mobile && gpuIsWeak()) return 'low';
   // Điện thoại KHÔNG báo RAM + ít nhân thường là máy đời thấp → coi là yếu để chạy mượt.
   if (mobile && !memKnown && cores <= 4) return 'low';
   // Điện thoại budget RAM ≤ 4GB (vd Samsung Galaxy A32, Helio G80 GPU yếu) → hạng THẤP:
   // nền game phẳng tĩnh, không blur, DPR thấp… cho NHẸ & MƯỢT nhất, không chờ adaptive phản ứng.
-  if (mobile && mem <= 4) return 'low';
+  // Điện thoại tầm trung RAM ≤ 6GB (Redmi/Realme/Galaxy A…) cũng vào hạng THẤP: ổn định quan trọng hơn hiệu ứng.
+  if (mobile && mem <= 6) return 'low';
   if (mem <= 4 || cores <= 4 || (mobile && (mem <= 6 || cores <= 6))) return 'mid';
   return 'high';
 }
@@ -98,10 +101,41 @@ function forcedTier(): Tier | null {
   return null;
 }
 
+/* ——— TỰ CỨU KHI CRASH ———
+ * Lúc app đang hiện trên màn hình, giữ cờ `ld_boot` trong localStorage; ẩn app/đóng bình thường thì xoá cờ.
+ * Renderer bị hệ điều hành giết (hết RAM/GPU) thì không kịp xoá → lần mở sau thấy cờ còn = lần trước CRASH.
+ * Khi đó tự ép hạng 'low' (nhớ luôn); crash tiếp ở 'low' thì tắt hẳn chuyển động ('rm'). */
+const BOOT_KEY = 'ld_boot';
+const RM_KEY = 'ld_rm';
+let crashedLastTime = false;
+function readCrashFlag(): void {
+  try {
+    crashedLastTime = localStorage.getItem(BOOT_KEY) === '1';
+    if (crashedLastTime) {
+      if (localStorage.getItem('gfx') === 'low') localStorage.setItem(RM_KEY, '1');
+      localStorage.setItem('gfx', 'low');
+    }
+  } catch { /* private mode */ }
+}
+
+/** Gọi 1 lần lúc khởi động (sau applyGfxClass). */
+export function startCrashGuard(): void {
+  if (typeof document === 'undefined') return;
+  const set = (on: boolean) => { try { if (on) localStorage.setItem(BOOT_KEY, '1'); else localStorage.removeItem(BOOT_KEY); } catch { /* private mode */ } };
+  set(document.visibilityState === 'visible');
+  document.addEventListener('visibilitychange', () => set(document.visibilityState === 'visible'));
+  window.addEventListener('pagehide', () => set(false));
+  window.addEventListener('pageshow', () => set(document.visibilityState === 'visible'));
+}
+
 let cached: Quality | null = null;
 
 export function getQuality(): Quality {
   if (cached) return cached;
+  if (typeof window !== 'undefined') {
+    readCrashFlag();
+    try { if (localStorage.getItem(RM_KEY) === '1') document.documentElement.classList.add('rm'); } catch { /* private mode */ }
+  }
   const reduce = typeof window !== 'undefined'
     && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       || document.documentElement.classList.contains('rm'));
