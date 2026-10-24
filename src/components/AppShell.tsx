@@ -45,7 +45,7 @@ export function AppShell() {
     `flex min-h-11 flex-1 items-center justify-center rounded-control px-2 text-small font-semibold transition-colors ${isActive ? 'bg-primary text-on-primary shadow-pop' : 'text-muted'}`;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="min-h-app flex flex-col">
       {/* Header dính trên — thanh chuẩn: chiều cao cố định, nội dung căn giữa, có max-width */}
       <header className="app-header safe-top sticky top-0 z-30 border-b border-border/60 bg-bg/80 backdrop-blur-md">
         <div className={`mx-auto flex h-14 w-full ${headerMax} items-center justify-between gap-2 px-4 sm:h-16 sm:px-6`}>
@@ -85,7 +85,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : session ? 'px-4 pb-28 pt-1' : 'px-4 pb-4 pt-1'}`}>
+      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : session ? 'px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] pt-1' : 'px-4 pb-4 pt-1'}`}>
         <div key={pathname} className={`mx-auto w-full ${columnLayout ? 'my-auto' : ''} ${immersive || isJourney ? '' : 'page-in'} ${contentMax}`}>
           {/* Giữ header + nav khi trang con (chunk lazy) đang tải, chỉ vùng nội dung hiện spinner. */}
           <Suspense fallback={<Loading />}><Outlet /></Suspense>

@@ -1,5 +1,5 @@
 /* Keep the original arcade UI, free of the app shell's width/header constraints. */
-.day7-flight { position: fixed; inset: 0; z-index: 60; height: 100dvh; isolation: isolate; }
+.day7-flight { position: fixed; inset: 0; z-index: 60; height: 100vh; height: 100dvh; isolation: isolate; }
 .day7-flight > .game-shell { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 /* The canvas is opaque. A static backdrop avoids continuously compositing a hidden animation. */
 .day7-flight .game-bg::before { animation: none; }

@@ -38,7 +38,7 @@ export function ChapterIntro() {
   const big = isMilestone(day);
 
   return (
-    <div className="relative -mx-4 -mb-6 -mt-1 flex min-h-[calc(100dvh-var(--app-header))] flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
+    <div className="relative -mx-4 -mb-6 -mt-1 game-minh-full flex flex-col overflow-hidden px-4 pb-5 pt-3 lg:-mx-8 lg:px-8">
       <RegionScene act={act} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col">

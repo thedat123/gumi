@@ -33,9 +33,9 @@
   --text-headline: 28px;
   /* Chiều cao header dính (gồm cả safe-area trên) — dùng chung cho mọi màn full-bleed
      để trừ đúng, không dư/thiếu khoảng dưới đáy. Header: h-14 (mobile) / h-16 (sm+). */
-  --app-header: calc(env(safe-area-inset-top, 0px) + 3.5rem);
+  --app-header: calc(env(safe-area-inset-top, 0px) + 3.5rem + 1px);
 }
 
 @media (min-width: 640px) {
-  :root { --app-header: calc(env(safe-area-inset-top, 0px) + 4rem); }
+  :root { --app-header: calc(env(safe-area-inset-top, 0px) + 4rem + 1px); }
 }

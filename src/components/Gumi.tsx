@@ -34,6 +34,11 @@ interface Props {
   onEventEnd?: () => void;
 }
 
+// Avatar mặt (faceOnly): khung VUÔNG căn giữa ĐẦU thật của sprite (tâm đầu x≈92, không phải 100),
+// cắt theo đường cằm để bỏ tay/cổ/áo → đầu "sticker" nằm gọn giữa khung tròn.
+const FACE_VIEWBOX = '36 21 112 112';
+const FACE_CLIP = 'M0 0 H200 V108 H136 Q128 116 120 118.5 Q108 122.5 94 122.5 Q78 122 68 119 Q60 115 56 112 H0 Z';
+
 // Neck pieces use their own anchor: center (103,119), sized to the narrow neck below the chin.
 const NECK_ATTACHMENT = 'translate(103 119) scale(.62) translate(-100 -127)';
 
@@ -345,7 +350,7 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
   const style = {
     '--gumi-size': `${size}px`,
     '--hop-delay': `${hopDelay}s`,
-    ...(faceOnly ? { aspectRatio: '112 / 90', overflow: 'hidden' } : {}),
+    ...(faceOnly ? { aspectRatio: '1 / 1', overflow: 'hidden' } : {}),
   } as CSSProperties;
 
   return (
@@ -358,8 +363,9 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
       onClick={onPoke}
       onAnimationEnd={(e) => { if (e.target instanceof Element && e.target.classList.contains('g-actor')) onEventEnd?.(); }}
     >
-      <svg viewBox={faceOnly ? '44 24 112 90' : '0 0 200 220'} aria-hidden="true" focusable="false">
+      <svg viewBox={faceOnly ? FACE_VIEWBOX : '0 0 200 220'} aria-hidden="true" focusable="false">
         <defs>
+          <clipPath id={`${headClipId}-face`}><path d={FACE_CLIP} /></clipPath>
           <clipPath id={headClipId}><path d="M40 30 H140 V112 H120 Q112 124 96 125 Q79 124 69 112 H40 Z" /></clipPath>
           <radialGradient id="gHi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffffff" stopOpacity="0.6" /><stop offset="1" stopColor="#ffffff" stopOpacity="0" /></radialGradient>
           <radialGradient id="gCore" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#2A1A15" stopOpacity="0.2" /><stop offset="1" stopColor="#2A1A15" stopOpacity="0" /></radialGradient>
@@ -376,7 +382,8 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
           <linearGradient id="jShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".22" /><stop offset=".45" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".18" /></linearGradient>
         </defs>
         {outfit.background !== 'none' && <Backdrop id={outfit.background} />}
-        <ellipse className="g-shadow" cx="100" cy="199" rx={fit ? 34 : 42} ry="5" />
+        {!faceOnly && <ellipse className="g-shadow" cx="100" cy="199" rx={fit ? 34 : 42} ry="5" />}
+        <g clipPath={faceOnly ? `url(#${headClipId}-face)` : undefined}>
         <g className="g-actor" key={`${poke}-${eventKey}`}>
           <g className="g-breath">
             {/* Áo choàng phải nằm sau cơ thể; các phụ kiện khác nằm trên sprite. */}
@@ -407,6 +414,7 @@ function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey 
             <g className="acc-slot acc-glasses" transform="translate(-18.2 -7.35) scale(1.095)"><Glasses id={outfit.glasses} /></g>
             <g className="acc-slot acc-hat" transform="translate(-18.2 -7.35) scale(1.095)"><Hat id={outfit.hat} /></g>
           </g>
+        </g>
         </g>
         <circle className="g-flash" cx="100" cy="120" r="96" />
         {SPARKLES.map((s, i) => (

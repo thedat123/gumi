@@ -259,7 +259,7 @@ html.gfx-low .gumi-prop { display: none; }
 }
 
 /* Gumi Room — wardrobe-inspired game shell, rendered identically on all devices. */
-.game-room { padding: 18px 16px 24px; min-height: calc(100dvh - var(--app-header, 64px)); background: radial-gradient(ellipse at 12% 0, #f8dce5, transparent 48%), radial-gradient(ellipse at 100% 60%, #dceae7, transparent 50%), #f8eee9; }
+.game-room { padding: 18px 16px 24px; min-height: calc(100vh - var(--app-header, 64px)); min-height: calc(100dvh - var(--app-header, 64px)); background: radial-gradient(ellipse at 12% 0, #f8dce5, transparent 48%), radial-gradient(ellipse at 100% 60%, #dceae7, transparent 50%), #f8eee9; }
 .room-shell { width: min(100%, 1120px); margin: auto; border: 1px solid #ead3d4; border-radius: 28px; background: #fffaf6; overflow: hidden; box-shadow: 0 18px 54px #88576414, 0 3px 0 #e7cbd0; }
 .room-game-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; color: white; background: radial-gradient(circle at 88% 0, #ffffff19 0 72px, transparent 73px), radial-gradient(circle at 70% 110%, #ffffff10 0 45px, transparent 46px), linear-gradient(115deg,#ae345c,#c14c74 50%,#8e3a78); }
 .room-title { display: flex; align-items: center; gap: 12px; }
@@ -366,8 +366,8 @@ html.gfx-low .gumi-prop { display: none; }
 
 /* Full-screen room: floating game HUD and a single-tap furnishing dock. */
 /* Lock body scroll so the immersive layout has no empty space when pulling on any screen. */
-html:has(.full-room), body:has(.full-room) { overflow: hidden; height: 100dvh; overscroll-behavior: none; }
-.full-room.game-room { padding: 0; position: relative; height: calc(100dvh - var(--app-header, 64px)); min-height: 480px; overflow: hidden; background: #f3dedc; }
+html:has(.full-room), body:has(.full-room) { overflow: hidden; height: 100vh; height: 100dvh; overscroll-behavior: none; }
+.full-room.game-room { padding: 0; position: relative; height: calc(100vh - var(--app-header, 64px)); height: calc(100dvh - var(--app-header, 64px)); min-height: 420px; overflow: hidden; background: #f3dedc; }
 .full-room .room-shell { width: 100%; height: 100%; max-width: none; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
 .full-room .room-game-header { display: none; }
 .full-room .room-status { position: absolute; z-index: 20; top: 14px; left: 50%; transform: translateX(-50%); width: min(580px, 100%); padding: 0 18px; }
@@ -452,7 +452,7 @@ html:has(.full-room), body:has(.full-room) { overflow: hidden; height: 100dvh; o
  .full-room .room-dock > * > :last-child { font-size: 9px; }
 }
 @media (max-height: 560px) and (min-width: 600px) {
- .full-room.game-room { min-height: 260px; height: calc(100dvh - var(--app-header, 64px)); }
+ .full-room.game-room { min-height: 260px; height: calc(100vh - var(--app-header, 64px)); height: calc(100dvh - var(--app-header, 64px)); }
  .full-room .room-status { left: 16px; transform: none; width: 310px; top: 10px; padding: 0; }
  .full-room .room-status > div > :first-child, .full-room .room-status > div > :last-child { height: 40px; width: 40px; }
  .full-room .room-controls { left: 12px; transform: none; width: 310px; top: 77px; gap: 4px; }
