@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
@@ -12,7 +12,7 @@ import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
 import { approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync } from '../app/useAsync';
-import type { GumiEvent } from '../api/types';
+import type { DayState, GumiEvent } from '../api/types';
 
 /** S05 — Trang chủ = BẢN ĐỒ HÀNH TRÌNH kiểu game: MỘT con đường liền mạch, Ngày 1 dưới chân → Ngày 14 trên đỉnh, 2 hồi nối đuôi nhau. */
 export function Dashboard() {
@@ -87,7 +87,7 @@ export function Dashboard() {
                 {tab === 'journey' ? (
                   <div className="min-h-0 flex-1 overflow-y-auto overscroll-none bg-[#0E4F41] pb-20">
                     <MapErrorBoundary>
-                      <JourneyMap days={days} today={today} replayAll={s.replayAll} />
+                      <DeferredMap days={days} today={today} replayAll={s.replayAll} />
                     </MapErrorBoundary>
                   </div>
                 ) : (
@@ -108,6 +108,20 @@ export function Dashboard() {
         </AsyncView>
     </div>
   );
+}
+
+/** Hiển thị JourneyMap sau 1 task boundary: HUD paint trước, map render sau.
+ *  Tránh long-task ANR trên Galaxy A32 (Helio G80 CPU chậm). */
+function DeferredMap({ days, today, replayAll }: { days: DayState[]; today: number; replayAll?: boolean }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setReady(true), 0);
+    return () => clearTimeout(id);
+  }, []);
+  if (!ready) return (
+    <div className="flex items-center justify-center py-16 text-[40px]" aria-hidden="true">🗺️</div>
+  );
+  return <JourneyMap days={days} today={today} replayAll={replayAll} />;
 }
 
 function Chip({ icon, v, cls, wide }: { icon: IconName; v: string; cls?: string; wide?: boolean }) {
