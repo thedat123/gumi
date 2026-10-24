@@ -67,10 +67,10 @@ export function Dashboard() {
 
                 <div className="mt-2.5"><StreakBoard days={days} today={today} streak={s.streak} /></div>
 
-                {/* Tab switcher: Hành trình | Tường cộng đồng */}
+                {/* Tab switcher: Hành trình | Tường cộng đồng (chỉ hiện wall sau khi hoàn thành) */}
                 <div className="mt-2.5 flex gap-1 rounded-xl bg-bg/60 p-1">
                   <TabBtn active={tab === 'journey'} onClick={() => setTab('journey')} icon="map">Hành trình</TabBtn>
-                  <TabBtn active={tab === 'wall'} onClick={() => setTab('wall')} icon="sparkle">Tường cộng đồng</TabBtn>
+                  {finished && <TabBtn active={tab === 'wall'} onClick={() => setTab('wall')} icon="sparkle">Tường cộng đồng</TabBtn>}
                 </div>
 
                 {anyBanner && tab === 'journey' && (

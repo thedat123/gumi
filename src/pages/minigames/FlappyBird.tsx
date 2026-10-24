@@ -1,13 +1,15 @@
-import { ufoArt } from '../../lib/arcadeArt';
+import { prepareUfoArt, ufoArt } from '../../lib/ufoArt';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import './day7-flight.css';
 import { useParams } from 'react-router-dom';
 import { ArcadeOverlay, ArcadeStage } from '../../components/ArcadeStage';
 import { Banner } from '../../components/Banner';
 import { MissionDone } from '../../components/MissionDone';
 import { actOfDay } from '../../lib/scoring';
 import { playSfx } from '../../lib/sfx';
-import { useArcadeLoop } from '../../lib/useArcadeLoop';
-import { getQuality, type Tier } from '../../lib/quality';
+import { useDay7FlightLoop } from '../../lib/useDay7FlightLoop';
+import { getQuality } from '../../lib/quality';
 import { vi } from '../../content/vi';
 
 const PASS = 20;  // qua 20 cột = ĐẠT (tính streak) — pass rồi KHÔNG cho chơi lại
@@ -32,18 +34,32 @@ export function FlappyBird() {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const g = useRef<State>({ mode: 'ready', by: 0, byPrev: 0, vy: 0, pipes: [], score: 0, w: 1, h: 1, t: 0, best: 0, acc: 0, rot: 0, thrust: 0 });
-  // Cache gradient sky theo (w, h, act) — tránh tạo object mới mỗi frame
-  const skyCache = useRef<{ w: number; h: number; act: number; g: CanvasGradient | null }>({ w: 0, h: 0, act: 0, g: null });
+  const finishTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastFlapSound = useRef(-Infinity);
+  const birdRef = useRef<HTMLDivElement>(null);
+  const pipesRef = useRef<(HTMLDivElement | null)[]>([]);
+  const cloudsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [artReady, setArtReady] = useState(false);
+  const [artError, setArtError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [mode, setMode] = useState<Mode>('ready');
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [award, setAward] = useState<number>(m?.points ?? 20);
 
+  useEffect(() => {
+    let cancelled = false;
+    setArtError(false);
+    void prepareUfoArt().then(() => { if (!cancelled) setArtReady(true); })
+      .catch(() => { if (!cancelled) setArtError(true); });
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
+
   const to = (mo: Mode) => { g.current.mode = mo; setMode(mo); };
   // Chốt ván: trao điểm mốc rồi chuyển sang màn hoàn thành (không cho chơi lại).
   const finish = (pts: number) => {
     setAward(pts); to('won'); playSfx('win');
-    setTimeout(() => setDone(true), 700);
+    finishTimer.current = setTimeout(() => setDone(true), 700);
   };
 
   const reset = useCallback(() => {
@@ -54,28 +70,50 @@ export function FlappyBird() {
 
   const flap = useCallback(() => {
     const s = g.current;
-    if (s.mode === 'won') return;
+    if (!artReady || document.hidden || s.mode === 'won') return;
     if (s.mode === 'dead') { reset(); }
     const s2 = g.current;
     if (s2.mode === 'ready') to('play');
     s2.vy = -0.68 * s2.h; // lực vỗ cánh, tỉ lệ theo chiều cao khung
     s2.thrust = 1;
     s2.rot = -0.18;        // hất mũi LÊN ngay khi vỗ (cảm giác nhạy như Flappy thật)
-    playSfx('pop');
-  }, [reset]);
+    const now = performance.now();
+    if (now - lastFlapSound.current >= 100) { playSfx('pop'); lastFlapSound.current = now; }
+  }, [reset, artReady]);
 
   // Bàn phím: Space / ↑ để vỗ cánh
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); flap(); } };
+    const onKey = (e: KeyboardEvent) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (!e.repeat) flap(); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [flap]);
 
-  // Không truyền fpsCapOverride → quality system tự quyết: low=30fps, mid=60fps, high=60fps.
-  // Adaptive downgrade hạ cả DPR lẫn frameInterval khi máy đuối — bắt được mọi loại thiết bị.
-  useArcadeLoop(boxRef, canvasRef, (ctx, w, h, dt) => {
+  useEffect(() => {
+    if (done) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const visible = () => { g.current.acc = 0; };
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      clearTimeout(finishTimer.current);
+      document.removeEventListener('visibilitychange', visible);
+
+    };
+  }, [done]);
+
+  // Physics stays fixed-step; only compositor transforms change each frame.
+  useDay7FlightLoop(boxRef, (w, h, dt) => {
     const s = g.current;
-    if (s.w !== w || s.h !== h) { s.w = w; s.h = h; if (s.mode === 'ready') s.by = h * 0.42; }
+    if (s.w !== w || s.h !== h) {
+      if (s.w > 1 && s.h > 1) {
+        const sx = w / s.w, sy = h / s.h;
+        s.by *= sy; s.byPrev *= sy; s.vy *= sy;
+        for (const p of s.pipes) { p.x *= sx; p.xPrev *= sx; p.gapY *= sy; }
+      }
+      s.w = w; s.h = h;
+      if (s.mode === 'ready') s.by = h * 0.42;
+    }
     s.t += dt;
     const tier = getQuality().tier;
     // Thrust/rot chỉ dùng để vẽ hiệu ứng — skip tính toán trên máy yếu
@@ -134,8 +172,42 @@ export function FlappyBird() {
     if (s.mode === 'play') alpha = clamp(s.acc / STEP, 0, 1);
     else { s.byPrev = s.by; for (const p of s.pipes) p.xPrev = p.x; }
 
-    draw(ctx, w, h, s, act, { birdX, birdR, gap, pipeW, alpha, tier, skyCache: skyCache.current });
-  });
+    const by = s.byPrev + (s.by - s.byPrev) * alpha;
+    const bird = birdRef.current;
+    if (bird) {
+      const size = `${birdR * 3}px`;
+      if (bird.style.width !== size) {
+        bird.style.width = size; bird.style.height = `${birdR * 1.85}px`;
+      }
+      bird.style.transform = `translate3d(${birdX - birdR * 1.5}px,${by - birdR * 1.05}px,0) rotate(${s.rot * .3}rad)`;
+      bird.style.setProperty('--thrust', String(.25 + s.thrust));
+    }
+    for (let i = 0; i < pipesRef.current.length; i++) {
+      const node = pipesRef.current[i];
+      if (!node) continue;
+      const p = s.pipes[i];
+      if (!p) { if (!node.hidden) node.hidden = true; continue; }
+      node.hidden = false;
+      const top = Math.max(0, p.gapY - gap / 2);
+      const bottom = Math.min(h, p.gapY + gap / 2);
+      // Geometry changes only on spawn/resize, not while a pipe travels.
+      const geometry = `${pipeW}:${top}:${bottom}:${h}`;
+      if (node.dataset.geometry !== geometry) {
+        node.style.width = `${pipeW}px`;
+        node.style.setProperty('--pipe-top', `${top}px`);
+        node.style.setProperty('--pipe-bottom', `${bottom}px`);
+        node.style.setProperty('--pipe-height', `${h - bottom}px`);
+        node.dataset.geometry = geometry;
+      }
+      node.style.transform = `translate3d(${p.xPrev + (p.x - p.xPrev) * alpha}px,0,0)`;
+    }
+    for (let i = 0; i < cloudsRef.current.length; i++) {
+      const node = cloudsRef.current[i];
+      if (!node) continue;
+      const cx = ((s.t * (tier === 'high' ? 12 : 0) + i * w * .42) % (w + 160)) - 80;
+      node.style.transform = `translate3d(${cx}px,${h * (.14 + i * .12)}px,0)`;
+    }
+  }, !done);
 
   if (done) return <MissionDone day={day} points={award} earnedPoints={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
 
@@ -145,151 +217,28 @@ export function FlappyBird() {
     </span>
   );
 
-  return (
-    <ArcadeStage act={act} title="Flappy Gumi" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
+  return createPortal(
+    <div className="day7-flight"><ArcadeStage act={act} title="Flappy Gumi" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
+      scenery={<div className={`day7-scene day7-scene-${act}`} aria-hidden="true">
+        {[0, 1, 2].map(i => <div key={i} className="day7-cloud" ref={node => { cloudsRef.current[i] = node; }} />)}
+        {Array.from({ length: 24 }, (_, i) => <div key={i} hidden className="day7-pipe" ref={node => { pipesRef.current[i] = node; }}><div className="day7-pipe-top"/><div className="day7-pipe-bottom"/></div>)}
+        <div className="day7-ground"/>
+        <div ref={birdRef} className="day7-ufo"><i/><img src={ufoArt.src} alt="" draggable={false}/></div>
+      </div>}
       overlay={
         mode === 'ready' ? (
           <ArcadeOverlay>
             <p className="text-title font-extrabold text-white drop-shadow">{vi.flight.ready}</p>
             <p className="max-w-xs text-small font-medium text-white/90">Qua <b>20 cột</b> là đạt (+20). Cố thêm <b>50 cột</b> (+50) và <b>100 cột</b> (+100)! Chạm màn hình hoặc bấm Space.</p>
-            <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.start}</button>
+            <button type="button" onPointerDown={(e) => e.stopPropagation()} disabled={!artReady && !artError} aria-busy={!artReady && !artError} onClick={artError ? () => setLoadAttempt(n => n + 1) : flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{artError ? 'Tải lại hình ảnh' : artReady ? vi.minigames.common.start : 'Đang tải hình ảnh…'}</button>
           </ArcadeOverlay>
         ) : mode === 'dead' ? (
           <ArcadeOverlay>
             <Banner kind="error">Ối! Mới {score} cột, chưa đủ 20 để đạt. Thử lại nào!</Banner>
-            <button type="button" onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
+            <button type="button" onPointerDown={(e) => e.stopPropagation()} onClick={flap} className="rounded-pill border border-black/15 bg-primary px-6 py-2.5 font-bold text-on-primary shadow-pop active:scale-95">{vi.minigames.common.retry}</button>
           </ArcadeOverlay>
         ) : null
       }
-    />
+    /></div>, document.body
   );
-}
-
-/* ---- Vẽ ---- */
-type SkyCache = { w: number; h: number; act: number; g: CanvasGradient | null };
-const SKY: Record<1 | 2 | 3, [string, string]> = { 1: ['#BFE9FB', '#F6E8DC'], 2: ['#CDE7C6', '#EFE2C4'], 3: ['#CFE6FA', '#EAF2FB'] };
-
-// Phân tầng đồ hoạ theo Tier — mỗi tier cắt đúng phần nặng nhất của nó:
-//   low : fillRect thuần, không path, không gradient, không cloud, không thruster
-//   mid : gradient sky cached, không cloud (12 arc/frame → 0), pipe flat, 1 thruster
-//   high: gradient sky cached, 3 cloud, pipe gradient, 3 thruster
-
-function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: State, act: 1 | 2 | 3, d: { birdX: number; birdR: number; gap: number; pipeW: number; alpha: number; tier: Tier; skyCache: SkyCache }) {
-  const { tier } = d;
-  // Integer coords: `n | 0` fast-floor → tránh subpixel anti-aliasing trên mobile Canvas 2D
-  const by = (s.byPrev + (s.by - s.byPrev) * d.alpha) | 0;
-  const [c0, c1] = SKY[act];
-
-  // --- Nền ---
-  if (tier === 'low') {
-    ctx.fillStyle = c0; ctx.fillRect(0, 0, w, h);
-  } else {
-    const sc = d.skyCache;
-    if (sc.w !== w || sc.h !== h || sc.act !== act || !sc.g) {
-      const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, c0); sky.addColorStop(1, c1);
-      sc.g = sky; sc.w = w; sc.h = h; sc.act = act;
-    }
-    ctx.fillStyle = sc.g; ctx.fillRect(0, 0, w, h);
-    // Mây: chỉ high — 3 cloud × 4 arc = 12 arc/frame, bỏ ở mid để tiết kiệm CPU
-    if (tier === 'high') {
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      for (let i = 0; i < 3; i++) { const cx = ((s.t * 12 + i * w * 0.42) % (w + 160)) - 80, cy = h * (0.14 + i * 0.12); cloud(ctx, cx, cy, 26 + i * 6); }
-    }
-  }
-
-  // --- Cột đường ---
-  for (const p of s.pipes) {
-    const px = (p.xPrev + (p.x - p.xPrev) * d.alpha) | 0;
-    // Clamp về [0, h] để tránh height âm khi gap gần mép canvas (gây IndexSizeError ở arcTo)
-    const topH = Math.max(0, (p.gapY - d.gap / 2) | 0);
-    const botY = Math.min(h, (p.gapY + d.gap / 2) | 0);
-    pipe(ctx, px, 0, d.pipeW, topH, true, tier);
-    pipe(ctx, px, botY, d.pipeW, Math.max(0, h - botY), false, tier);
-  }
-
-  // --- Đất ---
-  const groundY = (h * 0.95) | 0;
-  ctx.fillStyle = act === 2 ? '#B98A5E' : act === 3 ? '#C9B79E' : '#E4C08C';
-  ctx.fillRect(0, groundY, w, h - groundY);
-
-  // --- Chim (UFO Gumi) ---
-  const r = d.birdR;
-  if (tier === 'low') {
-    // Bỏ save/translate/rotate/restore — vẽ thẳng integer coords, không subpixel, nhanh nhất có thể
-    if (ufoArt.complete && ufoArt.naturalWidth) {
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(ufoArt, (d.birdX - r * 1.5) | 0, (by - r * 1.05) | 0, (r * 3) | 0, (r * 1.85) | 0);
-      ctx.imageSmoothingEnabled = true;
-    }
-  } else {
-    ctx.save();
-    ctx.translate(d.birdX | 0, by); ctx.rotate(s.rot * .3);
-    // Thruster: high = 3 luồng gradient, mid = 1 luồng flat
-    const offsets = tier === 'high' ? [-.65, 0, .65] : [0];
-    for (const off of offsets) {
-      const len = r * (.25 + s.thrust * (1.15 + Math.sin(s.t * 65 + off) * .2));
-      ctx.beginPath();
-      ctx.moveTo(off * r - r * .15, r * .4);
-      ctx.quadraticCurveTo(off * r - r * .22, r * .8, off * r, r * .4 + len);
-      ctx.quadraticCurveTo(off * r + r * .22, r * .8, off * r + r * .15, r * .4);
-      if (tier === 'high') {
-        const glow = ctx.createLinearGradient(0, r * .4, 0, r * .4 + len);
-        glow.addColorStop(0, '#e8fcff'); glow.addColorStop(.3, '#65dbff'); glow.addColorStop(1, '#42aaff00');
-        ctx.fillStyle = glow;
-      } else {
-        ctx.fillStyle = '#65dbff';
-      }
-      ctx.fill();
-    }
-    if (ufoArt.complete && ufoArt.naturalWidth) ctx.drawImage(ufoArt, -r * 1.5, -r * 1.05, r * 3, r * 1.85);
-    ctx.restore();
-  }
-}
-
-function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, 7); ctx.arc(x + r, y + r * 0.2, r * 0.8, 0, 7);
-  ctx.arc(x - r, y + r * 0.2, r * 0.75, 0, 7); ctx.arc(x + r * 0.4, y - r * 0.5, r * 0.7, 0, 7);
-  ctx.fill();
-}
-
-function pipe(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hh: number, top: boolean, tier: Tier) {
-  const capH = Math.min(18, w * 0.4) | 0;
-  const capY = top ? y + hh - capH : y;
-
-  if (tier === 'low') {
-    // fillRect thuần — không path, không gradient: nhanh nhất có thể
-    ctx.fillStyle = '#EE7DA0'; ctx.fillRect(x, y, w, hh);
-    ctx.fillStyle = '#C94E74'; ctx.fillRect(x - 4, capY, w + 8, capH);
-    return;
-  }
-
-  if (tier === 'mid') {
-    // Flat color + highlight — không createLinearGradient (bỏ 2 gradient object/pipe/frame)
-    // round() giữ rounded-corner đẹp hơn low nhưng không tốn gradient
-    ctx.fillStyle = '#EE7DA0'; round(ctx, x, y, w, hh, 8); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    round(ctx, x + w * 0.16, y, Math.max(3, w * 0.12), hh, 4); ctx.fill();
-    ctx.fillStyle = '#C94E74';
-    round(ctx, x - 4, capY, w + 8, capH, 6); ctx.fill();
-    return;
-  }
-
-  // High: gradient đầy đủ
-  const body = ctx.createLinearGradient(x, 0, x + w, 0);
-  body.addColorStop(0, '#F2A0B8'); body.addColorStop(0.5, '#EE7DA0'); body.addColorStop(1, '#D45E82');
-  ctx.fillStyle = body; round(ctx, x, y, w, hh, 8); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.22)';
-  round(ctx, x + w * 0.16, y, Math.max(3, w * 0.12), hh, 4); ctx.fill();
-  ctx.fillStyle = '#C94E74';
-  round(ctx, x - 4, capY, w + 8, capH, 6); ctx.fill();
-}
-
-function round(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  if (w <= 0 || h <= 0) return; // guard: negative dimensions crash arcTo
-  r = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }

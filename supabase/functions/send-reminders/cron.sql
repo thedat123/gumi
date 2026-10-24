@@ -8,8 +8,17 @@ create extension if not exists pg_net   with schema extensions;
 
 -- 2) Lưu URL function + service role key vào Vault (thay <ref> và <SERVICE_ROLE_KEY>).
 --    Lấy service role key ở: Project Settings → API → service_role (secret).
-select vault.create_secret('https://<ref>.supabase.co/functions/v1/send-reminders', 'send_reminders_url');
-select vault.create_secret('<SERVICE_ROLE_KEY>', 'send_reminders_key');
+-- Provision these secrets once using vault.create_secret (or update_secret on rotation).
+-- Do not run with placeholders; keep the service key outside version control.
+-- Required: send_reminders_url = https://<ref>.supabase.co/functions/v1/send-reminders
+-- Required: send_reminders_key = project's service_role JWT
+do $$
+begin
+  if not exists (select 1 from vault.decrypted_secrets where name = 'send_reminders_url')
+     or not exists (select 1 from vault.decrypted_secrets where name = 'send_reminders_key') then
+    raise exception 'Provision send_reminders_url and send_reminders_key in Vault before scheduling';
+  end if;
+end $$;
 
 -- 3) Đặt lịch mỗi phút. Gỡ lịch cũ trùng tên trước cho idempotent.
 select cron.unschedule('send-reminders') where exists (select 1 from cron.job where jobname = 'send-reminders');

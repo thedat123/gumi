@@ -1,7 +1,7 @@
 /* Service worker tự viết cho Mật Độ (PWA). Đổi VERSION mỗi lần deploy để làm mới cache.
    Chiến lược: điều hướng (navigate) network-first + rơi về vỏ app đã cache khi offline;
    tài nguyên tĩnh cùng miền dùng stale-while-revalidate. Không đụng tới request khác miền (Supabase). */
-const VERSION = 'ld-facts-20261022';
+const VERSION = 'ld-flight-20261024';
 const OFFLINE_URL = '/offline.html';
 const SHELL = ['/', OFFLINE_URL, '/manifest.webmanifest'];
 
@@ -112,12 +112,15 @@ self.addEventListener('fetch', (event) => {
     (async () => {
       const cache = await caches.open(VERSION);
       const cached = await cache.match(req);
+      // Vite content-hashed assets are immutable: a hit needs no network at all.
+      if (cached && /^\/assets\/.+-[A-Za-z0-9_-]{8,}\.[^/]+$/.test(url.pathname)) return cached;
       const network = fetch(req)
         .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone());
+          if (res && res.ok) event.waitUntil(cache.put(req, res.clone()));
           return res;
         })
         .catch(() => null);
+      event.waitUntil(network.then(() => undefined));
       return cached || (await network) || Response.error();
     })(),
   );

@@ -8,7 +8,7 @@ export type GumiState = 'bo_pho' | 'hap_hoi' | 'tien_hoa';
 export type GumiEvent = 'cheer' | 'revive' | 'evolve';
 export type CampaignPhase = 'before' | 'running' | 'ended';
 export type CheckinStatus = 'approved' | 'rejected' | 'pending';
-export type Role = 'player' | 'admin';
+export type Role = 'player' | 'admin' | 'gamer';
 
 export interface Session {
   userId: string;

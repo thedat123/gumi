@@ -40,6 +40,7 @@ const idle = (cb: () => void) =>
   ?? setTimeout(cb, 1800);
 if (!isSlowNetwork()) {
   idle(() => {
+    if (/^\/(event|mission)(\/|$)/.test(window.location.pathname)) return;
     void import('./pages/Dashboard');
     void import('./pages/Leaderboard');
     void import('./pages/GumiRoom');

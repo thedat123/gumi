@@ -6,8 +6,10 @@ import { Icon } from './Icon';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 
-function timeAgo(iso: string): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+function timeAgo(iso: string | null | undefined): string {
+  const ms = iso ? new Date(iso).getTime() : NaN;
+  if (!iso || isNaN(ms)) return 'vừa xong';
+  const s = Math.max(0, (Date.now() - ms) / 1000);
   if (s < 60) return 'vừa xong';
   if (s < 3600) return `${Math.floor(s / 60)} phút trước`;
   if (s < 86400) return `${Math.floor(s / 3600)} giờ trước`;

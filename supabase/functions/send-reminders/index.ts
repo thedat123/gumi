@@ -11,41 +11,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
-// ——— Bảng lịch nhắc (GIỮ ĐỒNG BỘ với src/lib/reminders.ts) ———
-const REMINDERS = [
-  { minute: 0,            text: '👻 Bạn có thấy bóng dáng ai đó vừa bỏ lỡ challenge hôm nay không? Chính là bạn đấyy!!!!, nhanh tay vào khôi phục lại chuỗi nào.' },
-  { minute: 8 * 60,       text: 'Thử thách hôm nay đang chờ bạn chinh phục đấy, Dành ít phút cho Gumi trước khi bắt đầu một ngày bận rộn nào.' },
-  { minute: 15 * 60,      text: 'Đến giờ giải lao òi, đừng quên giảm đường cùng Gumi nhé bạn ơi 🐱' },
-  { minute: 18 * 60,      text: 'Biết là bận rồi nhưng mà để ý Gumi một tí đi🥲' },
-  { minute: 21 * 60,      text: 'Cả ngày trôi qua rồi mà bạn vẫn chưa ghé thăm tôi? Đừng để tôi phải đến tận nhà gõ cửa nhé đấy nhé!' },
-  { minute: 23 * 60 + 30, text: 'Đừng hòng đi ngủ yên ổn nếu chưa hoàn thành challenge hôm nay. Hoàn thành ngay trước khi quá muộn!' },
-] as const;
-
-interface Due { date: string; minute: number; text: string }
-
-function vnParts(now: Date): { date: string; minute: number } {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(now);
-  const v = (t: string) => parts.find((p) => p.type === t)!.value;
-  return { date: `${v('year')}-${v('month')}-${v('day')}`, minute: Number(v('hour')) * 60 + Number(v('minute')) };
-}
-
-function dueReminder(now: Date, lastPlayDate: string | null, campaignDay: number, lastCompletedDate: string | null): Due | null {
-  const { date, minute } = vnParts(now);
-  if (lastPlayDate === date || lastCompletedDate === date) return null;
-  if (minute < 8 * 60) {
-    if (campaignDay <= 1) return null;
-    const yesterday = new Date(`${date}T00:00:00Z`);
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-    const y = yesterday.toISOString().slice(0, 10);
-    if (lastPlayDate === y || lastCompletedDate === y) return null;
-    return { date, ...REMINDERS[0] };
-  }
-  const reminder = [...REMINDERS].reverse().find((r) => r.minute <= minute)!;
-  return { date, ...reminder };
-}
+import { dueReminder } from '../_shared/reminders.ts';
 
 interface Target {
   user_id: string; endpoint: string; p256dh: string; auth: string;
@@ -70,19 +36,29 @@ Deno.serve(async (_req) => {
   const now = new Date();
   let sent = 0, skipped = 0, pruned = 0;
 
+  const claimedUsers = new Set<string>();
   for (const t of (targets ?? []) as Target[]) {
     if (t.phase !== 'running') { skipped++; continue; }
     const due = dueReminder(now, t.last_play_date, t.campaign_day, t.last_completed_date);
     if (!due) { skipped++; continue; }
 
     // Giành suất gửi (đã gửi mốc này hôm nay thì bỏ) — chống cron mỗi phút gửi lặp.
-    const { data: claimed } = await supabase.rpc('claim_push_slot', { p_user: t.user_id, p_date: due.date, p_minute: due.minute });
-    if (!claimed) { skipped++; continue; }
+    if (!claimedUsers.has(t.user_id)) {
+      const { data: claimed, error: claimError } = await supabase.rpc('claim_push_slot', { p_user: t.user_id, p_date: due.date, p_minute: due.minute });
+      if (claimError) return Response.json({ error: claimError.message }, { status: 500 });
+      if (!claimed) { skipped++; continue; }
+      claimedUsers.add(t.user_id);
+      const { error: recordError } = await supabase.from('notifications').insert({
+        user_id: t.user_id, title: 'Mật Độ', body: due.text, url: `/chapter/${t.campaign_day}`,
+      });
+      if (recordError) console.error('notification insert failed', recordError.message);
+    }
 
     try {
       await webpush.sendNotification(
         { endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } },
-        JSON.stringify({ title: 'Gumi nhắc bạn 🐱', body: due.text, url: `/chapter/${t.campaign_day}`, tag: `gumi-reminder-${due.date}` }),
+        JSON.stringify({ title: 'Mật Độ', body: due.text, url: `/chapter/${t.campaign_day}`, tag: `gumi-reminder-${due.date}-${due.minute}` }),
+        { TTL: 300, urgency: 'high' },
       );
       sent++;
     } catch (err) {

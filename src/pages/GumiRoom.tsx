@@ -10,6 +10,7 @@ import { SugarPassDialog } from '../components/SugarPassDialog';
 import { SkinPicker } from '../components/SkinPicker';
 import { StreakFlame } from '../components/StreakFlame';
 import { RoomDecorLayer } from '../components/RoomDecorLayer';
+import { WallFeed } from '../components/WallFeed';
 import { useRoomDecor } from '../app/room-decor';
 import { isMuted, setMuted, setAmbience, stopAmbience } from '../lib/sfx';
 import { vi } from '../content/vi';
@@ -53,6 +54,7 @@ export function GumiRoom() {
   const { decor } = useRoomDecor();
   const nav = useNavigate();
   const [wardrobe, setWardrobe] = useState(false);
+  const [showWall, setShowWall] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [warnMission, setWarnMission] = useState(false); // hỏi trước khi vào màn lúc hấp hối (tránh mất chuỗi oan)
   const [roomIdx, setRoomIdx] = useState(0);
@@ -82,6 +84,7 @@ export function GumiRoom() {
   const toggleDay = useCallback(() => setIsDay((v) => !v), []);
   const startDecorate = useCallback(() => { setDecorate(true); setDrawerOpen(true); }, []);
   const openWardrobe = useCallback(() => setWardrobe(true), []);
+  const openWall = useCallback(() => setShowWall(true), []);
   const changeRoom = (dir: 1 | -1) => { setSlide(dir > 0 ? 'left' : 'right'); setRoomIdx((i) => (i + dir + ROOMS.length) % ROOMS.length); };
   const exitDecorate = () => { setDecorate(false); setDrawerOpen(false); };
 
@@ -180,7 +183,7 @@ export function GumiRoom() {
                     </button>
                   )}
 
-                  <RoomDock done={done} rank={s.rank} onWardrobe={openWardrobe} />
+                  <RoomDock done={done} rank={s.rank} onWardrobe={openWardrobe} onWall={openWall} />
                 </div>
 }
               </div>
@@ -212,6 +215,19 @@ export function GumiRoom() {
               </div>
             )}
             {wardrobe && <SkinPicker daysDone={done} onClose={() => setWardrobe(false)} />}
+            {showWall && (
+              <div className="fixed inset-0 z-[2000] flex flex-col justify-end bg-text/40" onClick={() => setShowWall(false)}>
+                <div className="safe-bottom max-h-[75dvh] w-full overflow-y-auto rounded-t-[20px] bg-surface shadow-pop" onClick={(e) => e.stopPropagation()}>
+                  <div className="sticky top-0 flex items-center justify-between border-b border-border bg-surface/95 px-4 py-3 backdrop-blur">
+                    <h2 className="flex items-center gap-1.5 text-body font-bold"><Icon name="sparkle" size={16} filled className="text-accent" />Tường cộng đồng</h2>
+                    <button type="button" onClick={() => setShowWall(false)} aria-label="Đóng" className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-bg"><Icon name="x" size={18} /></button>
+                  </div>
+                  <div className="p-4">
+                    <WallFeed />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       }}
@@ -267,14 +283,15 @@ const RoomControls = memo(function RoomControls({ roomIdx, isDay, muted, onDecor
   );
 });
 
-/** Dock dưới: Bản đồ, Xếp hạng, Tủ đồ, Card. */
-const RoomDock = memo(function RoomDock({ done, rank, onWardrobe }: { done: number; rank?: number | null; onWardrobe: () => void }) {
+/** Dock dưới: Bản đồ, Xếp hạng, Tủ đồ, Card, Tường. */
+const RoomDock = memo(function RoomDock({ done, rank, onWardrobe, onWall }: { done: number; rank?: number | null; onWardrobe: () => void; onWall: () => void }) {
   return (
     <div className="room-dock flex justify-center gap-2 sm:gap-2.5">
       <Dock to="/journey" icon="map" label="Bản đồ" badge={`${done}/${vi.journey.total}`} />
       <Dock to="/leaderboard" icon="trophy" label="Xếp hạng" badge={rank ? `#${rank}` : undefined} />
       <DockButton icon="shirt" label={vi.wardrobe.dock} onClick={onWardrobe} />
       <Dock to="/summary" icon="camera" label="Card" />
+      <DockButton icon="sparkle" label="Tường" onClick={onWall} />
     </div>
   );
 });

@@ -1,18 +1,8 @@
 name: Push reminders
 
-# Gửi lời nhắc Web Push TỪ GITHUB (không cần deploy Supabase Edge Function / pg_cron).
-# KIỂU "EventBridge": KHÔNG polling mỗi phút — mỗi mốc nhắc là MỘT lịch riêng chạy đúng giờ đó.
-# GitHub chạy theo UTC, giờ VN = UTC+7 → quy đổi bên dưới. Lịch GitHub có thể trễ vài phút;
-# script tự chọn mốc nhắc "muộn nhất <= bây giờ" + claim_push_slot chống gửi trùng nên vẫn đúng.
-# Tách bạch: KHI NÀO (lịch dưới) · GỬI GÌ (scripts/send-reminders.mjs) · CHO AI (RPC Supabase).
+# Production reminders run every minute via Supabase pg_cron.
+# GitHub remains manual-only because scheduled Actions can be delayed.
 on:
-  schedule:
-    - cron: '0 17 * * *'   # VN 00:00 — nhắc đã lỡ hôm trước
-    - cron: '0 1 * * *'    # VN 08:00
-    - cron: '0 8 * * *'    # VN 15:00
-    - cron: '0 11 * * *'   # VN 18:00
-    - cron: '0 14 * * *'   # VN 21:00
-    - cron: '30 16 * * *'  # VN 23:30
   workflow_dispatch:
     inputs:
       test:
@@ -35,7 +25,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Gửi nhắc nhở
-        run: node scripts/send-reminders.mjs
+        run: node --import tsx scripts/send-reminders.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

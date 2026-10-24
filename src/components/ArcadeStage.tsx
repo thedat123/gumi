@@ -4,10 +4,10 @@ import { Icon } from './Icon';
 import { vi } from '../content/vi';
 
 /** Khung game arcade CHIẾM TRỌN MÀN HÌNH: nền theo vùng đất, thanh trên (Thoát→bản đồ + tựa + HUD), vùng canvas + lớp phủ. */
-export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, overlay, onPointerDown }: {
+export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, overlay, onPointerDown, scenery }: {
   act?: 1 | 2 | 3; title: string; hint?: string; hud?: ReactNode;
   boxRef: RefObject<HTMLDivElement | null>; canvasRef: RefObject<HTMLCanvasElement | null>;
-  overlay?: ReactNode; onPointerDown?: () => void;
+  scenery?: ReactNode; overlay?: ReactNode; onPointerDown?: () => void;
 }) {
   const { day: dayParam } = useParams();
   const day = Number(dayParam);
@@ -39,6 +39,7 @@ export function ArcadeStage({ act = 1, title, hint, hud, boxRef, canvasRef, over
       </header>
       <div ref={boxRef} onPointerDown={onPointerDown} className="relative z-10 mt-2 flex-1 touch-none select-none [@media(max-height:520px)]:mt-1">
         <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" />
+        {scenery}
         {overlay}
       </div>
     </div>

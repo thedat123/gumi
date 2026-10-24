@@ -583,7 +583,7 @@ export function createMockApi(): Api {
       const s = requireSession();
       await delay(null, 400);
       ensurePlayable(TOTAL_DAYS);
-      state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date(0).toISOString() }, ...state.wall];
+      state.wall = [{ id: uid(), name: state.profile?.name ?? s.email, text, createdAt: new Date().toISOString() }, ...state.wall];
       state.storyBonus = storyProof ? 10 : 0;
       // Có ảnh Story → đẩy vào hàng chờ admin duyệt tay (từ chối sẽ gỡ điểm ngày 14).
       if (storyProof) ADMIN_SEED.unshift({ id: `c-grad-${Date.now()}`, user: state.profile?.name ?? s.email, day: TOTAL_DAYS, status: 'pending', emoji: '📤', flag: 'Tốt nghiệp — chờ duyệt' });

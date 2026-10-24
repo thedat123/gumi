@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { Loading } from './components/Loading';
-import { RequireAdmin, RequireAuth, RequireProfile, RequireToday } from './app/guards';
+import { RequireGamer, RequireAdmin, RequireAuth, RequireProfile, RequireToday } from './app/guards';
 import { SessionProvider } from './app/session';
 import { SkinProvider } from './app/skin';
 import { RoomDecorProvider } from './app/room-decor';
@@ -10,6 +10,7 @@ import { SystemState } from './pages/SystemState'; // nhẹ + guards đã import
 
 // Mỗi trang thành một chunk riêng: màn đầu (login/landing) không còn kéo theo toàn bộ app.
 // Trang nặng (Phòng 3D, minigame, Admin) chỉ tải khi người dùng thật sự vào.
+const EventGame = lazy(() => import('./pages/event/EventGame').then(m => ({ default: m.EventGame })));
 const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 const ChapterIntro = lazy(() => import('./pages/ChapterIntro').then((m) => ({ default: m.ChapterIntro })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
@@ -32,6 +33,7 @@ export function App() {
       <SkinProvider>
       <RoomDecorProvider>
       <Routes>
+        <Route path="event" element={<RequireGamer><Suspense fallback={<Loading />}><EventGame /></Suspense></RequireGamer>} />
         {/* Admin: shell riêng (dashboard), KHÔNG dùng AppShell game của người chơi. */}
         <Route path="admin" element={<RequireAdmin><Suspense fallback={<Loading />}><Admin /></Suspense></RequireAdmin>} />
         <Route element={<AppShell />}>

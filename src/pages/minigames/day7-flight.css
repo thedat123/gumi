@@ -1,0 +1,32 @@
+/* Keep the original arcade UI, free of the app shell's width/header constraints. */
+.day7-flight { position: fixed; inset: 0; z-index: 60; height: 100dvh; isolation: isolate; }
+.day7-flight > .game-shell { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+/* The canvas is opaque. A static backdrop avoids continuously compositing a hidden animation. */
+.day7-flight .game-bg::before { animation: none; }
+/* Paint scenery once at native screen resolution. Only small moving layers are composited. */
+.day7-flight canvas { display: none; }
+.day7-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; contain: layout paint style; background: linear-gradient(#BFE9FB,#F6E8DC); }
+.day7-scene-2 { background: linear-gradient(#CDE7C6,#EFE2C4); }
+.day7-scene-3 { background: linear-gradient(#CFE6FA,#EAF2FB); }
+.day7-pipe { position: absolute; top: 0; left: 0; height: 100%; }
+.day7-pipe[hidden] { display: none; }
+.day7-pipe-top,.day7-pipe-bottom { position: absolute; width: 100%; border-radius: 8px; background: linear-gradient(90deg,#F2A0B8,#EE7DA0 50%,#D45E82); }
+.day7-pipe-top { top: 0; height: var(--pipe-top); }
+.day7-pipe-bottom { top: var(--pipe-bottom); height: var(--pipe-height); }
+.day7-pipe-top::before,.day7-pipe-bottom::before { content: ''; position: absolute; left: 16%; top: 0; bottom: 0; width: 12%; border-radius: 4px; background: #ffffff38; }
+.day7-pipe-top::after,.day7-pipe-bottom::after { content: ''; position: absolute; left: -4px; right: -4px; height: min(18px,100%); border-radius: 6px; background: #C94E74; }
+.day7-pipe-top::after { bottom: 0; }
+.day7-pipe-bottom::after { top: 0; }
+.day7-ground { position: absolute; inset: 95% 0 0; background: #E4C08C; }
+.day7-scene-2 .day7-ground { background: #B98A5E; }
+.day7-scene-3 .day7-ground { background: #C9B79E; }
+.day7-ufo { position: absolute; left: 0; top: 0; width: 60px; height: 37px; transform-origin: 50% 57%; will-change: transform; }
+.day7-ufo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; image-rendering: auto; }
+.day7-ufo i { position: absolute; left: 44%; top: 72%; width: 12%; height: 50%; border-radius: 0 0 50% 50%; background: linear-gradient(#e8fcff,#65dbff 30%,#42aaff00); transform: scaleY(var(--thrust,.25)); transform-origin: top; }
+.day7-cloud { position: absolute; top: 0; left: 0; width: 92px; height: 38px; border-radius: 50%; background: #ffffff8c; }
+.day7-cloud::before,.day7-cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
+.day7-cloud::before { width: 52px; height: 52px; left: 18px; top: -20px; }
+.day7-cloud::after { width: 42px; height: 42px; right: 0; top: -8px; }
+/* Scenery remains sharp on low tiers; only nonessential motion/blur is reduced. */
+html.gfx-low .day7-ufo i { display: none; }
+html.gfx-low .day7-flight [class*="backdrop-blur"] { backdrop-filter: none; }

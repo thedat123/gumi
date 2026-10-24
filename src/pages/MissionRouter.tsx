@@ -1,14 +1,16 @@
 import { useParams } from 'react-router-dom';
-import { CheckIn } from './CheckIn';
-import { Day7 } from './Day7';
-import { Quiz } from './Quiz';
-import { Crossword } from './minigames/Crossword';
-import { Day14Final } from './minigames/Day14Final';
-import { FlappyBird } from './minigames/FlappyBird';
-import { MemoryMatch } from './minigames/MemoryMatch';
-import { QuickQuiz } from './minigames/QuickQuiz';
-import { SortGame } from './minigames/SortGame';
-import { WordHunt } from './minigames/WordHunt';
+import { lazy, Suspense } from 'react';
+import { Loading } from '../components/Loading';
+const CheckIn = lazy(() => import('./CheckIn').then(m => ({ default: m.CheckIn })));
+const Day7 = lazy(() => import('./Day7').then(m => ({ default: m.Day7 })));
+const Quiz = lazy(() => import('./Quiz').then(m => ({ default: m.Quiz })));
+const Crossword = lazy(() => import('./minigames/Crossword').then(m => ({ default: m.Crossword })));
+const Day14Final = lazy(() => import('./minigames/Day14Final').then(m => ({ default: m.Day14Final })));
+const FlappyBird = lazy(() => import('./minigames/FlappyBird').then(m => ({ default: m.FlappyBird })));
+const MemoryMatch = lazy(() => import('./minigames/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
+const QuickQuiz = lazy(() => import('./minigames/QuickQuiz').then(m => ({ default: m.QuickQuiz })));
+const SortGame = lazy(() => import('./minigames/SortGame').then(m => ({ default: m.SortGame })));
+const WordHunt = lazy(() => import('./minigames/WordHunt').then(m => ({ default: m.WordHunt })));
 
 // Điều phối màn chơi theo ngày cho hành trình 14 ngày (khớp vi.missions):
 //   2  → Quiz "Đoán Thìa Đoán Muỗng"        8  → QuickQuiz "Trắc Nghiệm Chớp Nhoáng"
@@ -20,16 +22,8 @@ import { WordHunt } from './minigames/WordHunt';
 export function MissionRouter() {
   const { day } = useParams();
   const n = Number(day) || 1;
-  switch (n) {
-    case 2: return <Quiz />;
-    case 3: return <Day7 />;
-    case 5: return <SortGame />;                    // Đấu Trường Calo
-    case 7: return <FlappyBird />;                  // CỬA ẢI Hồi 1 — Flappy Gumi
-    case 8: return <QuickQuiz />;                   // Trắc nghiệm 3 câu, 10s/câu
-    case 9: return <WordHunt />;                    // Wordsearch
-    case 11: return <Crossword />;                  // CROSSWORD "Gumi Bắt Chữ" (3 phút)
-    case 12: return <MemoryMatch />;                // Lật Thẻ Trí Nhớ
-    case 14: return <Day14Final />;                 // CỬA ẢI cuối — hứng nước → lời nhắn tốt nghiệp
-    default: return <CheckIn />;                    // DRINK / SHARE → check-in ảnh
-  }
+  const games: Record<number, typeof CheckIn> = { 2: Quiz, 3: Day7, 5: SortGame, 7: FlappyBird, 8: QuickQuiz,
+    9: WordHunt, 11: Crossword, 12: MemoryMatch, 14: Day14Final };
+  const Game = games[n] ?? CheckIn;
+  return <Suspense fallback={<Loading />}><Game /></Suspense>;
 }

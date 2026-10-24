@@ -1,0 +1,43 @@
+import { chromium } from '@playwright/test';
+const base = process.env.FLIGHT_BASE_URL || 'http://127.0.0.1:5201';
+const browser=await chromium.launch({headless:true});
+const results=[];
+for(const spec of [ {name:'desktop',width:1440,height:900,tier:'high',rate:1}, {name:'galaxy-a32',width:412,height:915,tier:'low',rate:6}, {name:'very-old',width:360,height:640,tier:'low',rate:12}, {name:'landscape',width:844,height:390,tier:'mid',rate:4} ]) {
+ const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},deviceScaleFactor:3});
+ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`${base}/login`);
+ await page.locator('input[type=email]').fill('test5@gumi.vn');await page.locator('input[type=password]').fill('test1234');await page.locator('button[type=submit]').click();
+ await page.waitForURL(u=>!u.pathname.includes('login'));
+ await page.goto(`${base}/mission/7?gfx=${spec.tier}`);
+ await page.locator('.day7-flight .day7-scene').waitFor();
+ const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:spec.rate});
+ const layout=await page.locator('.day7-flight > .game-shell').boundingBox();
+ if(layout.x!==0||layout.y!==0||layout.width!==spec.width||layout.height!==spec.height)throw Error('Not full screen '+JSON.stringify(layout));
+ const artwork=await page.locator('.day7-ufo img').evaluate(img=>({width:img.naturalWidth,height:img.naturalHeight}));
+ if(!artwork.width)throw Error('UFO artwork did not load');
+ if(await page.locator('.day7-flight canvas').isVisible())throw Error('Full-screen canvas still repaints');
+ if(await page.locator('.flight-day7').count())throw Error('Redesigned UI still present');
+ await page.waitForTimeout(250);
+ await page.screenshot({path:`/private/tmp/gumi-day7-${spec.name}.png`});
+ await page.getByRole('button',{name:'Bắt đầu',exact:true}).click();
+ await page.waitForTimeout(300);await page.screenshot({path:`/private/tmp/gumi-day7-${spec.name}-playing.png`});
+ await context.setOffline(true);
+ const performanceResult=await page.evaluate(async()=>{
+  let sceneFrames = 0;
+  const observer = new MutationObserver(records => { if (records.some(record => record.attributeName === 'style')) sceneFrames++; });
+  observer.observe(document.querySelector('.day7-ufo'), { attributes: true });
+  const intervals=[];let previous=performance.now();let until=previous+4000;
+  const input=setInterval(()=>window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',bubbles:true})),360);
+  await new Promise(resolve=>{function frame(now){intervals.push(now-previous);previous=now;if(now<until)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame)});
+  clearInterval(input);observer.disconnect();intervals.sort((a,b)=>a-b);
+  return {frames:intervals.length,sceneFrames,p50:intervals[Math.floor(intervals.length*.5)],p95:intervals[Math.floor(intervals.length*.95)]};
+ });
+ await context.setOffline(false);
+ if(performanceResult.sceneFrames < 30)throw Error('Scene not animating offline');
+ await page.setViewportSize({width:spec.height,height:spec.width});await page.waitForTimeout(200);
+ if(errors.length)throw Error(errors.join('\n'));
+ await page.getByRole('link',{name:'Thoát',exact:true}).click();await page.waitForURL('**/journey');await page.locator('.day7-flight').waitFor({state:'detached'});
+ if(await page.evaluate(()=>document.body.style.overflow==='hidden'))throw Error('Scroll lock leaked');
+ results.push({device:spec.name,cpuSlowdown:spec.rate,layout,artwork,performanceResult});await context.close();
+}
+console.log(JSON.stringify(results,null,2));await browser.close();

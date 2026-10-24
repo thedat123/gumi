@@ -1,0 +1,5 @@
+simulation: event-resilience
+routing: path
+mocks:
+  - routeKey: supabase
+    path: ../mocks/event-supabase/default.cjs

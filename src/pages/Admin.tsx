@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { EventResults } from './event/EventResults';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
@@ -11,6 +12,7 @@ import { useAsync } from '../app/useAsync';
 import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
 
 const TABS: AdminTab[] = [
+  { id: 'event', label: 'Sự kiện trực tiếp', icon: 'medal' },
   { id: 'overview', label: 'Tổng quan', icon: 'medal' },
   { id: 'review', label: 'Duyệt ảnh', icon: 'flag' },
   { id: 'players', label: 'Người chơi', icon: 'paw' },
@@ -24,6 +26,7 @@ const TOTAL = vi.journey.total;
 export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
+  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults /></AdminShell>;
   if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
   if (tab === 'wall')   return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><WallPanel /></AdminShell>;
   return (

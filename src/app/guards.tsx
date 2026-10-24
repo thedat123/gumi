@@ -21,6 +21,7 @@ export function RequireProfile({ children }: { children: ReactNode }) {
   if (loading) return <Loading />;
   if (!session) return <Navigate to="/welcome" replace />;
   if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
+  if (profile?.role === 'gamer') return <Navigate to="/event" replace />;
   if (!profile) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
@@ -47,5 +48,13 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
   if (loading) return <Loading />;
   if (!session) return <Navigate to="/welcome" replace />;
   if (profile?.role !== 'admin') return <SystemState fixed="forbidden" />;
+  return <>{children}</>;
+}
+
+export function RequireGamer({ children }: { children: ReactNode }) {
+  const { session, profile, loading } = useSession();
+  if (loading) return <Loading />;
+  if (!session) return <Navigate to="/login" replace />;
+  if (profile?.role !== 'gamer') return <SystemState fixed="forbidden" />;
   return <>{children}</>;
 }

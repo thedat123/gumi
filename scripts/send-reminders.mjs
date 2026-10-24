@@ -1,5 +1,5 @@
-// Gửi lời nhắc Web Push TỪ GITHUB ACTIONS (thay cho Supabase Edge Function + pg_cron).
-// Chạy theo lịch trong .github/workflows/reminders.yml. Gọi các RPC service_role sẵn có
+// Fallback GitHub runner; primary production scheduling should use Supabase pg_cron.
+// Chạy bằng node --import tsx scripts/send-reminders.mjs. Gọi các RPC service_role sẵn có
 // (reminder_targets / claim_push_slot / purge_push_log — migration 0021) rồi đẩy Web Push.
 //
 // Env cần (đặt ở GitHub → Settings → Secrets and variables → Actions):
@@ -8,39 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
-// ——— Bảng lịch nhắc (GIỮ ĐỒNG BỘ với src/lib/reminders.ts & edge function cũ) ———
-const REMINDERS = [
-  { minute: 0,            text: '👻 Bạn có thấy bóng dáng ai đó vừa bỏ lỡ challenge hôm nay không? Chính là bạn đấyy!!!!, nhanh tay vào khôi phục lại chuỗi nào.' },
-  { minute: 8 * 60,       text: 'Thử thách hôm nay đang chờ bạn chinh phục đấy, Dành ít phút cho Gumi trước khi bắt đầu một ngày bận rộn nào.' },
-  { minute: 15 * 60,      text: 'Đến giờ giải lao òi, đừng quên giảm đường cùng Gumi nhé bạn ơi 🐱' },
-  { minute: 18 * 60,      text: 'Biết là bận rồi nhưng mà để ý Gumi một tí đi🥲' },
-  { minute: 21 * 60,      text: 'Cả ngày trôi qua rồi mà bạn vẫn chưa ghé thăm tôi? Đừng để tôi phải đến tận nhà gõ cửa nhé đấy nhé!' },
-  { minute: 23 * 60 + 30, text: 'Đừng hòng đi ngủ yên ổn nếu chưa hoàn thành challenge hôm nay. Hoàn thành ngay trước khi quá muộn!' },
-];
-
-function vnParts(now) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(now);
-  const v = (t) => parts.find((p) => p.type === t).value;
-  return { date: `${v('year')}-${v('month')}-${v('day')}`, minute: Number(v('hour')) * 60 + Number(v('minute')) };
-}
-
-function dueReminder(now, lastPlayDate, campaignDay, lastCompletedDate) {
-  const { date, minute } = vnParts(now);
-  if (lastPlayDate === date || lastCompletedDate === date) return null;
-  if (minute < 8 * 60) {
-    if (campaignDay <= 1) return null;
-    const yesterday = new Date(`${date}T00:00:00Z`);
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-    const y = yesterday.toISOString().slice(0, 10);
-    if (lastPlayDate === y || lastCompletedDate === y) return null;
-    return { date, ...REMINDERS[0] };
-  }
-  const reminder = [...REMINDERS].reverse().find((r) => r.minute <= minute);
-  return { date, ...reminder };
-}
+import { dueReminder } from '../supabase/functions/_shared/reminders.ts';
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY } = process.env;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@matdo.app';
@@ -58,6 +26,7 @@ if (error) { console.error('reminder_targets lỗi:', error.message); process.ex
 const FORCE = process.env.FORCE_SEND === '1';
 const now = new Date();
 let sent = 0, skipped = 0, pruned = 0, recorded = 0;
+const claimedUsers = new Set();
 const notifiedUsers = new Set(); // 1 dòng noti / user / lần chạy (dù user có nhiều thiết bị)
 
 for (const t of targets ?? []) {
@@ -68,8 +37,12 @@ for (const t of targets ?? []) {
     if (t.phase !== 'running') { skipped++; continue; }
     const due = dueReminder(now, t.last_play_date, t.campaign_day, t.last_completed_date);
     if (!due) { skipped++; continue; }
-    const { data: claimed } = await supabase.rpc('claim_push_slot', { p_user: t.user_id, p_date: due.date, p_minute: due.minute });
-    if (!claimed) { skipped++; continue; }
+    if (!claimedUsers.has(t.user_id)) {
+      const { data: claimed, error: claimError } = await supabase.rpc('claim_push_slot', { p_user: t.user_id, p_date: due.date, p_minute: due.minute });
+      if (claimError) throw claimError;
+      if (!claimed) { skipped++; continue; }
+      claimedUsers.add(t.user_id);
+    }
     payload = { title: 'Mật Độ', body: due.text, url: `/chapter/${t.campaign_day}`, tag: `gumi-reminder-${due.date}` };
   }
 
@@ -81,7 +54,7 @@ for (const t of targets ?? []) {
   }
 
   try {
-    await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, JSON.stringify(payload));
+    await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, JSON.stringify(payload), { TTL: 300, urgency: 'high' });
     sent++;
   } catch (err) {
     const code = err?.statusCode;
