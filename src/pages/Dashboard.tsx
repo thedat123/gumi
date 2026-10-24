@@ -9,6 +9,7 @@ import { JourneyMap, MapErrorBoundary } from '../components/JourneyMap';
 import { StreakBoard } from '../components/StreakBoard';
 import { SugarPassDialog } from '../components/SugarPassDialog';
 import { WallFeed } from '../components/WallFeed';
+import { useMediaQuery } from '../components/Pagination';
 import { vi } from '../content/vi';
 import { ACT_STARTS, approvedCount, gumiStage } from '../lib/scoring';
 import { useAsync, useIdlePrefetch } from '../app/useAsync';
@@ -92,14 +93,7 @@ export function Dashboard() {
                     </MapErrorBoundary>
                   </div>
                 ) : (
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-20">
-                    <div className="mx-auto max-w-[560px] px-3 pt-4">
-                      <p className="mb-3 flex items-center gap-1.5 text-caption font-bold uppercase tracking-widest text-muted">
-                        <Icon name="sparkle" size={13} filled className="text-accent" />Tường cộng đồng
-                      </p>
-                      <WallFeed />
-                    </div>
-                  </div>
+                  <WallTab />
                 )}
 
                 {dialog && <SugarPassDialog hoursLeft={s.passHoursLeft} error={passError} onCancel={() => { setDialog(false); setPassError(false); }} onConfirm={usePass} />}
@@ -122,6 +116,30 @@ function DeferredMap({ days, today, replayAll }: { days: DayState[]; today: numb
   // Chờ 1 nhịp: tô sẵn đúng màu dải bản đồ của hồi đang chơi → không nháy nền tối/trắng trước khi map hiện.
   if (!ready) return <div className="h-full min-h-[60vh]" style={{ background: today >= ACT_STARTS[1]! ? '#5B4E90' : '#1E8069' }} aria-hidden="true" />;
   return <JourneyMap days={days} today={today} replayAll={replayAll} />;
+}
+
+/** Tường cộng đồng: ĐIỆN THOẠI = khung cố định lấp phần còn lại trên menu dưới, bài dài thì cuộn BÊN TRONG khung;
+ *  DESKTOP = chia trang 8 bài/trang. */
+function WallTab() {
+  const desktop = useMediaQuery('(min-width: 768px)');
+  const title = (
+    <p className="mb-3 flex shrink-0 items-center gap-1.5 text-caption font-bold uppercase tracking-widest text-muted">
+      <Icon name="sparkle" size={13} filled className="text-accent" />Tường cộng đồng
+    </p>
+  );
+  if (desktop) return (
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24">
+      <div className="mx-auto max-w-[640px] px-3 pt-4">{title}<WallFeed pageSize={8} /></div>
+    </div>
+  );
+  return (
+    <div className="mx-auto flex min-h-0 w-full max-w-[560px] flex-1 flex-col px-3 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+      {title}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-card border border-border bg-surface/60 p-2 [-webkit-overflow-scrolling:touch]">
+        <WallFeed />
+      </div>
+    </div>
+  );
 }
 
 function Chip({ icon, v, cls, wide }: { icon: IconName; v: string; cls?: string; wide?: boolean }) {

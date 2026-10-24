@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { EventResults } from './event/EventResults';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
@@ -10,6 +10,7 @@ import { WallFeed } from '../components/WallFeed';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
+import { Pagination, usePagination } from '../components/Pagination';
 
 const TABS: AdminTab[] = [
   { id: 'event', label: 'Sự kiện trực tiếp', icon: 'medal' },
@@ -26,7 +27,7 @@ const TOTAL = vi.journey.total;
 export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
-  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults /></AdminShell>;
+  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults tone="light" /></AdminShell>;
   if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
   if (tab === 'wall')   return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><WallPanel /></AdminShell>;
   return (
@@ -93,9 +94,7 @@ function ReviewPanel() {
         <AsyncView state={queue}>
           {() => {
             const items = pending.filter((c) => (filter === 'all' || (filter === 'social' ? isSocialPhoto(c) : !isSocialPhoto(c))) && c.user.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi')));
-            return items.length ? <div className="grid items-start gap-5 bg-bg/40 p-4 min-[700px]:grid-cols-2 sm:p-5 min-[1600px]:grid-cols-3">
-              {items.map((c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} disabled={busyId !== null} onAct={act} />)}
-            </div> : <div className="flex flex-col items-center px-6 py-16 text-center">
+            return items.length ? <ReviewGrid items={items} resetKey={`${filter}|${search}`} render={(c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} disabled={busyId !== null} onAct={act} />} /> : <div className="flex flex-col items-center px-6 py-16 text-center">
               <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Icon name={pending.length ? 'flag' : 'check'} size={30} /></span>
               <h3 className="text-title font-bold">{pending.length ? 'Không tìm thấy ảnh phù hợp' : 'Đã xử lý hết ảnh chờ duyệt'}</h3>
               <p className="mt-2 max-w-sm text-small text-muted">{pending.length ? 'Thử tên khác hoặc chọn một nhóm ảnh khác.' : 'Ảnh mới của người chơi sẽ xuất hiện tại đây.'}</p>
@@ -103,6 +102,17 @@ function ReviewPanel() {
           }}
         </AsyncView>
       </section>
+    </div>
+  );
+}
+
+/** Lưới ảnh chờ duyệt, 12 ảnh/trang (duyệt xong ảnh biến mất, trang tự lùi nếu trống). */
+function ReviewGrid<T>({ items, resetKey, render }: { items: T[]; resetKey: string; render: (c: T) => ReactNode }) {
+  const pg = usePagination(items, 12, resetKey);
+  return (
+    <div className="flex flex-col">
+      <div className="grid items-start gap-5 bg-bg/40 p-4 min-[700px]:grid-cols-2 sm:p-5 min-[1600px]:grid-cols-3">{pg.slice.map(render)}</div>
+      <Pagination {...pg} unit="ảnh" className="border-t border-border px-4 py-3 sm:px-5" />
     </div>
   );
 }
@@ -198,7 +208,7 @@ function WallPanel() {
           <p className="text-small font-bold">Tất cả bài đăng</p>
         </div>
         <div className="p-4 sm:p-5">
-          <WallFeed onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
+          <WallFeed pageSize={10} hiddenIds={deleted} onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
         </div>
       </section>
     </div>
@@ -420,6 +430,9 @@ function PlayersPanel({ s }: { s: AdminStats }) {
             : b.points - a.points);
   }, [s.players, q, sort, status]);
 
+  const pg = usePagination(rows, 20, `${q}|${sort}|${status}`);
+  const offset = pg.from - 1; // số thứ tự liên tục qua các trang
+
   const SORTS: { k: SortKey; label: string }[] = [
     { k: 'points', label: 'Điểm' }, { k: 'days', label: 'Ngày' }, { k: 'streak', label: 'Chuỗi' }, { k: 'name', label: 'Tên' },
   ];
@@ -449,7 +462,8 @@ function PlayersPanel({ s }: { s: AdminStats }) {
 
       <div className="grid gap-3 sm:grid-cols-2 min-[1100px]:hidden">
         {rows.length === 0 && <p className="col-span-full rounded-2xl border border-border bg-surface px-4 py-10 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>}
-        {rows.map((p, i) => {
+        {pg.slice.map((p, j) => {
+          const i = offset + j;
           const b = playerBadge(p);
           return <article key={p.id} className="min-w-0 rounded-[20px] border border-border bg-surface p-4 shadow-soft">
             <div className="flex items-center gap-3">
@@ -477,7 +491,8 @@ function PlayersPanel({ s }: { s: AdminStats }) {
         </div>
         {rows.length === 0
           ? <p className="px-3 py-8 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>
-          : rows.map((p, i) => {
+          : pg.slice.map((p, j) => {
+            const i = offset + j;
             const b = playerBadge(p);
             return (
               <div key={p.id} className="admin-row flex items-center gap-2 px-3 py-2 text-small">
@@ -495,6 +510,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
             );
           })}
       </Card></div>
+      <Pagination {...pg} unit="người chơi" />
     </div>
   );
 }
