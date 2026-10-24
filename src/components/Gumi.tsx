@@ -17,6 +17,8 @@ import type { GumiEvent, GumiState } from '../api/types';
 interface Props {
   state: GumiState;
   size?: number;
+  /** Cắt SVG chỉ hiện vùng mặt/đầu (dùng cho avatar nhỏ). */
+  faceOnly?: boolean;
   /** Sự kiện chạy một lần (nhảy mừng, hồi sinh, tiến hoá). Đổi eventKey để chạy lại. */
   event?: GumiEvent | null;
   eventKey?: number;
@@ -272,7 +274,7 @@ const SPARKLES = [
 /** Mascot Gumi bằng SVG + CSS. Chỉ animate transform/opacity; trang trí nên ẩn khỏi trình đọc màn hình (chữ trạng thái nằm ở nơi khác). */
 // memo: mascot SVG khá nặng → chỉ render lại khi props đổi (state/size/event/feed…), không theo mọi lần chạm phòng.
 export const Gumi = memo(GumiBase);
-function GumiBase({ state, size = 200, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
+function GumiBase({ state, size = 200, faceOnly = false, event = null, eventKey = 0, interactive = false, outfit: propOutfit, feed = null, onEventEnd }: Props) {
   const { outfit: ctxOutfit } = useOutfit();
   const headClipId = `gumi-head-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const outfit = propOutfit ?? ctxOutfit;
@@ -353,7 +355,7 @@ function GumiBase({ state, size = 200, event = null, eventKey = 0, interactive =
       onClick={onPoke}
       onAnimationEnd={(e) => { if (e.target instanceof Element && e.target.classList.contains('g-actor')) onEventEnd?.(); }}
     >
-      <svg viewBox="0 0 200 220" aria-hidden="true" focusable="false">
+      <svg viewBox={faceOnly ? '28 18 144 112' : '0 0 200 220'} aria-hidden="true" focusable="false">
         <defs>
           <clipPath id={headClipId}><path d="M40 30 H140 V112 H120 Q112 124 96 125 Q79 124 69 112 H40 Z" /></clipPath>
           <radialGradient id="gHi" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffffff" stopOpacity="0.6" /><stop offset="1" stopColor="#ffffff" stopOpacity="0" /></radialGradient>

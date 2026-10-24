@@ -85,7 +85,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : 'px-4 pb-28 pt-1'}`}>
+      <main className={`flex-1 ${columnLayout ? 'flex flex-col' : ''} ${isRoom || isJourney ? '' : isGame || isOnboarding ? 'px-4 pb-6 pt-1' : session ? 'px-4 pb-28 pt-1' : 'px-4 pb-4 pt-1'}`}>
         <div key={pathname} className={`mx-auto w-full ${columnLayout ? 'my-auto' : ''} ${immersive || isJourney ? '' : 'page-in'} ${contentMax}`}>
           {/* Giữ header + nav khi trang con (chunk lazy) đang tải, chỉ vùng nội dung hiện spinner. */}
           <Suspense fallback={<Loading />}><Outlet /></Suspense>

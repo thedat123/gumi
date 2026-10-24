@@ -155,7 +155,7 @@ export function FinalBoss() {
     if (s.mode !== 'play') { s.pxPrev = s.px; s.bxPrev = s.bx; for (const b of s.bullets) { b.xPrev = b.x; b.yPrev = b.y; } for (const sh of s.shots) sh.yPrev = sh.y; }
     const alpha = s.mode === 'play' ? clamp(s.acc / STEP, 0, 1) : 1;
     draw(ctx, w, h, s, act, { pr, py, alpha });
-  });
+  }, 0);
 
   if (done) return <MissionDone day={day} points={points} note="BOSS ĐƯỜNG bị đánh bại! Bạn tốt nghiệp Mật Độ 🎓" />;
 

@@ -4,7 +4,7 @@ import { MissionDone } from '../../components/MissionDone';
 import { Icon } from '../../components/Icon';
 import { playSfx } from '../../lib/sfx';
 import { useDomGameLoop } from '../../lib/useDomGameLoop';
-import { advanceWater, createWaterState, resetWaterState, WATER_CONFIG, WATER_POOL, waterClamp, type WaterMode } from '../../lib/waterCatch';
+import { advanceWater, createWaterState, resetWaterState, WATER_CONFIG, WATER_POOL, WATER_STEP, waterClamp, type WaterMode } from '../../lib/waterCatch';
 import { bossUrl, prepareWaterArt } from '../../lib/waterArt';
 import { vi } from '../../content/vi';
 import { ArcadeOverlay, ArcadeStage } from '../../components/ArcadeStage';
@@ -139,6 +139,7 @@ export function BossBattle({ onWon }: { onWon?: () => void } = {}) {
       if (car.current.style.width !== size) car.current.style.width = size;
       car.current.style.transform = `translate3d(${s.x * w - width * 70 / 110}px,${h * .85 - width * 88 / 110}px,0)`;
     }
+    const alpha = waterClamp(s.accumulator / WATER_STEP, 0, 1);
     for (let i = 0; i < WATER_POOL; i++) {
       const node = drops.current[i], drop = s.drops[i];
       if (!node) continue;
@@ -146,7 +147,9 @@ export function BossBattle({ onWon }: { onWon?: () => void } = {}) {
       node.hidden = false;
       const kind = drop.good ? drop.kind === 0 ? 'water' : 'tea' : drop.kind === 2 ? 'candy' : drop.kind === 0 ? 'cube' : 'sugar';
       if (node.dataset.kind !== kind) node.dataset.kind = kind;
-      node.style.transform = `translate3d(${drop.x * w - 14}px,${drop.y * h - 14}px,0)`;
+      const ix = (drop.previousX + (drop.x - drop.previousX) * alpha) * w - 14;
+      const iy = (drop.previousY + (drop.y - drop.previousY) * alpha) * h - 14;
+      node.style.transform = `translate3d(${ix}px,${iy}px,0)`;
     }
   }, !done && (hud.mode === 'ready' || hud.mode === 'play'));
 

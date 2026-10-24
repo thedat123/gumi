@@ -52,7 +52,7 @@ export function Dashboard() {
               <div className="relative z-20 shrink-0 border-b border-white/40 bg-surface/80 px-2.5 pb-2 pt-2.5 backdrop-blur-md">
                <div className="mx-auto w-full max-w-[560px]">
                 <div className="flex items-center gap-2.5">
-                  <Gumi state={s.gumi} size={46} progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
+                  <Gumi state={s.gumi} size={46} faceOnly progress={progress} event={event?.name ?? null} eventKey={event?.key ?? 0} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body font-extrabold text-primary" data-testid="gumi-caption">{vi.gumi.stage[gumiStage(days)]}</p>
                     <p className="truncate text-caption font-semibold text-muted">

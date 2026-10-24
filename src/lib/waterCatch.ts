@@ -4,7 +4,7 @@ export interface WaterConfig { hp: number; every: number; bad: number; fall: num
 export const WATER_CONFIG: WaterConfig = { hp: 16, every: .38, bad: .34, fall: 190, burst: 0 };
 export const WATER_STEP = 1 / 60;
 export const WATER_POOL = 24;
-export interface WaterDrop { active: boolean; x: number; y: number; previousY: number; speed: number; good: boolean; kind: number; sway: number }
+export interface WaterDrop { active: boolean; x: number; y: number; previousX: number; previousY: number; speed: number; good: boolean; kind: number; sway: number }
 export interface WaterState {
   mode: WaterMode; x: number; target: number; hp: number; lives: number;
   time: number; spawn: number; burst: number; accumulator: number; drops: WaterDrop[];
@@ -13,7 +13,7 @@ export const waterClamp = (n: number, min: number, max: number) => Math.max(min,
 export function createWaterState(config = WATER_CONFIG): WaterState {
   return { mode: 'ready', x: .5, target: .5, hp: config.hp, lives: 3,
     time: 0, spawn: 0, burst: 0, accumulator: 0,
-    drops: Array.from({ length: WATER_POOL }, () => ({ active: false, x: 0, y: 0, previousY: 0, speed: 0, good: true, kind: 0, sway: 0 })),
+    drops: Array.from({ length: WATER_POOL }, () => ({ active: false, x: 0, y: 0, previousX: 0, previousY: 0, speed: 0, good: true, kind: 0, sway: 0 })),
   };
 }
 export function resetWaterState(state: WaterState, config = WATER_CONFIG) {
@@ -24,7 +24,7 @@ export function resetWaterState(state: WaterState, config = WATER_CONFIG) {
 function spawn(state: WaterState, config: WaterConfig, random: () => number, x?: number) {
   const drop = state.drops.find(d => !d.active);
   if (!drop) return;
-  drop.active = true; drop.x = x ?? .08 + random() * .84;
+  drop.active = true; drop.x = drop.previousX = x ?? .08 + random() * .84;
   drop.y = drop.previousY = -.04;
   drop.speed = (config.fall + (1 - state.hp / config.hp) * 90) / 620;
   drop.good = x === undefined && random() > config.bad;
@@ -53,7 +53,7 @@ export function advanceWater(state: WaterState, dt: number, width: number, heigh
     }
     for (const drop of state.drops) {
       if (!drop.active) continue;
-      drop.previousY = drop.y;
+      drop.previousY = drop.y; drop.previousX = drop.x;
       drop.y += drop.speed * WATER_STEP;
       drop.x += Math.sin(state.time * 2 + drop.sway) * 12 / Math.max(1, width) * WATER_STEP;
       if (drop.y >= .85 - ry * .5 && drop.previousY <= .85 + ry && Math.abs(drop.x - state.x) < rx) {
