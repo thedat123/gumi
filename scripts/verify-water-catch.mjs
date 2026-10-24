@@ -1,0 +1,62 @@
+import { chromium } from '@playwright/test';
+const base = process.env.GAME_BASE_URL || 'http://127.0.0.1:5203';
+const browser = await chromium.launch({ headless: true });
+const seed = () => localStorage.setItem('ld_mock_v3', JSON.stringify({session:{userId:'water-qa',email:'test5@gumi.vn'},users:{},profile:{id:'water-qa',name:'QA',avatar:'🐱',level:100,drinksPerWeek:7,role:'player',sugarPassAvailable:true},completed:[],passed:[],rejected:[],levels:{},wall:[],campaignDay:14,passesLeft:2,playStreak:0,storyBonus:0,earnedPoints:{}}));
+const results = [];
+try {
+  for (const spec of [{name:'desktop',w:1440,h:900,cpu:1},{name:'galaxy-a32',w:412,h:915,cpu:6},{name:'very-old',w:360,h:640,cpu:12},{name:'landscape',w:844,h:390,cpu:4}]) {
+    const context = await browser.newContext({viewport:{width:spec.w,height:spec.h},deviceScaleFactor:2.625});
+    const page = await context.newPage(), errors=[];
+    page.on('pageerror', e=>errors.push(e.message)); await page.addInitScript(seed);
+    await page.goto(`${base}/mission/14?gfx=low`);
+    await page.getByRole('button',{name:'Bắt đầu',exact:true}).waitFor();
+    const box=await page.locator('.water-game .game-shell').boundingBox();
+    if(!box || box.width < 200 || box.height < 180)throw Error('Original arcade layout missing');
+    await page.getByRole('heading',{name:'Đánh Bại Boss Đường',exact:true}).waitFor();
+    await page.getByText('Hạ gục Boss Đường!',{exact:true}).waitFor();
+    if(await page.locator('.water-header,.water-status,.water-footer').count())throw Error('Redesigned UI remains');
+    if(await page.locator('.water-game canvas').isVisible())throw Error('Canvas redraw remains');
+    await page.screenshot({path:`/private/tmp/gumi-water-${spec.name}-ready.png`});
+    const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:spec.cpu});
+    await context.setOffline(true);
+    await page.evaluate(()=>{Math.random=()=>.9;});
+    await page.getByRole('button',{name:'Bắt đầu',exact:true}).click();
+    const metrics=await page.evaluate(async()=>{
+      const deltas=[];let previous=performance.now(),frames=0;const end=previous+4000;
+      let right=false;
+      const input=setInterval(()=>{window.dispatchEvent(new KeyboardEvent('keyup',{code:right?'ArrowRight':'ArrowLeft'}));right=!right;window.dispatchEvent(new KeyboardEvent('keydown',{code:right?'ArrowRight':'ArrowLeft'}));},400);
+      let updates=0;const observer=new MutationObserver(()=>updates++);observer.observe(document.querySelector('.water-car'),{attributes:true,attributeFilter:['style']});
+      await new Promise(resolve=>{const tick=now=>{frames++;deltas.push(now-previous);previous=now;if(now<end)requestAnimationFrame(tick);else resolve();};requestAnimationFrame(tick);});
+      clearInterval(input);observer.disconnect();window.dispatchEvent(new KeyboardEvent('keyup',{code:'ArrowRight'}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'ArrowLeft'}));
+      deltas.sort((a,b)=>a-b);return{frames,updates,p95:deltas[Math.floor(deltas.length*.95)]};
+    });
+    if(metrics.updates<30)throw Error('Car stopped moving offline');
+    await page.screenshot({path:`/private/tmp/gumi-water-${spec.name}-playing.png`});
+    await page.setViewportSize({width:spec.h,height:spec.w});await page.waitForTimeout(150);
+    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');
+    await context.setOffline(false);await page.getByRole('link',{name:'Thoát',exact:true}).click();
+    await page.locator('.water-game').waitFor({state:'detached'});
+    if(await page.evaluate(()=>document.body.style.overflow==='hidden'))throw Error('Scroll lock leaked');
+    if(errors.length)throw Error(errors.join('\n'));
+    results.push({...spec,metrics});await context.close();
+  }
+  const context=await browser.newContext({viewport:{width:412,height:915}}), page=await context.newPage();
+  await page.addInitScript(seed);await page.goto(`${base}/mission/14?gfx=low`);
+  await page.getByRole('button',{name:'Bắt đầu',exact:true}).waitFor();await page.clock.install();
+  await page.evaluate(()=>{Math.random=()=>.1;});
+  await page.getByRole('button',{name:'Bắt đầu',exact:true}).click();
+  const box=await page.locator('.water-scene').boundingBox();
+  const move=async x=>{await page.mouse.move(box.x+box.width*x,box.y+box.height*.7);};
+  await move(.164);await page.clock.runFor(6500);
+  await page.getByRole('alert').filter({hasText:'Hết mạng rồi! Boss còn 16 độ ngọt.'}).waitFor();
+  await page.evaluate(()=>{Math.random=()=>.9;});
+  await page.getByRole('button',{name:'Chơi lại',exact:true}).click();
+  await page.getByRole('button',{name:'Bắt đầu',exact:true}).click();await move(.836);
+  await page.clock.runFor(14000);
+  await page.locator('.water-game').waitFor({state:'detached'});
+  await page.locator('textarea').waitFor();
+  if(await page.evaluate(()=>document.body.style.overflow==='hidden'))throw Error('Scroll lock leaked on graduation');
+  console.log(JSON.stringify(results,null,2));
+  console.log('PASS: original UI/cached artwork, drag+keyboard, offline motion, rotation/exit, loss/retry/win and graduation wall. CPU slowdown is simulation, not physical A32 evidence.');
+  await context.close();
+} finally {await browser.close();}

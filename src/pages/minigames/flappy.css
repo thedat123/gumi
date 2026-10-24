@@ -4,3 +4,13 @@
 @media(max-height:500px){.flight-stage.flight-day7{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}.flight-header{min-height:45px;padding:5px 0;gap:10px}.flight-title h1{font-size:17px;margin:0}.flight-title small{display:none}.flight-exit{width:34px;height:32px;font-size:20px}.flight-score strong{font-size:26px}.flight-sound{min-height:30px;padding:5px 10px}.flight-goals{padding-bottom:6px}.flight-goals>span{padding:4px 10px}.flight-footer{padding:5px 2px;font-size:8px}.flight-dialog{padding:16px 22px;width:min(100%,480px);border-radius:16px}.flight-dialog h2{font-size:22px;margin:8px 0}.flight-dialog p{font-size:12px;line-height:1.4;margin:10px 0 12px}.flight-stage .flight-start{padding:10px;min-height:40px;font-size:15px}.flight-event{min-height:300px}}
 /* No blurred overlays, animated backgrounds or per-frame CSS transitions on any quality tier. */
 .flight-stage *{animation:none!important;backdrop-filter:none!important}.flight-bird{transition:none!important}
+
+/* Cached native-resolution pipe layers: only transforms change while travelling. */
+.flight-pipe{position:absolute;left:0;top:0;height:100%;pointer-events:none}
+.flight-pipe[hidden]{display:none}
+.flight-pipe>i{position:absolute;left:0;width:100%;background:linear-gradient(90deg,#258f86 0 12%,#83e8b4 12% 24%,#258f86 24%)}
+.flight-pipe>i:first-child{top:0;height:var(--flight-pipe-top)}
+.flight-pipe>i:last-child{top:var(--flight-pipe-bottom);height:var(--flight-pipe-height)}
+.flight-pipe>i::after{content:'';position:absolute;left:-4px;right:-4px;height:min(var(--flight-cap),100%);background:#165b58}
+.flight-pipe>i:first-child::after{bottom:0}.flight-pipe>i:last-child::after{top:0}
+.flight-start:disabled{opacity:.65;cursor:wait}

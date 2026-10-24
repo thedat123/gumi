@@ -2,13 +2,24 @@
 export function registerSW() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
   if (!import.meta.env.PROD) return; // dev không cần SW (tránh cache gây khó debug)
-  // SW mới (deploy mới) nắm quyền → TỰ reload MỘT lần để lấy bản mới sạch, khỏi phải tải tay.
-  // Nhờ sw.js có skipWaiting + clients.claim nên controllerchange bắn ngay khi bản mới kích hoạt.
+  // First activation already runs the current build. Updates must not discard an active game.
+  let hasController = Boolean(navigator.serviceWorker.controller);
   let refreshing = false;
+  let waiting: MutationObserver | undefined;
+  const reloadWhenIdle = () => {
+    if (document.querySelector('[data-game-active="true"]')) return;
+    waiting?.disconnect(); waiting = undefined;
+    if (!refreshing) { refreshing = true; window.location.reload(); }
+  };
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hasController) { hasController = true; return; }
     if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
+    if (document.querySelector('[data-game-active="true"]')) {
+      if (!waiting) {
+        waiting = new MutationObserver(reloadWhenIdle);
+        waiting.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-game-active'] });
+      }
+    } else reloadWhenIdle();
   });
   window.addEventListener('load', () => {
     // updateViaCache:'none' → trình duyệt LUÔN tải sw.js từ mạng khi kiểm tra (bỏ qua HTTP cache)

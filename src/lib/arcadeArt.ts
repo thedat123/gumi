@@ -4,7 +4,7 @@ import gumiUrl from '../assets/gumi-gold.webp';
 const load = (url: string) => { const img = new Image(); img.src = url; return img; };
 export const ufoArt = load(ufoUrl);
 export const bossArt = load(bossUrl);
-const driverArt = load(gumiUrl);
+export const driverArt = load(gumiUrl);
 
 /** Driver sits behind the bodywork and windshield; wheels follow actual travel. */
 export function drawGumiCar(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, time: number, steering: number) {

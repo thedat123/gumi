@@ -1,0 +1,29 @@
+/* Original ArcadeStage layout/artwork; only rendering uses cached independent layers. */
+.water-game{display:contents}
+.water-game canvas{display:none}
+.water-scene{position:absolute;inset:0;overflow:hidden;pointer-events:none;contain:layout paint style;background:linear-gradient(#FBE3D2,#F6D6C4)}
+.water-scene-2{background:linear-gradient(#CDE7C6,#E7F0DC)}
+.water-scene-3{background:linear-gradient(#CFE6FA,#E6EEF9)}
+.water-boss{position:absolute;top:0;left:0;transform-origin:50% 43.82%;filter:drop-shadow(0 8px 6px #364a6255)}
+.water-boss img{display:block;width:100%;height:100%}
+.water-boss-bar{position:absolute;top:0;left:0;height:12px;border-radius:6px;overflow:hidden;background:#0000002e}
+.water-boss-bar i{display:block;width:100%;height:100%;border-radius:inherit;background:#5AC46E;transform-origin:left}
+.water-ground{position:absolute;inset:95.5% 0 0;background:#E4C08C}
+.water-scene-2 .water-ground{background:#B98A5E}
+.water-scene-3 .water-ground{background:#C9B79E}
+.water-road{position:absolute;left:0;right:0;bottom:0;background:#506574;overflow:hidden}
+.water-lanes{position:absolute;left:0;width:calc(100% + 65px);height:3px;background:repeating-linear-gradient(90deg,#dce8d9 0 32px,transparent 32px 65px)}
+.water-car{position:absolute;top:0;left:0;will-change:transform;pointer-events:none}
+.water-car img{display:block;width:100%;height:auto}
+.water-drop{position:absolute;top:0;left:0;width:28px;height:28px;pointer-events:none}
+.water-drop[hidden]{display:none}
+.water-drop svg{width:100%;height:100%;display:block}
+.water-drop .water-good{display:none}
+.water-drop[data-kind=water]{color:#5FA8E8}
+.water-drop[data-kind=tea]{color:#6FB6A0}
+.water-drop[data-kind=water] .water-good,.water-drop[data-kind=tea] .water-good{display:block}
+.water-drop[data-kind=water] .water-bad,.water-drop[data-kind=tea] .water-bad{display:none}
+.water-drop[data-kind=cube]{color:#EAD8B0}
+.water-drop[data-kind=sugar]{color:#F2F2F2}
+.water-drop[data-kind=candy]{color:#F19AB0}
+html.gfx-low .water-boss{filter:none}

@@ -25,5 +25,5 @@ export function MissionRouter() {
   const games: Record<number, typeof CheckIn> = { 2: Quiz, 3: Day7, 5: SortGame, 7: FlappyBird, 8: QuickQuiz,
     9: WordHunt, 11: Crossword, 12: MemoryMatch, 14: Day14Final };
   const Game = games[n] ?? CheckIn;
-  return <Suspense fallback={<Loading />}><Game /></Suspense>;
+  return <div data-game-active="true" style={{ display: 'contents' }}><Suspense fallback={<Loading />}><Game /></Suspense></div>;
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from '../../app/session';
+import { prepareUfoArt } from '../../lib/ufoArt';
 import { playSfx } from '../../lib/sfx';
 import { EventFlappyBird as FlappyBird } from '../minigames/EventFlappyBird';
 import { cases, gameNames, healthy, pairs, shuffle, sugary } from './data';
@@ -10,9 +11,9 @@ function useClock(seconds: number, active: boolean, end: () => void) {
   const [left, setLeft] = useState(seconds); const callback = useRef(end); callback.current = end;
   useEffect(() => {
     setLeft(seconds); if (!active) return;
-    let finished = false;
+    let finished = false, previous = seconds;
     const deadline = Date.now() + seconds * 1000;
-    const timer = window.setInterval(() => { const n = Math.max(0, Math.ceil((deadline-Date.now())/1000)); setLeft(n); if (!n && !finished) { finished = true; clearInterval(timer); callback.current(); } }, 200);
+    const timer = window.setInterval(() => { const n = Math.max(0, Math.ceil((deadline-Date.now())/1000)); if (n !== previous) { previous = n; setLeft(n); } if (!n && !finished) { finished = true; clearInterval(timer); callback.current(); } }, 200);
     return () => clearInterval(timer);
   }, [seconds, active]);
   return left;
@@ -20,6 +21,15 @@ function useClock(seconds: number, active: boolean, end: () => void) {
 export function EventGame() {
   const { signOut, session } = useSession();
   const owner = session!.userId;
+  const [assets, setAssets] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [assetAttempt, setAssetAttempt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setAssets('loading');
+    void prepareUfoArt().then(() => { if (!cancelled) setAssets('ready'); })
+      .catch(() => { if (!cancelled) setAssets('error'); });
+    return () => { cancelled = true; };
+  }, [assetAttempt]);
   const [team, setTeam] = useState('');
   const [stage, setStage] = useState(-1);
   const [scores, setScores] = useState<number[]>([]);
@@ -57,13 +67,13 @@ export function EventGame() {
   }, [stage, result, scores, team, persist, pendingKey]);
   useEffect(() => {
     const status = () => { setQueued(pendingCount(owner)); setOnline(navigator.onLine); };
-    const reconnect = () => { status(); void flushResults(owner).catch(() => {}); };
+    const reconnect = () => { status(); if (stage < 0 || stage >= 4) void flushResults(owner).catch(() => {}); };
     window.addEventListener('event-results', status); window.addEventListener('storage', status);
     window.addEventListener('online', reconnect); window.addEventListener('offline', status);
     const timer = setInterval(() => { if (!document.hidden && navigator.onLine) reconnect(); }, 30000);
     reconnect();
     return () => { clearInterval(timer); window.removeEventListener('event-results', status); window.removeEventListener('storage', status); window.removeEventListener('online', reconnect); window.removeEventListener('offline', status); };
-  }, [owner]);
+  }, [owner, stage]);
   useEffect(() => {
     const update = () => setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', update);
@@ -73,9 +83,9 @@ export function EventGame() {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     else void document.documentElement.requestFullscreen?.().catch(() => {});
   };
-  return <main className="event-shell"><header className="event-header"><div className="event-brand"><span className="event-brand-mark" aria-hidden="true">M<span>↓</span></span><div><b>MẬT ĐỘ</b><small>THE LESS SUGAR CHALLENGE</small></div></div><nav aria-label="Tiến độ">{[...gameNames, 'Tổng kết'].map((name,i) => <span key={i} className={stage === i ? 'current' : stage > i ? 'lit' : ''} aria-current={stage === i ? 'step' : undefined}><b>{stage > i ? '✓' : `0${i+1}`}</b><small>{name}</small></span>)}</nav><div className="event-controls"><span className={`event-connection ${!online || queued ? 'pending' : ''}`} role="status">{queued ? `${queued} kết quả chờ đồng bộ` : online ? 'SẴN SÀNG' : 'CHƠI NGOẠI TUYẾN'}</span><button onClick={fullScreen} aria-label={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'} title="Toàn màn hình">⛶</button><button className="event-signout" onClick={() => void signOut()}>Đăng xuất</button></div></header>
+  return <main className="event-shell" data-game-active={stage >= 0 ? 'true' : undefined}><header className="event-header"><div className="event-brand"><span className="event-brand-mark" aria-hidden="true">M<span>↓</span></span><div><b>MẬT ĐỘ</b><small>THE LESS SUGAR CHALLENGE</small></div></div><nav aria-label="Tiến độ">{[...gameNames, 'Tổng kết'].map((name,i) => <span key={i} className={stage === i ? 'current' : stage > i ? 'lit' : ''} aria-current={stage === i ? 'step' : undefined}><b>{stage > i ? '✓' : `0${i+1}`}</b><small>{name}</small></span>)}</nav><div className="event-controls"><span className={`event-connection ${!online || queued ? 'pending' : ''}`} role="status">{queued ? `${queued} kết quả chờ đồng bộ` : online ? 'SẴN SÀNG' : 'CHƠI NGOẠI TUYẾN'}</span><button onClick={fullScreen} aria-label={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'} title="Toàn màn hình">⛶</button><button className="event-signout" onClick={() => void signOut()}>Đăng xuất</button></div></header>
     <div className="event-content"><p className="event-eyebrow">{stage < 0 ? 'TRẠM THỬ THÁCH' : `${team} · ${stage < 4 ? `GAME 0${stage+1}` : 'HOÀN THÀNH CHẶNG'}`}</p>
-    {stage < 0 ? <><div className="event-lobby"><div className="event-lobby-copy"><span className="event-live">LIVE ARCADE / 2026</span><h1>HẠ MẬT ĐỘ.<br/><em>BẬT NĂNG LƯỢNG.</em></h1><p>Phản xạ nhanh. Ghi nhớ chuẩn. Bóc trần cú lừa.<br/>Sẵn sàng đưa đội bạn lên đỉnh bảng xếp hạng?</p><div className="event-lobby-stats"><span><b>04</b>THỬ THÁCH</span><span><b>01</b>ĐỘI CHƠI</span><span><b>∞</b>NĂNG LƯỢNG</span></div></div><form className="event-entry" onSubmit={e => { e.preventDefault(); if (team.trim()) setStage(0); }}><span className="event-eyebrow">PLAYER CHECK-IN</span><h2>Đội bạn tên gì?</h2><label htmlFor="event-team">Tên xuất hiện trên bảng xếp hạng</label><input id="event-team" maxLength={60} required autoComplete="off" value={team} onChange={e => setTeam(e.target.value)} placeholder="Nhập tên đội…"/><button className="event-primary" disabled={!team.trim()}>Bắt đầu thử thách <span>↗</span></button><small>Chỉ cần tên đội. Sẵn sàng là chơi.</small></form></div><div className="event-game-roster">{gameNames.map((name,i) => <article key={name}><span>0{i+1}</span><div><b>{name}</b><small>{['30 giây · Kéo & thả', '45 giây · Ghép cặp', '5 hồ sơ · Đúng hay sai', '5 lượt · Bay qua 40 cột'][i]}</small></div><i aria-hidden="true">{['↔','▦','?','↗'][i]}</i></article>)}</div><EventResults /></> : stage === 4 ? <><h1>CHẶNG ĐƯỜNG RỰC RỠ!</h1><h2>{team} · {scores.reduce((a,b) => a+b,0)} điểm</h2><div className="event-scorecards">{scores.map((s,i) => <article key={i}>{gameNames[i]}<b>{s}</b>{i===3 && <small>{s>=40 ? 'Hoàn thành' : 'Đã hết 5 lượt'}</small>}</article>)}</div><p role="status">{saved ? queued ? 'Đã lưu tại máy. Tự đồng bộ khi có mạng — đội tiếp theo có thể chơi ngay.' : 'Đã lưu lên bảng xếp hạng!' : 'Kết quả đang chờ lưu.'}</p>{error && <p role="alert">{error}</p>}{!saved && result && <button onClick={() => void persist(result)}>Lưu kết quả</button>}<button className="event-primary" disabled={!saved} onClick={() => { setTeam(''); setScores([]); setResult(null); setSaved(false); completedStage.current = -1; setStage(-1); }}>Đội tiếp theo →</button><EventResults /></> : <><div className="event-stage-heading"><h1>{gameNames[stage]}</h1><span className="event-stage-tag">THỬ THÁCH 0{stage+1} / 04</span></div>{stage===0 ? <Sort onDone={advance}/> : stage===1 ? <Memory onDone={advance}/> : stage===2 ? <Truth onDone={advance}/> : <FlappyBird eventFinish={advance}/>}</>}
+    {stage < 0 ? <><div className="event-lobby"><div className="event-lobby-copy"><span className="event-live">LIVE ARCADE / 2026</span><h1>HẠ MẬT ĐỘ.<br/><em>BẬT NĂNG LƯỢNG.</em></h1><p>Phản xạ nhanh. Ghi nhớ chuẩn. Bóc trần cú lừa.<br/>Sẵn sàng đưa đội bạn lên đỉnh bảng xếp hạng?</p><div className="event-lobby-stats"><span><b>04</b>THỬ THÁCH</span><span><b>01</b>ĐỘI CHƠI</span><span><b>∞</b>NĂNG LƯỢNG</span></div></div><form className="event-entry" onSubmit={e => { e.preventDefault(); if (team.trim() && assets === 'ready') setStage(0); }}><span className="event-eyebrow">PLAYER CHECK-IN</span><h2>Đội bạn tên gì?</h2><label htmlFor="event-team">Tên xuất hiện trên bảng xếp hạng</label><input id="event-team" maxLength={60} required autoComplete="off" value={team} onChange={e => setTeam(e.target.value)} placeholder="Nhập tên đội…"/><button className="event-primary" disabled={!team.trim() || assets !== 'ready'} aria-busy={assets === 'loading'}>{assets === 'loading' ? 'Đang chuẩn bị hình ảnh…' : 'Bắt đầu thử thách'} <span>↗</span></button>{assets === 'error' ? <><small role="alert">Chưa tải được hình ảnh. Kiểm tra kết nối và thử lại.</small><button type="button" onClick={() => setAssetAttempt(n => n + 1)}>Tải lại hình ảnh</button></> : <small>Chỉ cần tên đội. Sẵn sàng là chơi.</small>}</form></div><div className="event-game-roster">{gameNames.map((name,i) => <article key={name}><span>0{i+1}</span><div><b>{name}</b><small>{['30 giây · Kéo & thả', '45 giây · Ghép cặp', '5 hồ sơ · Đúng hay sai', '5 lượt · Bay qua 40 cột'][i]}</small></div><i aria-hidden="true">{['↔','▦','?','↗'][i]}</i></article>)}</div><EventResults /></> : stage === 4 ? <><h1>CHẶNG ĐƯỜNG RỰC RỠ!</h1><h2>{team} · {scores.reduce((a,b) => a+b,0)} điểm</h2><div className="event-scorecards">{scores.map((s,i) => <article key={i}>{gameNames[i]}<b>{s}</b>{i===3 && <small>{s>=40 ? 'Hoàn thành' : 'Đã hết 5 lượt'}</small>}</article>)}</div><p role="status">{saved ? queued ? 'Đã lưu tại máy. Tự đồng bộ khi có mạng — đội tiếp theo có thể chơi ngay.' : 'Đã lưu lên bảng xếp hạng!' : 'Kết quả đang chờ lưu.'}</p>{error && <p role="alert">{error}</p>}{!saved && result && <button onClick={() => void persist(result)}>Lưu kết quả</button>}<button className="event-primary" disabled={!saved} onClick={() => { setTeam(''); setScores([]); setResult(null); setSaved(false); completedStage.current = -1; setStage(-1); }}>Đội tiếp theo →</button><EventResults /></> : <><div className="event-stage-heading"><h1>{gameNames[stage]}</h1><span className="event-stage-tag">THỬ THÁCH 0{stage+1} / 04</span></div>{stage===0 ? <Sort onDone={advance}/> : stage===1 ? <Memory onDone={advance}/> : stage===2 ? <Truth onDone={advance}/> : <FlappyBird eventFinish={advance}/>}</>}
     </div></main>;
 }
 function Sort({ onDone }: { onDone: (s:number) => void }) {

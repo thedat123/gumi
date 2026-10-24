@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ufoArt } from '../../lib/ufoArt';
-import { flightAward, FLIGHT_GRAVITY, FLIGHT_HEIGHT, FLIGHT_IMPULSE, FLIGHT_SPEED, FLIGHT_STEP } from '../../lib/flight';
-import { useFlightLoop } from '../../lib/useFlightLoop';
+import { prepareUfoArt, ufoArt } from '../../lib/ufoArt';
+import { flightSize, flightAward, FLIGHT_GRAVITY, FLIGHT_HEIGHT, FLIGHT_IMPULSE, FLIGHT_SPEED, FLIGHT_STEP } from '../../lib/flight';
+import { useDomGameLoop } from '../../lib/useDomGameLoop';
 import { playSfx } from '../../lib/sfx';
 import { vi } from '../../content/vi';
 import './flappy.css';
@@ -22,7 +22,7 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 7;
   const field = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const pipeNodes = useRef<(HTMLDivElement | null)[]>([]);
   const bird = useRef<HTMLDivElement>(null);
   const engine = useRef<Flight>({ mode: 'ready', y: FLIGHT_HEIGHT * .42, velocity: 0, pipes: [], width: 1, score: 0, accumulator: 0 });
   const attempts = useRef(0), best = useRef(0), finishTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -31,7 +31,16 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
   const [score, setScore] = useState(0);
   const [award, setAward] = useState(0);
   const [done, setDone] = useState(false);
-  const [spriteReady, setSpriteReady] = useState(ufoArt.complete && ufoArt.naturalWidth > 0);
+  const [spriteReady, setSpriteReady] = useState(false);
+  const [spriteError, setSpriteError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setSpriteError(false);
+    void prepareUfoArt().then(() => { if (!cancelled) setSpriteReady(true); })
+      .catch(() => { if (!cancelled) setSpriteError(true); });
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
   const [paused, setPaused] = useState(document.hidden);
   const [quiet, setQuiet] = useState(false);
   const quietRef = useRef(quiet); quietRef.current = quiet;
@@ -42,7 +51,7 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
   }, []);
   const flap = useCallback(() => {
     const s = engine.current;
-    if (document.hidden || s.mode === 'won') return;
+    if (!spriteReady || document.hidden || s.mode === 'won') return;
     if (s.mode === 'ready' || s.mode === 'dead') {
       s.y = FLIGHT_HEIGHT * .42; s.velocity = 0; s.pipes = []; s.score = 0; s.accumulator = 0;
       s.mode = 'play'; setMode('play'); setScore(0);
@@ -50,7 +59,7 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
     s.velocity = FLIGHT_IMPULSE;
     const now = performance.now();
     if (now - lastSound.current > 100) { sound('pop'); lastSound.current = now; }
-  }, [sound]);
+  }, [sound, spriteReady]);
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -63,11 +72,13 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
     return () => { window.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', visibility); clearTimeout(finishTimer.current); };
   }, [flap]);
 
-  useFlightLoop(field, canvas, (ctx, w, h, dt, dirty, scale) => {
+  useDomGameLoop(field, (cssWidth, cssHeight, dt) => {
+    const { w, h } = flightSize(cssWidth, cssHeight);
+    const scale = cssHeight / h;
     const s = engine.current;
     if (s.width !== w) {
       if (s.width > 1) for (const p of s.pipes) p.x *= w / s.width;
-      s.width = w; dirty = true;
+      s.width = w;
     }
     const birdX = w * .3;
     const finish = (columns: number) => {
@@ -112,33 +123,35 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
       while (s.pipes.length && s.pipes[0].x + PIPE_WIDTH < -8) s.pipes.shift();
       if (changedScore) { setScore(s.score); if (s.mode === 'play') sound('sparkle'); }
     }
-    // HUD and character remain native-resolution DOM, even on a low-resolution canvas.
-    if (wasPlaying || dirty) {
-      const prediction = s.mode === 'play' ? s.accumulator : 0;
-      const y = Math.max(RADIUS, Math.min(h - RADIUS, s.y + s.velocity * prediction));
-      if (bird.current) {
-        if (dirty) {
-          bird.current.style.width = `${BIRD_WIDTH / w * 100}%`;
-          bird.current.style.height = `${BIRD_HEIGHT / h * 100}%`;
-        }
-        bird.current.style.transform = `translate3d(-50%, ${(y - BIRD_HEIGHT / 2) * scale}px, 0) rotate(${Math.max(-10, Math.min(18, s.velocity * .03))}deg)`;
-      }
-      ctx.clearRect(0, 0, w, h);
-      // Just a few solid rectangles per pipe. No gradients, shadows, filters, or image scaling in the loop.
-      for (const p of s.pipes) {
-        const x = Math.round(p.x - FLIGHT_SPEED * prediction);
-        const top = Math.max(0, Math.round(p.gapY - GAP / 2));
-        const bottom = Math.min(h, Math.round(p.gapY + GAP / 2));
-        ctx.fillStyle = eventFinish ? '#258f86' : '#b0476b';
-        ctx.fillRect(x, 0, PIPE_WIDTH, top); ctx.fillRect(x, bottom, PIPE_WIDTH, h - bottom);
-        ctx.fillStyle = eventFinish ? '#83e8b4' : '#f9a6bc';
-        ctx.fillRect(x + 7, 0, 7, top); ctx.fillRect(x + 7, bottom, 7, h - bottom);
-        ctx.fillStyle = eventFinish ? '#165b58' : '#732c4c';
-        ctx.fillRect(x - 4, Math.max(0, top - 14), PIPE_WIDTH + 8, Math.min(14, top));
-        ctx.fillRect(x - 4, bottom, PIPE_WIDTH + 8, Math.min(14, h - bottom));
-      }
+    // Every visible object is native-resolution DOM. No canvas clear/redraw or React frame updates.
+    const prediction = s.mode === 'play' ? s.accumulator : 0;
+    const y = Math.max(RADIUS, Math.min(h - RADIUS, s.y + s.velocity * prediction));
+    if (bird.current) {
+      const width = `${BIRD_WIDTH * scale}px`, height = `${BIRD_HEIGHT * scale}px`;
+      if (bird.current.style.width !== width) bird.current.style.width = width;
+      if (bird.current.style.height !== height) bird.current.style.height = height;
+      bird.current.style.transform = `translate3d(-50%, ${(y - BIRD_HEIGHT / 2) * scale}px, 0) rotate(${Math.max(-10, Math.min(18, s.velocity * .03))}deg)`;
     }
-  });
+    for (let i = 0; i < pipeNodes.current.length; i++) {
+      const node = pipeNodes.current[i], p = s.pipes[i];
+      if (!node) continue;
+      if (!p) { if (!node.hidden) node.hidden = true; continue; }
+      node.hidden = false;
+      const top = Math.max(0, p.gapY - GAP / 2) * scale;
+      const bottom = Math.min(h, p.gapY + GAP / 2) * scale;
+      const geometry = `${top}:${bottom}:${scale}`;
+      if (node.dataset.geometry !== geometry) {
+        node.style.width = `${PIPE_WIDTH * scale}px`;
+        node.style.setProperty('--flight-pipe-top', `${top}px`);
+        node.style.setProperty('--flight-pipe-bottom', `${bottom}px`);
+        node.style.setProperty('--flight-pipe-height', `${cssHeight - bottom}px`);
+        node.style.setProperty('--flight-cap', `${14 * scale}px`);
+        node.dataset.geometry = geometry;
+      }
+      node.style.transform = `translate3d(${(p.x - FLIGHT_SPEED * prediction) * scale}px,0,0)`;
+    }
+  }, !done && (mode === 'ready' || mode === 'play'));
+
 
   if (done) return <Suspense fallback={<div className="flight-saving" role="status">Đang mở kết quả…</div>}><MissionDone day={day} points={award} earnedPoints={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} /></Suspense>;
   return <section className={`flight-stage game-shell ${eventFinish ? 'flight-event' : 'flight-day7'}`} aria-label="Flappy Gumi">
@@ -155,13 +168,13 @@ export function EventFlappyBird({ eventFinish }: { eventFinish?: (score: number)
       e.preventDefault(); flap();
     }}>
       <div className="flight-horizon" aria-hidden="true"/>
-      <canvas ref={canvas} aria-hidden="true"/>
-      <div className={`flight-bird ${spriteReady ? 'has-sprite' : ''}`} ref={bird} aria-hidden="true"><span className="flight-fallback">●</span><img src={ufoArt.src} alt="" draggable={false} decoding="async" onLoad={() => setSpriteReady(true)} onError={() => setSpriteReady(false)}/></div>
+      {Array.from({ length: 24 }, (_, i) => <div key={i} className="flight-pipe" hidden ref={node => { pipeNodes.current[i] = node; }} aria-hidden="true"><i/><i/></div>)}
+      <div className={`flight-bird ${spriteReady ? 'has-sprite' : ''}`} ref={bird} aria-hidden="true"><span className="flight-fallback">●</span><img src={ufoArt.src} alt="" draggable={false} decoding="async"/></div>
       {(mode !== 'play' || paused) && <div className="flight-overlay"><div className="flight-dialog" role="status">
         <span className="flight-dialog-tag">{paused ? 'TẠM DỪNG' : mode === 'dead' ? 'THÊM MỘT LẦN NỮA!' : mode === 'won' ? 'HOÀN THÀNH' : 'BAY QUA CƠN THÈM'}</span>
         <h2>{paused ? 'Ván chơi đang tạm dừng' : mode === 'dead' ? `Bạn đã qua ${score} cột` : mode === 'won' ? 'Bay đẹp lắm!' : 'Sẵn sàng cất cánh?'}</h2>
         <p>{mode === 'dead' ? eventFinish ? `Lượt ${attempts.current}/5 · Kỷ lục ${best.current}/40. Thử lại nào!` : 'Qua 20 cột để đạt. Bay tiếp lên mốc 50 và 100 để nhận thêm điểm!' : eventFinish ? '5 lượt chơi · Đạt 40 cột để hoàn thành. Chạm hoặc bấm Space để bay.' : 'Chạm màn hình hoặc bấm Space / ↑ để bay. Giữ Gumi lọt qua khoảng trống giữa các cột.'}</p>
-        {!paused && mode !== 'won' && <button className="flight-start" onClick={flap}>{mode === 'dead' ? vi.minigames.common.retry : vi.minigames.common.start}<span aria-hidden="true">→</span></button>}
+        {!paused && mode !== 'won' && <button className="flight-start" disabled={!spriteReady && !spriteError} aria-busy={!spriteReady && !spriteError} onClick={spriteError ? () => setLoadAttempt(n => n + 1) : flap}>{spriteError ? 'Tải lại hình ảnh' : !spriteReady ? 'Đang tải hình ảnh…' : mode === 'dead' ? vi.minigames.common.retry : vi.minigames.common.start}<span aria-hidden="true">→</span></button>}
       </div></div>}
     </div>
     <footer className="flight-footer"><span>CHẠM / SPACE / ↑ ĐỂ BAY</span><span>{eventFinish ? `Lượt ${Math.min(attempts.current + 1, 5)}/5` : 'Qua 20 cột là đạt'}</span></footer>
