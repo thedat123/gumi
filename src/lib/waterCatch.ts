@@ -1,7 +1,8 @@
 /** Day 14 physics. No DOM, React, network or allocations in the simulation loop. */
 export type WaterMode = 'ready' | 'play' | 'dead' | 'won';
 export interface WaterConfig { hp: number; every: number; bad: number; fall: number; burst: number }
-export const WATER_CONFIG: WaterConfig = { hp: 16, every: .38, bad: .34, fall: 190, burst: 0 };
+// Ngày 14: đường (bad) nhiều hơn nước — 60% đường / 40% nước, rơi dày hơn để tăng độ khó.
+export const WATER_CONFIG: WaterConfig = { hp: 16, every: .34, bad: .6, fall: 190, burst: 0 };
 export const WATER_STEP = 1 / 60;
 export const WATER_POOL = 24;
 export interface WaterDrop { active: boolean; x: number; y: number; previousX: number; previousY: number; speed: number; good: boolean; kind: number; sway: number }
