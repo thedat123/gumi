@@ -29,8 +29,17 @@ interface Outbox { id: number; to_email: string; subject: string; html: string; 
 
 const SEND_BUDGET_MS = 18_000; // pg_net chờ 25s → gửi trong ~18s rồi trả lời, phần còn lại để phút sau
 
-Deno.serve(async (_req) => {
+/** So sánh hằng thời gian (không lộ độ dài khớp qua thời gian phản hồi). */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+Deno.serve(async (req) => {
   const started = Date.now();
+  const body = req.method === 'POST' ? await req.json().catch(() => ({})) as { testEmail?: string } : {};
   const env = (k: string) => Deno.env.get(k)?.trim() || undefined;
   const url = env('SUPABASE_URL'), serviceKey = env('SUPABASE_SERVICE_ROLE_KEY');
   const pub = env('VAPID_PUBLIC_KEY'), priv = env('VAPID_PRIVATE_KEY');
@@ -47,6 +56,56 @@ Deno.serve(async (_req) => {
 
   webpush.setVapidDetails(env('VAPID_SUBJECT') ?? 'mailto:admin@leveldown.app', pub, priv);
   const supabase = createClient(url, serviceKey);
+
+  // ---------- Chế độ GỬI THỬ cho đúng 1 tài khoản (GitHub Actions "Push reminders") ----------
+  // Bỏ qua lịch & chống trùng, gửi ngay: thông báo trong app + push mọi thiết bị + email (gửi thẳng, không qua hàng đợi).
+  // Chỉ người cầm SERVICE ROLE KEY mới gọi được — anon key (công khai trong app) không dùng được chế độ này.
+  if (body.testEmail) {
+    const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+    if (!safeEqual(bearer, serviceKey)) return Response.json({ error: 'forbidden' }, { status: 403 });
+    const { data: rows, error: tErr } = await supabase.rpc('reminder_test_target', { p_email: body.testEmail });
+    if (tErr) return Response.json({ error: tErr.message }, { status: 500 });
+    const t = (rows ?? [])[0] as { user_id: string; email: string; name: string | null; campaign_day: number } | undefined;
+    if (!t) return Response.json({ ok: false, error: `Không tìm thấy tài khoản ${body.testEmail}` }, { status: 404 });
+
+    const text = '🧪 Nhắc nhở THỬ: Thử thách hôm nay đang chờ bạn chinh phục đấy, dành ít phút cho Gumi nhé!';
+    const link = `/chapter/${t.campaign_day}`;
+    const result = { ok: true, user: t.email, day: t.campaign_day, inApp: false, push: { devices: 0, sent: 0, errors: [] as string[] }, email: 'chưa cấu hình SMTP' as string };
+
+    const { error: nErr } = await supabase.from('notifications').insert({ user_id: t.user_id, title: 'Mật Độ', body: text, url: link });
+    result.inApp = !nErr;
+    if (nErr) result.ok = false;
+
+    const { data: devs } = await supabase.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', t.user_id);
+    result.push.devices = (devs ?? []).length;
+    for (const d of (devs ?? []) as Sub[]) {
+      try {
+        await webpush.sendNotification({ endpoint: d.endpoint, keys: { p256dh: d.p256dh, auth: d.auth } },
+          JSON.stringify({ title: 'Mật Độ', body: text, url: link, tag: `gumi-test-${Date.now()}` }), { TTL: 300, urgency: 'high' });
+        result.push.sent++;
+      } catch (err) {
+        result.push.errors.push(String((err as { statusCode?: number }).statusCode ?? (err as Error).message));
+      }
+    }
+
+    if (emailOn) {
+      const token = await unsubscribeToken(unsubSecret!, t.user_id);
+      const m = reminderEmailPayload(emailFrom!, {
+        to: t.email, name: t.name, text, day: t.campaign_day, minute: 8 * 60, appUrl,
+        unsubscribeUrl: `${url}/functions/v1/email-unsubscribe?u=${t.user_id}&t=${token}`,
+      });
+      const mailer = nodemailer.createTransport({ host: smtp.host, port: smtp.port, secure: smtp.port === 465, auth: { user: smtp.user, pass: smtp.pass }, connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000 });
+      try {
+        const info = await mailer.sendMail({ from: emailFrom, to: m.to, subject: `[Thử] ${m.subject}`, html: m.html, text: m.text, headers: m.headers });
+        result.email = `đã gửi (${info.response ?? 'ok'})`;
+      } catch (err) {
+        const e = err as { code?: string; responseCode?: number; response?: string; message?: string };
+        result.email = `lỗi: ${e.responseCode ?? e.code ?? ''} ${e.response ?? e.message ?? ''}`.trim();
+        result.ok = false;
+      } finally { mailer.close(); }
+    }
+    return Response.json(result, { status: result.ok ? 200 : 500 });
+  }
 
   // ---------- 1) Xét nhắc nhở ----------
   const { data: users, error } = await supabase.rpc('reminder_users');

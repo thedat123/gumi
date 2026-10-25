@@ -1,14 +1,17 @@
 name: Push reminders
 
-# Production reminders run every minute via Supabase pg_cron.
-# GitHub remains manual-only because scheduled Actions can be delayed.
+# Lịch nhắc thật chạy mỗi phút bằng Supabase pg_cron (Edge Function send-reminders).
+# Workflow này chỉ chạy TAY để kiểm tra:
+#   • Điền test_email → gửi NGAY cho đúng tài khoản đó: thông báo trong app + push mọi thiết bị + email.
+#     Không đụng tới người chơi khác.
+#   • Để trống test_email → chạy 1 lượt nhắc nhở bình thường ngay bây giờ (chỉ ai tới giờ nhắc mới nhận).
 on:
   workflow_dispatch:
     inputs:
-      test:
-        description: 'Gửi NGAY một noti thử cho mọi subscription (bỏ qua lịch)'
-        type: boolean
-        default: false
+      test_email:
+        description: 'Email tài khoản nhận thử (để trống = chạy 1 lượt nhắc nhở bình thường)'
+        type: string
+        required: false
 
 concurrency:
   group: push-reminders
@@ -18,18 +21,25 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Gửi nhắc nhở
-        run: node --import tsx scripts/send-reminders.mjs
+      - name: Gọi Edge Function send-reminders
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
-          FORCE_SEND: ${{ (github.event_name == 'workflow_dispatch' && inputs.test) && '1' || '' }}
+          TEST_EMAIL: ${{ inputs.test_email }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::Thiếu GitHub secret SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY"; exit 1
+          fi
+          body=$(jq -n --arg e "$TEST_EMAIL" 'if $e == "" then {} else {testEmail: $e} end')
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST "$SUPABASE_URL/functions/v1/send-reminders" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H 'Content-Type: application/json' \
+            --max-time 60 -d "$body")
+          echo "HTTP $code"
+          jq . resp.json || cat resp.json
+          {
+            echo '### Kết quả send-reminders'
+            echo '```json'
+            jq . resp.json 2>/dev/null || cat resp.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ]
