@@ -64,3 +64,56 @@ jobs:
           # Các biến prod khác (để trống nếu chưa tạo secret cũng không sao).
           VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+
+  supabase:
+    name: Deploy · Supabase (migration · secrets · functions)
+    needs: check
+    # Chỉ chạy khi PUSH lên main. Song song với deploy Cloudflare.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kiểm tra secrets bắt buộc
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          missing=0
+          for k in SUPABASE_ACCESS_TOKEN PROJECT_REF SUPABASE_DB_URL; do
+            if [ -z "${!k}" ]; then echo "::error::Thiếu GitHub secret: $k"; missing=1; fi
+          done
+          exit $missing
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Chỉ chạy migration MỚI (đã ghi trong bảng gumi_schema_migrations thì bỏ qua).
+      - name: Migration
+        run: python3 scripts/migrate.py
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Đẩy secrets từ GitHub sang Supabase (bỏ qua biến nào chưa đặt). VAPID_* đã có sẵn trên Supabase.
+      - name: Đồng bộ secrets cho Edge Functions
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          REMINDER_EMAIL_FROM: ${{ secrets.REMINDER_EMAIL_FROM }}
+          APP_URL: ${{ secrets.APP_URL }}
+          EMAIL_UNSUB_SECRET: ${{ secrets.EMAIL_UNSUB_SECRET }}
+          EMAIL_SLOTS: ${{ secrets.EMAIL_SLOTS }}
+          EMAIL_DAILY_CAP: ${{ secrets.EMAIL_DAILY_CAP }}
+          EMAIL_BATCH: ${{ secrets.EMAIL_BATCH }}
+        run: |
+          args=()
+          for k in SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS REMINDER_EMAIL_FROM APP_URL EMAIL_UNSUB_SECRET EMAIL_SLOTS EMAIL_DAILY_CAP EMAIL_BATCH; do
+            if [ -n "${!k}" ]; then args+=("$k=${!k}"); fi
+          done
+          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"; else echo "Chưa có secret nào để đồng bộ"; fi
+      - name: Deploy Edge Functions
+        run: |
+          supabase functions deploy send-reminders --project-ref "$PROJECT_REF"
+          supabase functions deploy email-unsubscribe --no-verify-jwt --project-ref "$PROJECT_REF"
+          supabase functions deploy share-card --no-verify-jwt --project-ref "$PROJECT_REF"
