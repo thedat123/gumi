@@ -37,6 +37,17 @@ function safeEqual(a: string, b: string): boolean {
   return d === 0;
 }
 
+/** Mô tả loại key (không lộ giá trị) để báo lỗi dễ sửa: role trong JWT, hoặc tiền tố key kiểu mới. */
+function keyKind(key: string): string {
+  if (!key) return 'không có key';
+  if (key.startsWith('sb_publishable_')) return 'đây là publishable key (công khai)';
+  if (key.startsWith('sb_secret_')) return 'key sb_secret_ không hợp lệ hoặc đã bị thu hồi';
+  try {
+    const payload = JSON.parse(atob(key.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/')));
+    return `JWT role=${payload.role ?? '?'}, project=${payload.ref ?? '?'}`;
+  } catch { return 'không đọc được định dạng key'; }
+}
+
 Deno.serve(async (req) => {
   const started = Date.now();
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) as { testEmail?: string } : {};
@@ -61,10 +72,19 @@ Deno.serve(async (req) => {
   // Bỏ qua lịch & chống trùng, gửi ngay: thông báo trong app + push mọi thiết bị + email (gửi thẳng, không qua hàng đợi).
   // Chỉ người cầm SERVICE ROLE KEY mới gọi được — anon key (công khai trong app) không dùng được chế độ này.
   if (body.testEmail) {
+    // Xác thực bằng CHÍNH key người gọi: reminder_test_target chỉ cấp cho service_role, nên gọi được = đúng
+    // service role (chạy với cả key kiểu cũ eyJ… lẫn kiểu mới sb_secret_…). anon/authenticated bị từ chối.
     const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-    if (!safeEqual(bearer, serviceKey)) return Response.json({ error: 'forbidden' }, { status: 403 });
-    const { data: rows, error: tErr } = await supabase.rpc('reminder_test_target', { p_email: body.testEmail });
-    if (tErr) return Response.json({ error: tErr.message }, { status: 500 });
+    const caller = createClient(url, bearer, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: rows, error: tErr } = safeEqual(bearer, serviceKey)
+      ? await supabase.rpc('reminder_test_target', { p_email: body.testEmail })
+      : await caller.rpc('reminder_test_target', { p_email: body.testEmail });
+    if (tErr) {
+      const denied = /permission denied|not allowed|jwt|invalid api key|unauthorized/i.test(tErr.message) || tErr.code === '42501';
+      return denied
+        ? Response.json({ error: 'forbidden', hint: `Key gửi lên không phải service role (${keyKind(bearer)}). Cập nhật GitHub secret SUPABASE_SERVICE_ROLE_KEY bằng key service_role / secret trong Supabase → Settings → API Keys.` }, { status: 403 })
+        : Response.json({ error: tErr.message }, { status: 500 });
+    }
     const t = (rows ?? [])[0] as { user_id: string; email: string; name: string | null; campaign_day: number } | undefined;
     if (!t) return Response.json({ ok: false, error: `Không tìm thấy tài khoản ${body.testEmail}` }, { status: 404 });
 
