@@ -49,7 +49,7 @@ export function SortGame() {
   const [dragY, setDragY] = useState(0);
   const meta = useRef<{ rowH: number; listTop: number; grab: number }>({ rowH: 0, listTop: 0, grab: 0 });
 
-  if (done) return <MissionDone day={day} points={earned} note={vi.minigames.sort.success} />;
+  if (done) return <MissionDone day={day} points={earned} earnedPoints={earned} note={vi.minigames.sort.success} />;
   if (failed) return (
     <GameShell act={actOfDay(day)} title={vi.minigames.sort.title}>
       <div className="flex flex-col items-center gap-3 py-6 text-center">

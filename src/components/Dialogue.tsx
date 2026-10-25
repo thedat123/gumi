@@ -1,6 +1,13 @@
 import { memo } from 'react';
 import { vi, type Line } from '../content/vi';
 import { Gumi } from './Gumi';
+import { GUMI_FACE_TOKEN } from '../lib/narrationVoice';
+
+/** Câu thoại có thể chèn mặt Gumi bằng ký hiệu [gumi]. */
+function LineText({ text }: { text: string }) {
+  const parts = text.split(GUMI_FACE_TOKEN);
+  return <>{parts.map((t, i) => <span key={i}>{t}{i < parts.length - 1 && <span className="mx-0.5 inline-block h-6 w-6 overflow-hidden rounded-pill bg-accent/25 align-middle"><Gumi state="bo_pho" size={24} faceOnly /></span>}</span>)}</>;
+}
 
 const FACE: Record<Line['who'], string> = { gumi: '🐱', boss: '🧋', narrator: '' };
 
@@ -20,7 +27,7 @@ export const DialogueLine = memo(function DialogueLine({ line }: { line: Line })
       )}
       <div className={`max-w-[80%] rounded-card border-2 p-3 ${isBoss ? 'border-danger/40 bg-danger/10' : 'border-accent/50 bg-surface'}`}>
         <p className={`text-caption font-bold ${isBoss ? 'text-danger' : 'text-primary'}`}>{name}</p>
-        <p className="text-small text-text">{line.text}</p>
+        <div className="text-small text-text"><LineText text={line.text} /></div>
       </div>
     </div>
   );

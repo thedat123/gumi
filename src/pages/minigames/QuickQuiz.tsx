@@ -23,7 +23,7 @@ export function QuickQuiz() {
   const [saveError, setSaveError] = useState(false);
 
   if (!cfg || !m) return <Banner kind="error">Không có nhiệm vụ này.</Banner>;
-  if (note !== null) return <MissionDone day={day} points={earned ?? m.points} note={note} />;
+  if (note !== null) return <MissionDone day={day} points={earned ?? m.points} earnedPoints={earned ?? undefined} note={note} />;
 
   return (
     <GameShell act={actOfDay(day)} title={cfg.title} intro={vi.minigames.quiz.intro}>

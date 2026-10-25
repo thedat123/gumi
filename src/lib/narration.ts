@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Line } from '../content/vi';
-import { narrationUrl } from './narrationVoice';
+import { narrationUrl, spokenText } from './narrationVoice';
 
 // Lồng tiếng cốt truyện: ưu tiên PHÁT FILE mp3 sinh sẵn bằng Edge-TTS (giọng vi-VN nhất quán mọi máy).
 // Thiếu file (chưa generate) → tự lùi về Web Speech của trình duyệt cho câu đó.
@@ -36,7 +36,7 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 
 function speakFallback(line: Line, onDone: () => void): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) { onDone(); return; }
-  const u = new SpeechSynthesisUtterance(line.text);
+  const u = new SpeechSynthesisUtterance(spokenText(line.text));
   const v = voicesReady ? cachedVoice : refreshVoice();
   if (v) u.voice = v;
   u.lang = v?.lang ?? 'vi-VN';

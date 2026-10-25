@@ -119,13 +119,13 @@ export const vi = {
     emptyHint: 'Chọn nội thất để tạo căn phòng của bạn',
   },
 
-  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ đúng 1 ngày thì chuỗi chưa đứt — dùng Bùa để nối lại (ngày đó 0 điểm nhưng chuỗi được giữ). Bạn có 2 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được khi Gumi hấp hối (bạn lỡ đúng 1 ngày).',
-    noMiss: 'Bạn chưa lỡ ngày nào nên chưa cần dùng Bùa. Bùa được giữ nguyên — chỉ dùng được khi bạn lỡ đúng 1 ngày.',
+  pass: { button: 'Dùng Bùa Hồi Sinh', title: 'Bùa Hồi Sinh', body: 'Lỡ ngày nào thì dùng Bùa để lấp ngày đó (0 điểm). Chuỗi chỉ tính các ngày LIỀN NHAU — lấp 1 ngày mà ngày bên cạnh vẫn lỡ thì chuỗi không nối được. Bạn có 2 Bùa cho cả hành trình.', confirm: 'Dùng Bùa cứu chuỗi', cancel: 'Để sau', gotIt: 'Đã hiểu', locked: 'Để dành nhé — Bùa chỉ dùng được cho ngày bạn đã lỡ.',
+    noMiss: 'Bạn chưa lỡ ngày nào nên chưa cần dùng Bùa. Bùa được giữ nguyên — chỉ dùng được cho ngày bạn đã lỡ.',
     noneLeft: 'Bạn đã dùng hết Bùa Hồi Sinh cho hành trình này.',
     using: 'Đang dùng Bùa…', count: (n: number) => `Còn ${n}/2 Bùa Hồi Sinh`, success: 'Gumi bật dậy! Chuỗi của bạn được giữ.',
     warnTitle: 'Gumi đang hấp hối! 😿',
-    warnBody: (n: number) => `Bạn đang lỡ 1 ngày — vào chơi ngay sẽ MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh để giữ chuỗi nhé!`,
-    warnBodyNoPass: 'Bạn đang lỡ 1 ngày và đã hết Bùa. Vào chơi sẽ bắt đầu lại chuỗi từ đầu.',
+    warnBody: (n: number) => `Hôm qua bạn lỡ 1 ngày — chơi tiếp sẽ bắt đầu chuỗi mới, MẤT chuỗi ${n} ngày. Dùng Bùa Hồi Sinh lấp hôm qua để giữ chuỗi nhé!`,
+    warnBodyNoPass: 'Hôm qua bạn lỡ 1 ngày và đã hết Bùa. Vào chơi sẽ bắt đầu lại chuỗi từ 1.',
     playAnyway: 'Vẫn chơi (mất chuỗi)',
     rescuePlay: 'Cứu chuỗi rồi chơi' },
 
@@ -204,7 +204,7 @@ export const vi = {
         ], win: [ { who: 'gumi', text: 'Giải hết ô chữ! Rừng này hết chỗ cho đường ẩn trốn.' } ],
         tease: 'Lật thẻ trí nhớ: ghép đường với tên gọi trước khi hết giờ.' },
       { day: 12, intro: [
-          { who: 'gumi', text: '1 phút, ghép đủ 6 cặp. Trí nhớ vị giác của mình, thử thách nào!' },
+          { who: 'gumi', text: 'Ghi nhớ và ghép đúng 6 cặp đường trong vòng 1 phút. Bạn có đủ nhanh để đánh bại Gumi không? [gumi]' },
         ], win: [ { who: 'gumi', text: 'Ghép trọn bộ! Đầu mình giờ nhớ vị thật hơn vị ngọt.' } ],
         tease: 'Lan toả vị nhạt — kể cho cả rừng cùng nghe.' },
       { day: 13, intro: [
@@ -476,7 +476,7 @@ export const vi = {
       correct: 'Chuẩn luôn!',
       timeUp: 'Hết giờ rồi!',
       timeUpQuiz: 'Hết giờ! Đáp án đúng đang sáng màu xanh.',
-      timeUpMemory: (n: number, total: number) => `Hết 1 phút — bạn ghép được ${n}/${total} cặp. Cửa ải tính giờ không cho chơi lại, hẹn Gumi ở chặng sau nhé!`,
+      timeUpMemory: (n: number, total: number) => `Đã hết thời gian, bạn ghép được ${n}/${total} cặp. Hẹn Gumi ở chặng sau nhé!`,
     },
     // Ngày 6 — Đấu Trường Calo: xếp 5 ly theo độ ngọt.
     sort: {

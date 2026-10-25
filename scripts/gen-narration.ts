@@ -8,7 +8,7 @@ import { pipeline } from 'node:stream/promises';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { vi } from '../src/content/vi';
 import type { Line } from '../src/content/vi';
-import { VOICE, narrationHash } from '../src/lib/narrationVoice';
+import { VOICE, narrationHash, spokenText } from '../src/lib/narrationVoice';
 
 const OUT = join(process.cwd(), 'public', 'narration');
 mkdirSync(OUT, { recursive: true });
@@ -48,7 +48,7 @@ let made = 0, skipped = 0;
 for (const [hash, ln] of lines) {
   const file = join(OUT, `${hash}.mp3`);
   if (existsSync(file)) { skipped++; continue; }
-  await synth(VOICE[ln.who], ln.text, file);
+  await synth(VOICE[ln.who], spokenText(ln.text), file);
   made++;
   console.log(`✓ ${hash} [${ln.who}] ${ln.text.slice(0, 42)}…`);
 }

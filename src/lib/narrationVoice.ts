@@ -21,4 +21,8 @@ export function narrationHash(who: Line['who'], text: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
+/** Ký hiệu chèn mặt Gumi vào câu thoại (hiển thị là hình, KHÔNG đọc thành tiếng). */
+export const GUMI_FACE_TOKEN = '[gumi]';
+export const spokenText = (text: string) => text.split(GUMI_FACE_TOKEN).join('').replace(/\s+/g, ' ').trim();
+
 export const narrationUrl = (who: Line['who'], text: string) => `/narration/${narrationHash(who, text)}.mp3`;
