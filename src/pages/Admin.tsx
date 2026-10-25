@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { EventResults } from './event/EventResults';
+import { useEventResults } from './event/EventResults';
+import { gameNames } from './event/data';
+import type { EventResult } from './event/store';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
@@ -27,7 +29,7 @@ const TOTAL = vi.journey.total;
 export function Admin() {
   const [tab, setTab] = useState('overview');
   const stats = useAsync(() => api.admin.getStats(), []);
-  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventResults tone="light" pageSizes={ADMIN_PAGE_SIZES} /></AdminShell>;
+  if (tab === 'event') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><EventPanel /></AdminShell>;
   if (tab === 'review') return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><ReviewPanel /></AdminShell>;
   if (tab === 'wall')   return <AdminShell tabs={TABS} active={tab} onSelect={setTab}><WallPanel /></AdminShell>;
   return (
@@ -210,6 +212,206 @@ function WallPanel() {
         <div className="p-4 sm:p-5">
           <WallFeed pageSize={10} pageSizes={ADMIN_PAGE_SIZES} storageKey="admin-wall" hiddenIds={deleted} onDelete={(id) => { if (!deleted.includes(id)) void handleDelete(id); }} />
         </div>
+      </section>
+    </div>
+  );
+}
+
+/* ============================ SỰ KIỆN TRỰC TIẾP ============================ */
+type EvRow = EventResult & { pending?: boolean; rank: number };
+type EvSort = 'total' | 0 | 1 | 2 | 3;
+const GAME_SHORT = ['Phân loại', 'Truy vết', 'Sự thật', 'Flappy'];
+const FLAPPY_GOAL = 40; // Flappy Gumi: bay qua đủ 40 cột là hoàn thành
+const MEDAL = [
+  { color: '#C9962B', chip: 'bg-[#C9962B]/15 text-[#9A6F12]', label: 'Vô địch' },
+  { color: '#7D8A9C', chip: 'bg-[#7D8A9C]/15 text-[#566273]', label: 'Á quân' },
+  { color: '#B0703F', chip: 'bg-[#B0703F]/15 text-[#8A5126]', label: 'Hạng ba' },
+];
+
+function RankChip({ rank }: { rank: number }) {
+  const m = MEDAL[rank - 1];
+  return m
+    ? <span className={`inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-1.5 text-caption font-extrabold tabular-nums ${m.chip}`} aria-label={`Hạng ${rank}`}><Icon name="medal" size={14} filled />{rank}</span>
+    : <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-bg px-1.5 text-caption font-bold tabular-nums text-muted" aria-label={`Hạng ${rank}`}>{rank}</span>;
+}
+
+function PendingTag() {
+  return <span className="ml-2 inline-flex items-center gap-1 rounded-pill bg-accent/15 px-2 py-0.5 align-middle text-[11px] font-bold text-accent"><Icon name="clock" size={11} />Đang đồng bộ</span>;
+}
+
+function exportEventCsv(rows: EvRow[]) {
+  const header = ['Hạng', 'Tên đội', ...gameNames, 'Tổng', 'Thời gian'];
+  const esc = (v: string | number) => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
+  const body = rows.map((r) => [r.rank, r.team, ...gameNames.map((_, g) => r.scores[g] ?? 0), r.total, when(r.created_at)].map(esc).join(','));
+  const csv = '﻿' + [header.join(','), ...body].join('\r\n'); // BOM để Excel đọc đúng tiếng Việt
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `su-kien-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function EventPanel() {
+  const { rows, error } = useEventResults();
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState<EvSort>('total');
+
+  // Hạng luôn theo TỔNG điểm (hoà điểm: đội chơi trước xếp trên), dù đang sắp xếp theo cột khác.
+  const ranked: EvRow[] = useMemo(() => [...rows]
+    .sort((a, b) => b.total - a.total || (a.created_at ?? '￿').localeCompare(b.created_at ?? '￿'))
+    .map((r, i) => ({ ...r, rank: i + 1 })), [rows]);
+  const colMax = useMemo(() => gameNames.map((_, g) => Math.max(0, ...ranked.map((r) => r.scores[g] ?? 0))), [ranked]);
+  const view = useMemo(() => {
+    const key = q.trim().toLowerCase();
+    const list = ranked.filter((r) => !key || r.team.toLowerCase().includes(key));
+    return sort === 'total' ? list : [...list].sort((a, b) => (b.scores[sort] ?? 0) - (a.scores[sort] ?? 0) || a.rank - b.rank);
+  }, [ranked, q, sort]);
+  const pg = usePagination(view, 20, `${q}|${sort}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event' });
+
+  const top = ranked[0];
+  const avg = ranked.length ? Math.round(ranked.reduce((a, r) => a + r.total, 0) / ranked.length) : 0;
+  const flappyDone = ranked.filter((r) => (r.scores[3] ?? 0) >= FLAPPY_GOAL).length;
+  const SORTS: { k: EvSort; label: string }[] = [{ k: 'total', label: 'Tổng' }, ...GAME_SHORT.map((label, g) => ({ k: g as EvSort, label }))];
+
+  const bar = (g: number, v: number) => (
+    <span className="mt-1.5 block h-1.5 w-full overflow-hidden rounded-full bg-border/50" aria-hidden="true">
+      <span className="block h-full rounded-full bg-primary/70" style={{ width: `${colMax[g] ? Math.round((v / colMax[g]) * 100) : 0}%` }} />
+    </span>
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section className="admin-welcome flex flex-wrap items-center justify-between gap-6 rounded-[24px] p-6 sm:p-8">
+        <div className="max-w-xl">
+          <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · SỰ KIỆN TRỰC TIẾP</p>
+          <h2 className="text-[28px] font-extrabold leading-tight tracking-tight text-white sm:text-[34px]">Bảng vàng sự kiện.</h2>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Điểm 4 thử thách của từng đội — tự cập nhật ngay khi một đội chơi xong.</p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3.5 py-2 text-caption font-bold uppercase tracking-[.14em] text-white">
+          <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#5BD08F] opacity-70 motion-reduce:animate-none" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#5BD08F]" />
+          </span>
+          Trực tiếp
+        </span>
+      </section>
+
+      {error && <div role="status"><Banner kind="info">{error}</Banner></div>}
+
+      <section>
+        <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Chỉ số chính</h2>
+        <div className="grid grid-cols-2 gap-3 min-[1100px]:grid-cols-4">
+          <StatCard icon="flag" cls="text-primary" accent="#B83556" value={ranked.length} label="Đội đã thi đấu" />
+          <StatCard icon="trophy" cls="text-accent" accent="#C9962B" value={top?.total ?? 0} label="Điểm cao nhất" hint={top ? top.team : undefined} />
+          <StatCard icon="star" cls="text-info" accent="#55768C" value={avg} label="Điểm trung bình" />
+          <StatCard icon="medal" cls="text-success" accent="#1F7A4D" value={`${flappyDone}/${ranked.length}`} label={`Qua đủ ${FLAPPY_GOAL} cột Flappy`} />
+        </div>
+      </section>
+
+      {ranked.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Bục vinh quang</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {ranked.slice(0, 3).map((r, i) => (
+              <article key={r.id} className="admin-kpi flex flex-col gap-3 rounded-[20px] border border-border bg-surface p-5 shadow-soft" style={{ '--kpi': MEDAL[i]!.color } as CSSProperties}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-caption font-extrabold ${MEDAL[i]!.chip}`}><Icon name="medal" size={14} filled />{MEDAL[i]!.label}</span>
+                  <span className="text-caption font-bold tabular-nums text-muted">#{r.rank}</span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="truncate text-title font-extrabold" title={r.team}>{r.team}{r.pending && <PendingTag />}</h3>
+                  <p className="mt-1 text-[30px] font-extrabold leading-none tabular-nums text-text">{r.total}<span className="ml-1 text-small font-semibold text-muted">điểm</span></p>
+                </div>
+                <dl className="grid grid-cols-4 gap-1.5 rounded-xl bg-bg/60 p-2 text-center">
+                  {GAME_SHORT.map((g, gi) => (
+                    <div key={g} className="min-w-0"><dt className="truncate text-[11px] text-muted">{g}</dt><dd className="text-small font-extrabold tabular-nums">{r.scores[gi] ?? 0}</dd></div>
+                  ))}
+                </dl>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5"><h2 className="admin-section-title">Tất cả đội</h2><span className="admin-result-count">{view.length}/{ranked.length}</span></div>
+          <div className="admin-player-tools flex w-full flex-wrap items-center gap-2">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm tên đội…" aria-label="Tìm đội"
+              className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
+            <div className="admin-sort flex items-center gap-1 overflow-x-auto rounded-lg p-1" role="group" aria-label="Sắp xếp theo">
+              {SORTS.map((o) => (
+                <button key={String(o.k)} onClick={() => setSort(o.k)} aria-pressed={sort === o.k}
+                  className={`whitespace-nowrap rounded-md px-2.5 py-1 transition-colors ${sort === o.k ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'}`}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => exportEventCsv(view)} disabled={view.length === 0}
+              className="admin-export flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-small font-semibold text-text transition-colors hover:bg-bg disabled:opacity-40">
+              <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV
+            </button>
+          </div>
+        </div>
+
+        {ranked.length === 0 ? (
+          <div className="flex flex-col items-center rounded-[20px] border border-border bg-surface px-6 py-16 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg text-accent"><Icon name="trophy" size={28} filled /></span>
+            <p className="mt-4 text-body font-bold">Chưa có đội nào thi đấu</p>
+            <p className="mt-1 max-w-sm text-small text-muted">Bảng sẽ tự cập nhật ngay khi đội đầu tiên hoàn thành 4 thử thách.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 min-[1100px]:hidden">
+              {view.length === 0 && <p className="col-span-full rounded-2xl border border-border bg-surface px-4 py-10 text-center text-small text-muted">Không tìm thấy đội nào.</p>}
+              {pg.slice.map((r) => (
+                <article key={r.id} className="min-w-0 rounded-[20px] border border-border bg-surface p-4 shadow-soft">
+                  <div className="flex items-center gap-3">
+                    <RankChip rank={r.rank} />
+                    <h3 className="min-w-0 flex-1 break-words text-small font-bold">{r.team}{r.pending && <PendingTag />}</h3>
+                    <span className="text-title font-extrabold tabular-nums text-primary">{r.total}</span>
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-bg/60 p-3">
+                    {gameNames.map((g, gi) => (
+                      <div key={g} className="min-w-0">
+                        <dt className="flex items-baseline justify-between gap-2 text-caption text-muted"><span className="truncate">{g}</span><span className={`font-extrabold tabular-nums ${sort === gi ? 'text-primary' : 'text-text'}`}>{r.scores[gi] ?? 0}</span></dt>
+                        <dd>{bar(gi, r.scores[gi] ?? 0)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto rounded-[20px] border border-border bg-surface min-[1100px]:block"><Card className="min-w-[860px] divide-y divide-border/60 border-0 p-0">
+              <div className="sticky top-0 z-10 flex items-center gap-4 bg-bg/80 px-4 py-2.5 text-caption font-bold uppercase tracking-wide text-muted backdrop-blur">
+                <span className="w-14">Hạng</span>
+                <span className="min-w-0 flex-1">Đội</span>
+                {gameNames.map((g, gi) => <span key={g} className={`w-32 ${sort === gi ? 'text-primary' : ''}`}>{g}</span>)}
+                <span className={`w-20 text-right ${sort === 'total' ? 'text-primary' : ''}`}>Tổng</span>
+              </div>
+              {view.length === 0
+                ? <p className="px-4 py-8 text-center text-small text-muted">Không tìm thấy đội nào.</p>
+                : pg.slice.map((r) => (
+                  <div key={r.id} className="admin-row flex items-center gap-4 px-4 py-2.5 text-small">
+                    <span className="w-14"><RankChip rank={r.rank} /></span>
+                    <span className="min-w-0 flex-1 truncate font-semibold" title={r.team}>{r.team}{r.pending && <PendingTag />}</span>
+                    {gameNames.map((g, gi) => {
+                      const v = r.scores[gi] ?? 0;
+                      const best = v > 0 && v === colMax[gi];
+                      return <span key={g} className="w-32">
+                        <span className={`tabular-nums ${best ? 'font-extrabold text-primary' : 'font-semibold'}`} title={best ? 'Điểm cao nhất ở thử thách này' : undefined}>{v}</span>
+                        {bar(gi, v)}
+                      </span>;
+                    })}
+                    <span className="w-20 text-right text-body font-extrabold tabular-nums text-text">{r.total}</span>
+                  </div>
+                ))}
+            </Card></div>
+            <Pagination {...pg} unit="đội" />
+          </>
+        )}
       </section>
     </div>
   );

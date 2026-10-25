@@ -3,16 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import type { AppNotification } from '../api/types';
-
-/** Thời gian tương đối ngắn gọn tiếng Việt. */
-function ago(iso: string): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'vừa xong';
-  if (s < 3600) return `${Math.floor(s / 60)} phút trước`;
-  if (s < 86400) return `${Math.floor(s / 3600)} giờ trước`;
-  if (s < 172800) return 'hôm qua';
-  return `${Math.floor(s / 86400)} ngày trước`;
-}
+import { timeAgo } from '../lib/timeAgo';
 
 /**
  * Chuông thông báo — trung tâm thông báo trong app. Đọc từ api.listNotifications() (nguồn: bảng
@@ -131,7 +122,7 @@ export function NotificationBell() {
                     {!n.read && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   </span>
                   <span className="mt-0.5 block break-words text-caption leading-relaxed text-muted [overflow-wrap:anywhere]">{n.body}</span>
-                  <span className="mt-1 block text-[11px] text-muted/70">{ago(n.created_at)}</span>
+                  <span className="mt-1 block text-[11px] text-muted/70">{timeAgo(n.created_at)}</span>
                 </span>
               </button>
             ))}

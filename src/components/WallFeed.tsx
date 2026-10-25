@@ -8,17 +8,7 @@ import { useAsync } from '../app/useAsync';
 import { useRef } from 'react';
 import { Pagination, usePagination } from './Pagination';
 import type { WallPost } from '../api/types';
-
-function timeAgo(iso: string | null | undefined): string {
-  const ms = iso ? new Date(iso).getTime() : NaN;
-  if (!iso || isNaN(ms)) return 'vừa xong';
-  const s = Math.max(0, (Date.now() - ms) / 1000);
-  if (s < 60) return 'vừa xong';
-  if (s < 3600) return `${Math.floor(s / 60)} phút trước`;
-  if (s < 86400) return `${Math.floor(s / 3600)} giờ trước`;
-  if (s < 172800) return 'hôm qua';
-  return `${Math.floor(s / 86400)} ngày trước`;
-}
+import { timeAgo } from '../lib/timeAgo';
 
 /** Feed bài đăng Tường cộng đồng — dùng trong Dashboard (read-only) và Admin (có nút xoá).
  *  `pageSize` có → chia trang (desktop, admin); không có → hiện hết, khung cha tự cuộn (điện thoại). */
