@@ -8,7 +8,7 @@ import { Input } from '../components/Input';
 import { vi } from '../content/vi';
 
 const inApp = typeof navigator !== 'undefined' && /FBAN|FBAV|Instagram|Zalo/i.test(navigator.userAgent);
-const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 export function Login() {
   const nav = useNavigate();
