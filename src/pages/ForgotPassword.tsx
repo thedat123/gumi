@@ -8,7 +8,7 @@ import { Input } from '../components/Input';
 import { vi } from '../content/vi';
 import { useSession } from '../app/session';
 
-const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 /** Quên mật khẩu — nhập email để nhận link đặt lại. Không tiết lộ email có tồn tại hay không. */
 export function ForgotPassword() {
@@ -24,7 +24,7 @@ export function ForgotPassword() {
     setError(null);
     setBusy(true);
     try {
-      await resetPassword(email);
+      await resetPassword(email.trim());
       setSent(true);
     } catch {
       setError('send');

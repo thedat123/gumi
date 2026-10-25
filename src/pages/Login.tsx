@@ -11,7 +11,7 @@ import { errorCode } from '../lib/errors';
 import { useSession } from '../app/session';
 
 const inApp = typeof navigator !== 'undefined' && /FBAN|FBAV|Instagram|Zalo/i.test(navigator.userAgent);
-const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 export function Login() {
   const nav = useNavigate();
@@ -28,7 +28,7 @@ export function Login() {
     setError(null);
     setBusy(true);
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
       nav('/');
     } catch (err) {
       setError(errorCode(err) === 'wrong_password' ? 'wrong' : 'wrong');

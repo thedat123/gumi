@@ -7,13 +7,13 @@ import { GoogleButton } from '../components/GoogleButton';
 import { Gumi } from '../components/Gumi';
 import { Input } from '../components/Input';
 import { vi } from '../content/vi';
-import { errorCode } from '../lib/errors';
+import { errorCode, messageFor } from '../lib/errors';
 import { useSession } from '../app/session';
 import { rememberDataConsent } from '../lib/consent';
 
 
-const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-type ErrKey = 'email' | 'passwordShort' | 'passwordMismatch' | 'emailExists' | 'consent' | 'dataConsent' | null;
+const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+type ErrKey = 'email' | 'passwordShort' | 'passwordMismatch' | 'emailExists' | 'consent' | 'dataConsent' | 'server' | null;
 
 /** S02 — Đăng ký. Kiểm tra email/mật khẩu/đồng ý; xong thì sang onboarding. */
 export function Signup() {
@@ -27,6 +27,7 @@ export function Signup() {
   const dataConsentRef = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState<ErrKey>(null);
   const [busy, setBusy] = useState(false);
+  const [serverMsg, setServerMsg] = useState('');
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,11 +40,14 @@ export function Signup() {
     setErr(null);
     setBusy(true);
     try {
-      await signUp(email, pw);
+      await signUp(email.trim(), pw);
       nav('/onboarding');
     } catch (e2) {
-      setErr(errorCode(e2) === 'email_exists' ? 'emailExists' : null);
-      if (errorCode(e2) !== 'email_exists') setErr('email');
+      // Lỗi server (mạng, giới hạn gửi mail...) không phải lỗi định dạng email — báo đúng lỗi.
+      if (errorCode(e2) === 'email_exists') return setErr('emailExists');
+      console.error('signUp failed', e2);
+      setServerMsg(messageFor(e2));
+      setErr('server');
     } finally {
       setBusy(false);
     }
@@ -77,6 +81,7 @@ export function Signup() {
           <Input label={vi.signup.confirm} type="password" autoComplete="new-password" value={confirm}
             onChange={(e) => setConfirm(e.target.value)} error={err === 'passwordMismatch' ? vi.signup.errors.passwordMismatch : undefined} />
           {err === 'emailExists' && <Banner kind="error">{vi.signup.errors.emailExists}</Banner>}
+          {err === 'server' && <Banner kind="error">{serverMsg}</Banner>}
           <label className="flex items-start gap-2 text-small">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" aria-invalid={err === 'consent' ? true : undefined} />
             <span>{vi.signup.consentLabel} <Link to="/terms" className="text-primary underline underline-offset-2">{vi.signup.readTerms}</Link></span>
