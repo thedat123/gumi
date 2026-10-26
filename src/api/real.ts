@@ -107,6 +107,7 @@ const admin: AdminApi = {
   getStats: () => rpc<AdminStats>('admin_stats'),
   listCheckins: (day) => rpc<AdminCheckin[]>('admin_list_checkins', { p_day: day }),
   listFlags: () => rpc<AdminCheckin[]>('admin_list_flags'),
+  listPhotos: () => rpc<AdminCheckin[]>('admin_list_photos'),
   async setCheckinStatus(id, status: CheckinStatus, reason) {
     await rpc('admin_set_checkin_status', { p_id: id, p_status: status, p_reason: reason ?? null });
   },

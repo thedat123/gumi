@@ -127,6 +127,9 @@ export interface AdminCheckin {
   flag?: string;
   kind?: MissionKind;        // loại nhiệm vụ của ngày (DRINK/SHARE/…)
   level?: number | null;     // mức đường AI đọc được (chỉ ngày DRINK có needs_level)
+  reason?: string | null;    // lý do từ chối (nếu có)
+  reviewed?: boolean;        // admin đã xem/xác nhận ảnh này chưa
+  createdAt?: string;        // thời điểm gửi ảnh (ISO)
 }
 
 /** Một dòng người chơi trong bảng quản lý của admin. */
@@ -203,6 +206,8 @@ export interface AdminApi {
   getStats(): Promise<AdminStats>;
   listCheckins(day: number): Promise<AdminCheckin[]>;
   listFlags(): Promise<AdminCheckin[]>;
+  /** Mọi ảnh check-in (ảnh mới nhất mỗi người/ngày), kể cả ảnh AI đã tự duyệt. */
+  listPhotos(): Promise<AdminCheckin[]>;
   setCheckinStatus(id: string, status: CheckinStatus, reason?: string): Promise<void>;
   /** URL ký tạm để XEM ảnh check-in (bucket riêng tư). Trả null nếu không phải đường dẫn ảnh. */
   photoUrl(path: string): Promise<string | null>;

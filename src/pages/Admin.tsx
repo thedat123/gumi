@@ -41,29 +41,46 @@ export function Admin() {
   );
 }
 
-/* ============================ DUYỆT ẢNH (gửi admin duyệt tay) ============================ */
+/* ============================ DUYỆT ẢNH (mọi ảnh check-in: chờ duyệt tay + AI đã duyệt) ============================ */
 const isSocialPhoto = (c: AdminCheckin) => c.kind === 'SHARE' || c.kind === 'FINAL' || /Đăng MXH|Tốt nghiệp/.test(c.flag ?? '');
+/** Ảnh admin cần nhìn qua: chờ duyệt tay, hoặc AI đã duyệt mà admin chưa xác nhận. */
+const needsLook = (c: AdminCheckin) => c.status === 'pending' || (c.status === 'approved' && !c.reviewed);
+
+type StatusFilter = 'todo' | 'pending' | 'ai' | 'approved' | 'rejected' | 'all';
+const STATUS_MATCH: Record<StatusFilter, (c: AdminCheckin) => boolean> = {
+  todo: needsLook,
+  pending: (c) => c.status === 'pending',
+  ai: (c) => c.status === 'approved' && !c.reviewed,
+  approved: (c) => c.status === 'approved',
+  rejected: (c) => c.status === 'rejected',
+  all: () => true,
+};
 
 function ReviewPanel() {
-  const queue = useAsync(() => api.admin.listFlags(), []);
+  const queue = useAsync(() => api.admin.listPhotos(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState<StatusFilter>('todo');
+  const [kind, setKind] = useState<'all' | 'checkin' | 'social'>('all');
   const [search, setSearch] = useState('');
-  const [resolved, setResolved] = useState<string[]>([]);
-  const pending = (queue.data ?? []).filter((c) => c.status === 'pending' && !resolved.includes(c.id));
-  const socialCount = pending.filter(isSocialPhoto).length;
-  const tabs = [
-    { id: 'all', label: 'Tất cả ảnh', count: pending.length },
-    { id: 'checkin', label: 'Check-in đồ uống', count: pending.length - socialCount },
-    { id: 'social', label: 'Story & tốt nghiệp', count: socialCount },
+  // Kết quả duyệt/gỡ cập nhật tại chỗ (không tải lại cả danh sách).
+  const [changes, setChanges] = useState<Record<string, Partial<AdminCheckin>>>({});
+  const photos = (queue.data ?? []).map((c) => (changes[c.id] ? { ...c, ...changes[c.id] } : c));
+  const count = (f: StatusFilter) => photos.filter(STATUS_MATCH[f]).length;
+  const tabs: { id: StatusFilter; label: string }[] = [
+    { id: 'todo', label: 'Cần xem' },
+    { id: 'pending', label: 'Chờ duyệt tay' },
+    { id: 'ai', label: 'AI đã duyệt' },
+    { id: 'approved', label: 'Đã duyệt' },
+    { id: 'rejected', label: 'Đã gỡ / từ chối' },
+    { id: 'all', label: 'Tất cả' },
   ];
   const act = async (id: string, status: 'approved' | 'rejected', reason?: string) => {
     if (busyId) return;
     setBusyId(id); setErr(null);
     try {
       await api.admin.setCheckinStatus(id, status, reason);
-      setResolved((ids) => [...ids, id]);
+      setChanges((m) => ({ ...m, [id]: { status, reason: reason ?? null, reviewed: true } }));
     } catch { setErr('Không cập nhật được ảnh. Vui lòng thử lại.'); }
     finally { setBusyId(null); }
   };
@@ -74,32 +91,43 @@ function ReviewPanel() {
         <div className="max-w-xl">
           <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · KIỂM DUYỆT NỘI DUNG</p>
           <h2 className="text-[28px] font-extrabold leading-tight text-white sm:text-[34px]">Mỗi bức ảnh, một bước tiến.</h2>
-          <p className="mt-3 text-small leading-relaxed text-white/70">Xem ảnh check-in và Story, xác nhận nỗ lực của người chơi trên hành trình bớt ngọt.</p>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Xem mọi ảnh check-in và Story, kể cả ảnh AI đã tự duyệt. Ảnh không đạt thì gỡ, người chơi sẽ được báo và mất điểm ngày đó.</p>
         </div>
         <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4">
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-[#F2A9BC]"><Icon name="flag" size={24} /></span>
-          <div><p className="text-[32px] font-extrabold leading-none tabular-nums text-white">{queue.loading ? '—' : pending.length}</p><p className="mt-1 text-caption text-white/65">ảnh đang chờ duyệt</p></div>
+          <div><p className="text-[32px] font-extrabold leading-none tabular-nums text-white">{queue.loading ? '—' : count('todo')}</p><p className="mt-1 text-caption text-white/65">ảnh cần xem</p></div>
         </div>
       </section>
       {err && <div role="alert"><Banner kind="error">{err}</Banner></div>}
       <section className="overflow-hidden rounded-[24px] border border-border bg-surface shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4 sm:p-5">
-          <div className="flex flex-wrap gap-1.5" aria-label="Loại ảnh">
+          <div className="flex flex-wrap gap-1.5" aria-label="Trạng thái ảnh">
             {tabs.map((t) => <button key={t.id} onClick={() => setFilter(t.id)} aria-pressed={filter === t.id}
               className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-small font-bold transition-colors ${filter === t.id ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-bg'}`}>
-              {t.label}<span className={`rounded-md px-1.5 py-0.5 text-caption tabular-nums ${filter === t.id ? 'bg-primary/10' : 'bg-bg'}`}>{t.count}</span>
+              {t.label}<span className={`rounded-md px-1.5 py-0.5 text-caption tabular-nums ${filter === t.id ? 'bg-primary/10' : 'bg-bg'}`}>{queue.loading ? '—' : count(t.id)}</span>
             </button>)}
           </div>
-          <input aria-label="Tìm ảnh theo tên người chơi" placeholder="Tìm tên người chơi…" value={search} onChange={(e) => setSearch(e.target.value)}
-            className="min-h-11 w-full rounded-xl border border-border bg-bg/50 px-4 text-small outline-none focus:border-primary sm:w-60" />
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <select aria-label="Loại ảnh" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}
+              className="min-h-11 rounded-xl border border-border bg-bg/50 px-3 text-small outline-none focus:border-primary">
+              <option value="all">Mọi loại ảnh</option>
+              <option value="checkin">Check-in đồ uống</option>
+              <option value="social">Story & tốt nghiệp</option>
+            </select>
+            <input aria-label="Tìm ảnh theo tên người chơi" placeholder="Tìm tên người chơi…" value={search} onChange={(e) => setSearch(e.target.value)}
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-bg/50 px-4 text-small outline-none focus:border-primary sm:w-60 sm:flex-none" />
+          </div>
         </div>
         <AsyncView state={queue}>
           {() => {
-            const items = pending.filter((c) => (filter === 'all' || (filter === 'social' ? isSocialPhoto(c) : !isSocialPhoto(c))) && c.user.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi')));
-            return items.length ? <ReviewGrid items={items} resetKey={`${filter}|${search}`} render={(c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} disabled={busyId !== null} onAct={act} />} /> : <div className="flex flex-col items-center px-6 py-16 text-center">
-              <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Icon name={pending.length ? 'flag' : 'check'} size={30} /></span>
-              <h3 className="text-title font-bold">{pending.length ? 'Không tìm thấy ảnh phù hợp' : 'Đã xử lý hết ảnh chờ duyệt'}</h3>
-              <p className="mt-2 max-w-sm text-small text-muted">{pending.length ? 'Thử tên khác hoặc chọn một nhóm ảnh khác.' : 'Ảnh mới của người chơi sẽ xuất hiện tại đây.'}</p>
+            const q = search.trim().toLocaleLowerCase('vi');
+            const items = photos.filter((c) => STATUS_MATCH[filter](c)
+              && (kind === 'all' || (kind === 'social' ? isSocialPhoto(c) : !isSocialPhoto(c)))
+              && c.user.toLocaleLowerCase('vi').includes(q));
+            return items.length ? <ReviewGrid items={items} resetKey={`${filter}|${kind}|${search}`} render={(c) => <ReviewCard key={c.id} c={c} busy={busyId === c.id} disabled={busyId !== null} onAct={act} />} /> : <div className="flex flex-col items-center px-6 py-16 text-center">
+              <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><Icon name={photos.length ? 'flag' : 'check'} size={30} /></span>
+              <h3 className="text-title font-bold">{filter === 'todo' && !q && kind === 'all' ? 'Đã xem hết ảnh' : 'Không có ảnh phù hợp'}</h3>
+              <p className="mt-2 max-w-sm text-small text-muted">{filter === 'todo' ? 'Ảnh mới của người chơi sẽ xuất hiện tại đây.' : 'Thử tên khác hoặc chọn nhóm ảnh khác.'}</p>
             </div>;
           }}
         </AsyncView>
@@ -133,6 +161,13 @@ function ReviewCard({ c, busy, disabled, onAct }: {
 
   const mission = vi.missions[c.day - 1];
   const social = isSocialPhoto(c);
+  const badge = c.status === 'pending' ? { label: 'Chờ duyệt tay', cls: 'bg-[#fff4df] text-[#946019]' }
+    : c.status === 'rejected' ? { label: 'Đã gỡ', cls: 'bg-danger/10 text-danger' }
+    : c.reviewed ? { label: 'Admin đã duyệt', cls: 'bg-success/10 text-success' }
+    : { label: 'AI đã duyệt', cls: 'bg-info/10 text-info' };
+  const sentAt = c.createdAt ? new Date(c.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : null;
+  const approveLabel = c.status === 'approved' ? 'Ảnh OK' : c.status === 'rejected' ? 'Khôi phục' : 'Duyệt ảnh';
+  const rejectLabel = c.status === 'approved' ? 'Gỡ ảnh' : 'Từ chối';
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border bg-surface shadow-soft">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -150,26 +185,27 @@ function ReviewCard({ c, busy, disabled, onAct }: {
       <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-center gap-3">
           <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-small font-extrabold text-primary">{c.user.charAt(0).toLocaleUpperCase('vi')}</span>
-          <div className="min-w-0"><h3 className="truncate text-body font-bold" title={c.user}>{c.user}</h3><p className="mt-0.5 text-caption text-muted">{social ? 'Story & tốt nghiệp' : 'Check-in đồ uống'}</p></div>
-          <span className="ml-auto shrink-0 rounded-pill bg-[#fff4df] px-2.5 py-1 text-[11px] font-bold text-[#946019]">Chờ duyệt</span>
+          <div className="min-w-0"><h3 className="truncate text-body font-bold" title={c.user}>{c.user}</h3><p className="mt-0.5 text-caption text-muted">{social ? 'Story & tốt nghiệp' : 'Check-in đồ uống'}{sentAt && ` · ${sentAt}`}</p></div>
+          <span className={`ml-auto shrink-0 rounded-pill px-2.5 py-1 text-[11px] font-bold ${badge.cls}`}>{badge.label}</span>
         </div>
         <div className="rounded-xl bg-bg/70 p-3">
           <p className="text-small font-semibold">{mission?.title ?? `Nhiệm vụ ngày ${c.day}`}</p>
-          <p className="mt-1 text-caption leading-relaxed text-muted">{c.flag || 'Người chơi gửi ảnh để xác nhận nhiệm vụ.'}</p>
+          <p className="mt-1 text-caption leading-relaxed text-muted">{c.flag || (c.status === 'approved' && !c.reviewed ? 'AI đã nhận diện đạt và cộng điểm. Kiểm tra lại, không đạt thì gỡ.' : 'Người chơi gửi ảnh để xác nhận nhiệm vụ.')}</p>
           {c.level != null && <p className="mt-2 text-caption font-semibold text-info">Mức đường nhận diện: {c.level}%</p>}
+          {c.status === 'rejected' && c.reason && <p className="mt-2 text-caption font-semibold text-danger">Lý do gỡ: {c.reason}</p>}
         </div>
         {rejecting ? <form className="mt-auto space-y-3" onSubmit={(e) => { e.preventDefault(); if (reason.trim()) void onAct(c.id, 'rejected', reason.trim()); }}>
-          <label className="block text-small font-bold" htmlFor={`reason-${c.id}`}>Lý do từ chối</label>
+          <label className="block text-small font-bold" htmlFor={`reason-${c.id}`}>Lý do {c.status === 'approved' ? 'gỡ ảnh' : 'từ chối'}</label>
           <textarea id={`reason-${c.id}`} autoFocus required maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Cho người chơi biết ảnh cần sửa ở đâu…" disabled={disabled}
             className="min-h-24 w-full resize-y rounded-xl border border-border bg-surface p-3 text-small outline-none focus:border-primary" />
-          <p className="text-caption text-muted">Lý do sẽ được gửi cho người chơi cùng thông báo từ chối.</p>
+          <p className="text-caption text-muted">Người chơi sẽ nhận thông báo kèm lý do và mất điểm ngày này.</p>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => setRejecting(false)} disabled={disabled} className="min-h-11 rounded-xl border border-border text-small font-bold disabled:opacity-50">Huỷ</button>
-            <button type="submit" disabled={disabled || !reason.trim()} className="min-h-11 rounded-xl bg-danger text-small font-bold text-white disabled:opacity-50">{busy ? 'Đang gửi…' : 'Gửi từ chối'}</button>
+            <button type="submit" disabled={disabled || !reason.trim()} className="min-h-11 rounded-xl bg-danger text-small font-bold text-white disabled:opacity-50">{busy ? 'Đang gửi…' : c.status === 'approved' ? 'Gỡ ảnh' : 'Gửi từ chối'}</button>
           </div>
-        </form> : <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-4">
-          <button onClick={() => setRejecting(true)} disabled={disabled} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-small font-bold text-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"><Icon name="x" size={16} />Từ chối</button>
-          <button onClick={() => void onAct(c.id, 'approved')} disabled={disabled} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#247758] text-small font-bold text-white transition-colors hover:bg-[#1c6248] disabled:opacity-50"><Icon name="check" size={16} />{busy ? 'Đang duyệt…' : 'Duyệt ảnh'}</button>
+        </form> : <div className={`mt-auto grid gap-2 border-t border-border pt-4 ${c.status === 'approved' && c.reviewed ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {c.status !== 'rejected' && <button onClick={() => setRejecting(true)} disabled={disabled} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-small font-bold text-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"><Icon name="x" size={16} />{rejectLabel}</button>}
+          {!(c.status === 'approved' && c.reviewed) && <button onClick={() => void onAct(c.id, 'approved')} disabled={disabled} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#247758] text-small font-bold text-white transition-colors hover:bg-[#1c6248] disabled:opacity-50 ${c.status === 'rejected' ? 'col-span-2' : ''}`}><Icon name="check" size={16} />{busy ? 'Đang lưu…' : approveLabel}</button>}
         </div>}
       </div>
     </article>

@@ -361,12 +361,17 @@ export function createMockApi(): Api {
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
       return delay(ADMIN_SEED.filter((c) => c.flag).map((c) => ({ ...c, kind: vi.missions[c.day - 1]?.kind })));
     },
-    async setCheckinStatus(id, status: CheckinStatus, _reason) {
+    async listPhotos() {
+      requireSession();
+      if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
+      return delay(ADMIN_SEED.map((c) => ({ ...c, kind: vi.missions[c.day - 1]?.kind })));
+    },
+    async setCheckinStatus(id, status: CheckinStatus, reason) {
       requireSession();
       if (state.profile?.role !== 'admin') throw new ApiError('forbidden');
       // Mock: cập nhật tại chỗ để hàng đợi duyệt phản ánh ngay (bản thật gọi admin_set_checkin_status).
       const c = ADMIN_SEED.find((x) => x.id === id);
-      if (c) { c.status = status; delete c.flag; } // đã xử lý → rời hàng đợi duyệt tay
+      if (c) { c.status = status; c.reason = reason ?? null; c.reviewed = true; delete c.flag; } // đã xử lý → rời hàng đợi duyệt tay
       await delay(null, 200);
     },
     async photoUrl() { return null; }, // mock dùng emoji, không có ảnh thật
