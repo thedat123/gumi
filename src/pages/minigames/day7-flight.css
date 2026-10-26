@@ -30,3 +30,24 @@
 /* Scenery remains sharp on low tiers; only nonessential motion/blur is reduced. */
 html.gfx-low .day7-ufo i { display: none; }
 html.gfx-low .day7-flight [class*="backdrop-blur"] { backdrop-filter: none; }
+
+/* Chế độ sự kiện: cùng cảnh/engine, nằm trong khung trang (không fixed toàn màn hình). Màu theo tông hồng–vàng. */
+.day7-flight-event { position: relative; display: flex; flex-direction: column; overflow: hidden; isolation: isolate; background: #fff; border: 1px solid #fff; border-radius: 24px; color: #33231D; font-family: 'Plus Jakarta Sans Variable', system-ui, sans-serif; }
+.day7-event-bar { display: flex; align-items: center; gap: 14px; padding: 12px 18px; flex-shrink: 0; }
+.day7-event-rules { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.day7-event-rules b { font-size: 17px; font-weight: 900; }
+.day7-event-rules small { color: #775A4E; font-size: 12px; font-weight: 700; }
+.day7-event-score { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.day7-event-score strong { color: #B83556; font-size: 28px; font-weight: 900; line-height: 1; }
+.day7-event-score small { color: #A08578; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+.day7-flight-event .day7-event-sound { min-height: 36px; padding: 7px 14px; border-radius: 12px; border: 1px solid #EBD8CD; background: #FFF7F3; color: #33231D; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.day7-event-field { position: relative; flex: 1; min-height: 0; margin: 0 12px 12px; border-radius: 18px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; contain: layout paint style; }
+.day7-event-overlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: #33231D24; }
+.day7-event-dialog { width: min(100%, 400px); max-height: 100%; overflow: auto; padding: 28px 26px; border-radius: 24px; background: #fff; text-align: center; box-shadow: 0 1px 2px #6B33240F, 0 18px 40px -18px #8C3C3266; }
+.day7-event-dialog > span { color: #A9580A; font-size: 11px; font-weight: 900; letter-spacing: 1.6px; }
+.day7-event-dialog h2 { margin: 10px 0 0; font-size: 26px; font-weight: 900; letter-spacing: -.6px; line-height: 1.25; }
+.day7-event-dialog p { margin: 12px 0 20px; color: #775A4E; font-size: 14px; line-height: 1.6; }
+.day7-flight-event .day7-event-dialog button { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 52px; padding: 14px 20px; border: 0; border-radius: 14px; background: linear-gradient(135deg, #CC4468, #B83556 55%, #962A47); color: #fff; font: inherit; font-size: 17px; font-weight: 900; cursor: pointer; box-shadow: 0 14px 28px -12px #B835568C; touch-action: manipulation; }
+.day7-flight-event .day7-event-dialog button:disabled { background: #EFE2D9; color: #A08578; box-shadow: none; cursor: default; }
+.day7-flight-event button:focus-visible { outline: 3px solid #B8355666; outline-offset: 3px; }
+@media (max-width: 700px) { .day7-event-bar { padding: 10px 12px; gap: 10px; } .day7-event-field { margin: 0 8px 8px; } .day7-event-rules b { font-size: 15px; } .day7-event-score strong { font-size: 24px; } }

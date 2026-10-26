@@ -23,9 +23,15 @@ interface State { mode: Mode; by: number; byPrev: number; vy: number; pipes: Pip
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+// Chế độ sự kiện: 5 lượt, mục tiêu 40 cột, điểm = kỷ lục cao nhất trong 5 lượt.
+const EVENT_TARGET = 40;
+const EVENT_TRIES = 5;
+
 /** Ngày 7 — "Bay Qua Cơn Thèm": Flappy. Qua 20 cột là ĐẠT (+20); cố thêm 50/100 cột để +50/+100.
- *  Một lần chơi liền mạch tới khi chết hoặc đạt trần 100 cột; pass (≥20) rồi không cho chơi lại. */
-export function FlappyBird() {
+ *  Một lần chơi liền mạch tới khi chết hoặc đạt trần 100 cột; pass (≥20) rồi không cho chơi lại.
+ *  `event`: dùng chung engine/đồ hoạ cho màn sự kiện — hiện trong khung trang (không toàn màn hình),
+ *  5 lượt, xong thì gọi `event.onFinish(kỷ lục)`. */
+export function FlappyBird({ event }: { event?: { onFinish: (best: number) => void } } = {}) {
   const { day: dayParam } = useParams();
   const day = Number(dayParam) || 7;
   const m = vi.missions[day - 1];
@@ -46,6 +52,12 @@ export function FlappyBird() {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [award, setAward] = useState<number>(m?.points ?? 20);
+  const max = event ? EVENT_TARGET : MAX;
+  const attempts = useRef(0);
+  const eventRef = useRef(event); eventRef.current = event;
+  const [quiet, setQuiet] = useState(false);
+  const quietRef = useRef(quiet); quietRef.current = quiet;
+  const sfx = useCallback((name: Parameters<typeof playSfx>[0]) => { if (!quietRef.current) playSfx(name); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +70,10 @@ export function FlappyBird() {
   const to = (mo: Mode) => { g.current.mode = mo; setMode(mo); };
   // Chốt ván: trao điểm mốc rồi chuyển sang màn hoàn thành (không cho chơi lại).
   const finish = (pts: number) => {
-    setAward(pts); to('won'); playSfx('win');
+    if (g.current.mode === 'won') return;
+    to('won'); sfx('win');
+    if (eventRef.current) { eventRef.current.onFinish(pts); return; }
+    setAward(pts);
     finishTimer.current = setTimeout(() => setDone(true), 700);
   };
 
@@ -78,24 +93,28 @@ export function FlappyBird() {
     s2.thrust = 1;
     s2.rot = -0.18;        // hất mũi LÊN ngay khi vỗ (cảm giác nhạy như Flappy thật)
     const now = performance.now();
-    if (now - lastFlapSound.current >= 100) { playSfx('pop'); lastFlapSound.current = now; }
-  }, [reset, artReady]);
+    if (now - lastFlapSound.current >= 100) { sfx('pop'); lastFlapSound.current = now; }
+  }, [reset, artReady, sfx]);
 
   // Bàn phím: Space / ↑ để vỗ cánh
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (!e.repeat) flap(); } };
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.code === 'Space' || e.code === 'ArrowUp') && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); if (!e.repeat) flap(); }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [flap]);
 
   useEffect(() => {
     if (done) return;
+    // Toàn màn hình (ngày 7) mới khoá cuộn trang; trong sự kiện game nằm trong khung trang.
+    const lockScroll = !eventRef.current;
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (lockScroll) document.body.style.overflow = 'hidden';
     const visible = () => { g.current.acc = 0; };
     document.addEventListener('visibilitychange', visible);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (lockScroll) document.body.style.overflow = previousOverflow;
       clearTimeout(finishTimer.current);
       document.removeEventListener('visibilitychange', visible);
 
@@ -127,8 +146,14 @@ export function FlappyBird() {
     const die = () => {
       if (s.mode !== 'play') return;
       s.best = Math.max(s.best, s.score);
+      if (eventRef.current) {
+        attempts.current++;
+        if (attempts.current >= EVENT_TRIES) finish(s.best);
+        else { to('dead'); sfx('sleep'); }
+        return;
+      }
       if (s.score >= PASS) finish(milestone(s.score));
-      else { to('dead'); playSfx('sleep'); }
+      else { to('dead'); sfx('sleep'); }
     };
 
     // STEP 1/60: 2 bước/frame ở 30fps, 1 bước ở 60fps — đủ chính xác cho Flappy Bird.
@@ -148,9 +173,9 @@ export function FlappyBird() {
       for (const p of s.pipes) p.x -= speed * STEP;
       for (const p of s.pipes) {
         if (!p.scored && p.x + pipeW < birdX - birdR) {
-          p.scored = true; s.score = Math.min(MAX, s.score + 1);
+          p.scored = true; s.score = Math.min(max, s.score + 1);
           pendingScore = s.score;          // defer: gọi sau khi thoát loop
-          if (s.score >= MAX) finish(MAX);
+          if (s.score >= max) finish(max);
         }
       }
       // KHÔNG filter trong loop — tránh tạo array mới 2-4× / frame (GC pressure)
@@ -159,7 +184,7 @@ export function FlappyBird() {
     }
     // Dọn pipe + cập nhật score MỘT LẦN / frame (không phải mỗi bước vật lý)
     while (s.pipes.length && s.pipes[0].x + pipeW <= -20) s.pipes.shift();
-    if (pendingScore >= 0) { setScore(pendingScore); playSfx('sparkle'); }
+    if (pendingScore >= 0) { setScore(pendingScore); if (s.mode === 'play') sfx('sparkle'); }
 
     if (s.mode === 'ready') s.by = h * 0.42 + Math.sin(s.t * 2.2) * h * 0.02;
 
@@ -211,6 +236,39 @@ export function FlappyBird() {
 
   if (done) return <MissionDone day={day} points={award} earnedPoints={award} note={`Bạn lách qua ${score} cột đường — ăn +${award} điểm!`} />;
 
+  const scenery = (
+    <div className={`day7-scene day7-scene-${act}`} aria-hidden="true">
+      {[0, 1, 2].map(i => <div key={i} className="day7-cloud" ref={node => { cloudsRef.current[i] = node; }} />)}
+      {Array.from({ length: 24 }, (_, i) => <div key={i} hidden className="day7-pipe" ref={node => { pipesRef.current[i] = node; }}><div className="day7-pipe-top"/><div className="day7-pipe-bottom"/></div>)}
+      <div className="day7-ground"/>
+      <div ref={birdRef} className="day7-ufo"><i/><img src={ufoArt.src} alt="" draggable={false}/></div>
+    </div>
+  );
+
+  if (event) {
+    const tries = attempts.current, best = g.current.best;
+    return (
+      <section className="day7-flight-event game-shell" aria-label="Flappy Gumi">
+        <header className="day7-event-bar">
+          <div className="day7-event-rules"><b>Lượt {Math.min(tries + 1, EVENT_TRIES)}/{EVENT_TRIES}</b><small>Mục tiêu {EVENT_TARGET} cột{best > 0 && ` · Kỷ lục ${best}`}</small></div>
+          <div className="day7-event-score" aria-label={`${score} cột đã vượt qua`}><strong>{score}</strong><small>/ {EVENT_TARGET} CỘT</small></div>
+          <button type="button" className="day7-event-sound" onClick={() => setQuiet(q => !q)} aria-pressed={quiet} aria-label={quiet ? 'Bật âm thanh' : 'Tắt âm thanh'}>{quiet ? 'Âm tắt' : 'Âm bật'}</button>
+        </header>
+        <div ref={boxRef} className="day7-event-field" onPointerDown={e => { if (e.pointerType === 'mouse' && e.button !== 0) return; flap(); }}>
+          {scenery}
+          {(mode === 'ready' || mode === 'dead') && <div className="day7-event-overlay"><div className="day7-event-dialog" role="status">
+            <span>{mode === 'dead' ? 'THÊM MỘT LẦN NỮA!' : 'BAY QUA CƠN THÈM'}</span>
+            <h2>{mode === 'dead' ? `Bạn đã qua ${score} cột` : 'Sẵn sàng cất cánh?'}</h2>
+            <p>{mode === 'dead' ? `Lượt ${tries}/${EVENT_TRIES} · Kỷ lục ${best}/${EVENT_TARGET}. Thử lại nào!` : `${EVENT_TRIES} lượt chơi · Đạt ${EVENT_TARGET} cột để hoàn thành. Chạm hoặc bấm Space để bay.`}</p>
+            <button type="button" onPointerDown={e => e.stopPropagation()} disabled={!artReady && !artError} aria-busy={!artReady && !artError} onClick={artError ? () => setLoadAttempt(n => n + 1) : flap}>
+              {artError ? 'Tải lại hình ảnh' : !artReady ? 'Đang tải hình ảnh…' : mode === 'dead' ? vi.minigames.common.retry : vi.minigames.common.start}<span aria-hidden="true">→</span>
+            </button>
+          </div></div>}
+        </div>
+      </section>
+    );
+  }
+
   const hud = (
     <span className="flex shrink-0 items-center gap-1.5 rounded-pill bg-surface/90 px-3 py-1.5 text-small font-extrabold text-primary shadow-soft backdrop-blur">
       {score}<span className="text-caption font-semibold text-muted">/ {MAX}</span>
@@ -219,12 +277,7 @@ export function FlappyBird() {
 
   return createPortal(
     <div className="day7-flight"><ArcadeStage act={act} title="Flappy Gumi" hint={vi.flight.hint} hud={hud} boxRef={boxRef} canvasRef={canvasRef} onPointerDown={flap}
-      scenery={<div className={`day7-scene day7-scene-${act}`} aria-hidden="true">
-        {[0, 1, 2].map(i => <div key={i} className="day7-cloud" ref={node => { cloudsRef.current[i] = node; }} />)}
-        {Array.from({ length: 24 }, (_, i) => <div key={i} hidden className="day7-pipe" ref={node => { pipesRef.current[i] = node; }}><div className="day7-pipe-top"/><div className="day7-pipe-bottom"/></div>)}
-        <div className="day7-ground"/>
-        <div ref={birdRef} className="day7-ufo"><i/><img src={ufoArt.src} alt="" draggable={false}/></div>
-      </div>}
+      scenery={scenery}
       overlay={
         mode === 'ready' ? (
           <ArcadeOverlay>

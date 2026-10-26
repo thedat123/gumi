@@ -47,7 +47,7 @@ for(let i=0;i<5;i++){
 }
 await page.getByText('5 lượt chơi · Đạt 40 cột').waitFor();
 if(await page.locator('.event-shell canvas').count())throw Error('Event still uses canvas');
-if(!(await page.locator('.flight-bird img').evaluate(img=>img.naturalWidth>0)))throw Error('UFO not decoded before offline flight');
+if(!(await page.locator('.day7-flight-event .day7-ufo img').evaluate(img=>img.naturalWidth>0)))throw Error('UFO not decoded before offline flight');
 await page.screenshot({path:'/private/tmp/gumi-event-flappy.png'});
 // Measure real-time flight separately from the accelerated round-transition checks.
 await page.clock.resume();
@@ -57,12 +57,12 @@ await cdp.send('Emulation.setCPUThrottlingRate',{rate:cpu});
 await page.evaluate(()=>{Math.random=()=>.5;});
 await page.locator('.game-shell').getByRole('button',{name:'Bắt đầu',exact:true}).click();
 const metrics=await page.evaluate(async()=>{
- const bird=document.querySelector('.flight-bird');
- const scale=document.querySelector('.flight-field').clientHeight/600;
+ const bird=document.querySelector('.day7-flight-event .day7-ufo');
+ const fieldHeight=document.querySelector('.day7-event-field').clientHeight;
  const frameTimes=[];let previous=performance.now(),count=0;const end=previous+4000;
  const pilot=setInterval(()=>{
-   const match=bird.style.transform.match(/translate3d\(-50%, ([\d.-]+)px/);
-   if(match && Number(match[1])/scale+24>300)window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space'}));
+   const match=bird.style.transform.match(/translate3d\([\d.-]+px,([\d.-]+)px/);
+   if(match && Number(match[1])>fieldHeight*.45)window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space'}));
  },30);
  let updates=0;const observer=new MutationObserver(()=>updates++);observer.observe(bird,{attributes:true,attributeFilter:['style']});
  await new Promise(resolve=>{const tick=now=>{frameTimes.push(now-previous);previous=now;count++;if(now<end)requestAnimationFrame(tick);else resolve();};requestAnimationFrame(tick);});
