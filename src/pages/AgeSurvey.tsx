@@ -67,7 +67,7 @@ export function AgeSurvey() {
           <div className="flex min-w-0 flex-1 items-baseline justify-center gap-2">
             <input id="age-input" ref={inputRef} type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" autoFocus
               maxLength={2} placeholder="--" value={text}
-              aria-invalid={showInvalid || undefined} aria-describedby="age-help"
+              aria-invalid={showInvalid || undefined} aria-describedby={showInvalid ? 'age-help' : undefined}
               onChange={(e) => setText(e.target.value.replace(/\D/g, '').slice(0, 2))}
               onBlur={() => setTouched(true)}
               className="age-input w-[2.4ch] rounded-2xl border-b-4 border-dashed border-border-strong bg-bg/60 py-1 text-center text-[60px] font-black leading-none tabular-nums text-primary caret-primary outline-none transition-colors placeholder:text-border-strong focus:border-solid focus:border-primary focus:bg-primary/5 focus:outline-none focus-visible:outline-none" />
@@ -76,9 +76,7 @@ export function AgeSurvey() {
           <button type="button" aria-label={t.inc} onClick={() => bump(1)} disabled={valid && age === AGE_MAX}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-border-strong bg-bg text-title font-black active:scale-90 disabled:opacity-40">+</button>
         </div>
-        <p id="age-help" role={showInvalid ? 'alert' : undefined} className={`text-caption ${showInvalid ? 'font-semibold text-danger' : 'text-muted'}`}>
-          {showInvalid ? `⚠ ${t.invalid}` : t.hint}
-        </p>
+        {showInvalid && <p id="age-help" role="alert" className="text-caption font-semibold text-danger">⚠ {t.invalid}</p>}
       </section>
 
       <Button type="submit" loading={busy} disabled={!valid} block>{t.submit}</Button>

@@ -272,7 +272,7 @@ export const vi = {
     myRank: (rank: number, pts: number) => `Hạng hiện tại của bạn: #${rank} (${pts} pts)`,
     gap: (pts: number, name: string) => `Bạn chỉ cần thêm ${pts} điểm nữa để vượt qua ${name} và lọt vào Top 10!`,
     inTop: 'Bạn đang trong Top 10. Giữ vững phong độ nhé!',
-    tiebreak: 'Hoà điểm: người chưa dùng Bùa Hồi Sinh được xếp trên.',
+    tiebreak: 'Hoà điểm: ai hoàn thành sớm hơn được xếp trên.',
   },
   onboarding: {
     title: 'Nhận nuôi Gumi', levelTitle: 'Mức đường hiện tại của bạn', drinksTitle: 'Số ly ngọt mỗi tuần', nameTitle: 'Tên hiển thị', avatarTitle: 'Chọn avatar',
@@ -287,7 +287,6 @@ export const vi = {
     sub: 'Giúp ban tổ chức hiểu ai đang cùng Gumi bớt ngọt. Chỉ dùng để thống kê, không hiển thị công khai.',
     label: 'Nhập số tuổi của bạn',
     unit: 'tuổi',
-    hint: 'Nhập số tuổi thật, từ 6 đến 99.',
     invalid: 'Tuổi cần từ 6 đến 99.',
     dec: 'Giảm 1 tuổi',
     inc: 'Tăng 1 tuổi',
