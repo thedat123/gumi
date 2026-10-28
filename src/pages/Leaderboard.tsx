@@ -1,4 +1,4 @@
-import { api } from '../api';
+import { api, type Leaderboard as LeaderboardData } from '../api';
 import { AsyncView } from '../components/AsyncView';
 import { Banner } from '../components/Banner';
 import { Card } from '../components/Card';
@@ -8,6 +8,18 @@ import { useAsync } from '../app/useAsync';
 
 const TOP_N = 20; // chỉ hiện Top 20 (server cũng chỉ trả 20; cắt thêm ở đây phòng DB chưa cập nhật)
 const MEDAL_TINT = ['text-[#E0A800]', 'text-[#9AA6B0]', 'text-[#C08457]']; // vàng · bạc · đồng
+
+/**
+ * Câu nhắc cho người ngoài Top 20: cần thêm bao nhiêu điểm để vượt người đang đứng HẠNG 20.
+ * Tự tính từ danh sách (không dựa vào gapToTop10 của server — DB cũ vẫn tính theo hạng 10).
+ * Bằng điểm thì người hoàn thành trước xếp trên, nên phải hơn ít nhất 1 điểm.
+ */
+function gapText(lb: LeaderboardData) {
+  const me = lb.me!;
+  const cutoff = lb.top.find((r) => r.rank === TOP_N);
+  if (!cutoff) return vi.leaderboard.gap(me.gapToTop10, me.top10LastName);
+  return vi.leaderboard.gap(Math.max(1, cutoff.points - me.points + 1), cutoff.name);
+}
 
 /** S12 — Bảng xếp hạng Sugar Slayer. */
 export function Leaderboard() {
@@ -42,7 +54,7 @@ export function Leaderboard() {
             {lb.me && (
               <div className="grad-brand flex flex-col gap-1 rounded-card p-4 text-on-primary shadow-pop">
                 <p className="font-bold">{vi.leaderboard.myRank(lb.me.rank, lb.me.points)}</p>
-                <p className="text-small opacity-95">{lb.me.rank <= TOP_N ? vi.leaderboard.inTop : vi.leaderboard.gap(lb.me.gapToTop10, lb.me.top10LastName)}</p>
+                <p className="text-small opacity-95">{lb.me.rank <= TOP_N ? vi.leaderboard.inTop : gapText(lb)}</p>
               </div>
             )}
           </>
