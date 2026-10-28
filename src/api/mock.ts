@@ -124,6 +124,8 @@ function genPlayers(count: number): AdminPlayer[] {
       name: NAME_POOL[i % NAME_POOL.length]! + (i >= NAME_POOL.length ? ` ${Math.floor(i / NAME_POOL.length) + 1}` : ''),
       avatar: AVATAR_POOL[i % AVATAR_POOL.length]!,
       daysDone, points, streak, eligible, finished, usedPass,
+      // Tuổi giả ổn định, dồn nhiều ở 18–29; ~1/9 chưa trả lời khảo sát.
+      age: i % 9 === 4 ? null : [16, 19, 21, 22, 24, 26, 28, 31, 35, 20, 23, 42, 17, 25, 29, 38, 52, 22][i % 18]! + (i % 3),
     });
   }
   return list.sort((a, b) => b.points - a.points);
@@ -264,7 +266,7 @@ export function createMockApi(): Api {
         state.users[key] = { password: t.password, userId, role };
         state.session = { userId, email: key };
         if (!state.profile || state.profile.id !== userId) {
-          state.profile = { id: userId, name: t.name, avatar: t.avatar, level: 100, drinksPerWeek: 7, role, sugarPassAvailable: true };
+          state.profile = { id: userId, name: t.name, avatar: t.avatar, level: 100, drinksPerWeek: 7, role, sugarPassAvailable: true, age: 22 };
         } else {
           state.profile.role = role;
         }
@@ -413,6 +415,16 @@ export function createMockApi(): Api {
       if (!state.profile) throw new ApiError('server');
       await delay(null, 200);
       state.profile = { ...state.profile, ...patch };
+      save();
+      return state.profile;
+    },
+
+    async setAge(age) {
+      requireSession();
+      if (!state.profile) throw new ApiError('forbidden');
+      if (!Number.isInteger(age) || age < 6 || age > 99) throw new ApiError('server', 'invalid_age');
+      await delay(null, 300);
+      state.profile = { ...state.profile, age };
       save();
       return state.profile;
     },

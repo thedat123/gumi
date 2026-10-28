@@ -13,6 +13,7 @@ import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 import type { AdminCheckin, AdminPlayer, AdminStats } from '../api/types';
 import { ADMIN_PAGE_SIZES, Pagination, usePagination } from '../components/Pagination';
+import { AGE_GROUPS, ageGroupOf, groupByAge, medianAge } from '../lib/age';
 
 const TABS: AdminTab[] = [
   { id: 'event', label: 'Sự kiện trực tiếp', icon: 'medal' },
@@ -536,7 +537,189 @@ function Overview({ s, onSelect }: { s: AdminStats; onSelect: (tab: string) => v
         <div className="sm:hidden"><DailyTrend players={s.players} compact /></div>
         <div className="hidden sm:block"><DailyTrend players={s.players} /></div>
       </Card>
+
+      <AgeInsights players={s.players} />
     </div>
+  );
+}
+
+/* ============================ THỐNG KÊ ĐỘ TUỔI (từ khảo sát trước khi chơi) ============================ */
+const UNKNOWN_COLOR = '#C9CED8';
+
+function AgeInsights({ players }: { players: AdminPlayer[] }) {
+  const data = useMemo(() => {
+    const { rows, unknown } = groupByAge(players);
+    const answered = players.length - unknown.length;
+    const ages = players.map((p) => p.age);
+    const valid = ages.filter((a): a is number => typeof a === 'number');
+    const top = [...rows].sort((a, b) => b.items.length - a.items.length)[0];
+    return {
+      rows: rows.map((r) => {
+        const n = r.items.length;
+        const avg = (f: (p: AdminPlayer) => number) => (n ? r.items.reduce((t, p) => t + f(p), 0) / n : 0);
+        return {
+          ...r.group, count: n,
+          share: answered ? Math.round((n / answered) * 100) : 0,
+          avgPoints: Math.round(avg((p) => p.points)),
+          avgDays: Math.round(avg((p) => p.daysDone) * 10) / 10,
+          finishRate: n ? Math.round((r.items.filter((p) => p.finished).length / n) * 100) : 0,
+        };
+      }),
+      unknown: unknown.length,
+      answered,
+      answerRate: players.length ? Math.round((answered / players.length) * 100) : 0,
+      median: medianAge(ages),
+      avg: valid.length ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 10) / 10 : null,
+      top: top && top.items.length ? top.group : null,
+      valid,
+    };
+  }, [players]);
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-small font-bold uppercase tracking-wide text-muted">Độ tuổi người chơi</h2>
+          <p className="mt-0.5 text-caption text-muted">Từ khảo sát 1 câu trước khi chơi · {data.answered}/{players.length} người đã trả lời</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon="paw" cls="text-primary" accent="#B83556" value={data.median ?? '—'} label="Tuổi trung vị" />
+        <StatCard icon="star" cls="text-accent" accent="#EF9F2A" value={data.avg ?? '—'} label="Tuổi trung bình" />
+        <StatCard icon="medal" cls="text-info" accent={data.top?.color ?? '#55768C'} value={data.top ? data.top.label : '—'} label="Nhóm đông nhất" hint={data.top?.hint} />
+        <StatCard icon="check" cls="text-success" accent="#1F7A4D" value={`${data.answerRate}%`} label="Tỉ lệ trả lời" />
+      </div>
+
+      <div className="grid gap-5 min-[1100px]:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <Card className="flex min-w-0 flex-col gap-4 p-5">
+          <h3 className="text-body font-bold">Cơ cấu theo nhóm tuổi</h3>
+          <div className="flex flex-col items-center gap-5 sm:flex-row">
+            <AgeDonut rows={data.rows} unknown={data.unknown} total={players.length} />
+            <ul className="flex w-full flex-1 flex-col gap-2.5">
+              {data.rows.map((r) => (
+                <li key={r.id}>
+                  <div className="mb-1 flex items-center justify-between gap-2 text-small">
+                    <span className="flex min-w-0 items-center gap-2 font-semibold"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.color }} />{r.emoji} {r.label}<span className="truncate text-caption font-medium text-muted">{r.hint}</span></span>
+                    <span className="shrink-0 font-extrabold tabular-nums" style={{ color: r.color }}>{r.count} <span className="text-caption font-semibold text-muted">· {r.share}%</span></span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-bg"><div className="h-full rounded-full transition-all" style={{ width: `${Math.max(r.share, r.count ? 2 : 0)}%`, background: r.color }} /></div>
+                </li>
+              ))}
+              {data.unknown > 0 && <li className="flex items-center justify-between text-caption text-muted"><span className="flex items-center gap-2"><span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: UNKNOWN_COLOR }} />Chưa trả lời</span><span className="font-bold tabular-nums">{data.unknown}</span></li>}
+            </ul>
+          </div>
+        </Card>
+
+        <Card className="flex min-w-0 flex-col gap-4 p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-body font-bold">Hiệu quả theo nhóm tuổi</h3>
+            <span className="text-caption text-muted">Nhóm nào chơi chăm & về đích nhiều nhất</span>
+          </div>
+          <AgePerformance rows={data.rows} />
+        </Card>
+      </div>
+
+      <Card className="flex flex-col gap-3 p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-body font-bold">Phân bố theo từng tuổi</h3>
+          <span className="text-caption text-muted">Số người ở mỗi độ tuổi · màu theo nhóm</span>
+        </div>
+        <div className="sm:hidden"><AgeHistogram ages={data.valid} compact /></div>
+        <div className="hidden sm:block"><AgeHistogram ages={data.valid} /></div>
+      </Card>
+    </section>
+  );
+}
+
+type AgeRowStat = (typeof AGE_GROUPS)[number] & { count: number; share: number; avgPoints: number; avgDays: number; finishRate: number };
+
+function AgeDonut({ rows, unknown, total }: { rows: AgeRowStat[]; unknown: number; total: number }) {
+  const R = 54, C = 2 * Math.PI * R;
+  const segs = [...rows.map((r) => ({ id: r.id, color: r.color, n: r.count })), { id: 'unknown', color: UNKNOWN_COLOR, n: unknown }].filter((x) => x.n > 0);
+  let acc = 0;
+  return (
+    <svg viewBox="0 0 140 140" className="h-40 w-40 shrink-0 -rotate-90" role="img" aria-label="Biểu đồ tròn cơ cấu nhóm tuổi">
+      <circle cx="70" cy="70" r={R} fill="none" stroke="var(--color-border)" strokeWidth="18" />
+      {total > 0 && segs.map((sg) => {
+        const len = (sg.n / total) * C;
+        const el = <circle key={sg.id} cx="70" cy="70" r={R} fill="none" stroke={sg.color} strokeWidth="18"
+          strokeDasharray={`${Math.max(len - 1.5, 0.5)} ${C}`} strokeDashoffset={-acc} />;
+        acc += len;
+        return el;
+      })}
+      <g className="rotate-90" style={{ transformOrigin: '70px 70px' }}>
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="800" className="fill-[color:var(--color-text)]">{total}</text>
+        <text x="70" y="86" textAnchor="middle" fontSize="10" className="fill-[color:var(--color-muted)]">người chơi</text>
+      </g>
+    </svg>
+  );
+}
+
+function AgePerformance({ rows }: { rows: AgeRowStat[] }) {
+  const maxPts = Math.max(1, ...rows.map((r) => r.avgPoints));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[420px] text-small">
+        <thead>
+          <tr className="text-left text-caption font-bold uppercase tracking-wide text-muted">
+            <th className="pb-2 font-bold">Nhóm</th>
+            <th className="pb-2 text-right font-bold">Người</th>
+            <th className="w-[38%] pb-2 pl-4 font-bold">Điểm TB</th>
+            <th className="pb-2 text-right font-bold">Ngày TB</th>
+            <th className="pb-2 text-right font-bold">Về đích</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/60">
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td className="py-2.5 font-semibold"><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: r.color }} />{r.label}</td>
+              <td className="py-2.5 text-right tabular-nums">{r.count}</td>
+              <td className="py-2.5 pl-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg"><div className="h-full rounded-full" style={{ width: `${(r.avgPoints / maxPts) * 100}%`, background: r.color }} /></div>
+                  <span className="w-10 text-right font-extrabold tabular-nums" style={{ color: r.color }}>{r.count ? r.avgPoints : '—'}</span>
+                </div>
+              </td>
+              <td className="py-2.5 text-right tabular-nums">{r.count ? `${r.avgDays}/${TOTAL}` : '—'}</td>
+              <td className="py-2.5 text-right font-bold tabular-nums">{r.count ? `${r.finishRate}%` : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AgeHistogram({ ages, compact = false }: { ages: number[]; compact?: boolean }) {
+  if (!ages.length) return <p className="py-8 text-center text-small text-muted">Chưa có ai trả lời khảo sát tuổi.</p>;
+  const lo = Math.min(...ages, 12), hi = Math.max(...ages, 45);
+  const bins = Array.from({ length: hi - lo + 1 }, (_, i) => ({ age: lo + i, n: ages.filter((a) => a === lo + i).length }));
+  const max = Math.max(1, ...bins.map((b) => b.n));
+  const W = compact ? 340 : 660, H = compact ? 200 : 170, pad = { l: 22, r: 6, t: 14, b: 22 };
+  const fs = compact ? 10 : 9;
+  const bw = (W - pad.l - pad.r) / bins.length;
+  const ih = H - pad.t - pad.b;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Biểu đồ số người theo từng tuổi">
+      {[0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
+        <g key={v}>
+          <line x1={pad.l} x2={W - pad.r} y1={pad.t + ih - (v / max) * ih} y2={pad.t + ih - (v / max) * ih} stroke="var(--color-border)" />
+          <text x={pad.l - 5} y={pad.t + ih - (v / max) * ih + 3} textAnchor="end" fontSize={fs} className="fill-[color:var(--color-muted)]">{v}</text>
+        </g>
+      ))}
+      {bins.map((b, i) => {
+        const h = (b.n / max) * ih;
+        const x = pad.l + i * bw;
+        return (
+          <g key={b.age}>
+            <title>{`${b.age} tuổi: ${b.n} người`}</title>
+            <rect x={x + bw * 0.12} y={pad.t + ih - h} width={bw * 0.76} height={h} rx={Math.min(3, bw * 0.3)} fill={ageGroupOf(b.age)?.color ?? UNKNOWN_COLOR} />
+            {b.age % 5 === 0 && <text x={x + bw / 2} y={H - 6} textAnchor="middle" fontSize={fs} className="fill-[color:var(--color-muted)]">{b.age}</text>}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -601,10 +784,16 @@ type SortKey = 'points' | 'days' | 'streak' | 'name';
 const statusText = (p: AdminPlayer) => (p.finished ? st.badgeFinished : p.eligible ? st.badgeEligible : p.daysDone > 0 ? st.badgeActive : st.badgeIdle);
 
 /** Xuất danh sách (theo bộ lọc/sắp xếp hiện tại) ra CSV — mở được bằng Excel/Google Sheets. */
+function AgeChip({ age }: { age?: number | null }) {
+  const g = ageGroupOf(age);
+  if (!g) return <span className="text-caption text-muted">—</span>;
+  return <span title={`${g.hint} · ${g.label}`} className="inline-block whitespace-nowrap rounded-pill px-2 py-0.5 text-caption font-bold tabular-nums" style={{ background: `${g.color}1F`, color: g.color }}>{age} tuổi</span>;
+}
+
 function exportCsv(rows: AdminPlayer[]) {
-  const header = ['STT', 'Tên', 'Số ngày', 'Tổng điểm', 'Chuỗi', 'Trạng thái', 'Đã dùng Bùa'];
+  const header = ['STT', 'Tên', 'Tuổi', 'Nhóm tuổi', 'Số ngày', 'Tổng điểm', 'Chuỗi', 'Trạng thái', 'Đã dùng Bùa'];
   const esc = (v: string | number) => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  const body = rows.map((p, i) => [i + 1, p.name, `${p.daysDone}/${TOTAL}`, p.points, p.streak, statusText(p), p.usedPass ? 'Có' : ''].map(esc).join(','));
+  const body = rows.map((p, i) => [i + 1, p.name, p.age ?? '', ageGroupOf(p.age)?.label ?? '', `${p.daysDone}/${TOTAL}`, p.points, p.streak, statusText(p), p.usedPass ? 'Có' : ''].map(esc).join(','));
   const csv = '﻿' + [header.join(','), ...body].join('\r\n'); // BOM để Excel đọc đúng tiếng Việt
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
@@ -657,18 +846,21 @@ function PlayersPanel({ s }: { s: AdminStats }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortKey>('points');
   const [status, setStatus] = useState('all');
+  const [ageFilter, setAgeFilter] = useState('all');
 
   const rows = useMemo(() => {
     const key = q.trim().toLowerCase();
-    const filtered = s.players.filter((p) => (!key || p.name.toLowerCase().includes(key)) && (status === 'all' || (status === 'finished' ? p.finished : status === 'active' ? !p.finished && p.daysDone > 0 : p.daysDone === 0))); 
+    const filtered = s.players.filter((p) => (!key || p.name.toLowerCase().includes(key))
+      && (status === 'all' || (status === 'finished' ? p.finished : status === 'active' ? !p.finished && p.daysDone > 0 : p.daysDone === 0))
+      && (ageFilter === 'all' || (ageGroupOf(p.age)?.id ?? 'unknown') === ageFilter));
     return [...filtered].sort((a, b) =>
       sort === 'name' ? a.name.localeCompare(b.name)
         : sort === 'days' ? b.daysDone - a.daysDone
           : sort === 'streak' ? b.streak - a.streak
             : b.points - a.points);
-  }, [s.players, q, sort, status]);
+  }, [s.players, q, sort, status, ageFilter]);
 
-  const pg = usePagination(rows, 20, `${q}|${sort}|${status}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-players' });
+  const pg = usePagination(rows, 20, `${q}|${sort}|${status}|${ageFilter}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-players' });
   const offset = pg.from - 1; // số thứ tự liên tục qua các trang
 
   const SORTS: { k: SortKey; label: string }[] = [
@@ -683,6 +875,12 @@ function PlayersPanel({ s }: { s: AdminStats }) {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm tên người chơi…" aria-label="Tìm người chơi"
             className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
           <PlayerStatusSelect value={status} onChange={setStatus} />
+          <select value={ageFilter} onChange={(e) => setAgeFilter(e.target.value)} aria-label="Lọc theo độ tuổi"
+            className="h-9 rounded-lg border border-border bg-surface px-2.5 text-small font-medium text-text outline-none focus:border-primary/60">
+            <option value="all">Mọi độ tuổi</option>
+            {AGE_GROUPS.map((g) => <option key={g.id} value={g.id}>{g.label} · {g.hint}</option>)}
+            <option value="unknown">Chưa trả lời</option>
+          </select>
           <div className="admin-sort flex items-center gap-1 rounded-lg p-1">
             {SORTS.map((o) => (
               <button key={o.k} onClick={() => setSort(o.k)} aria-pressed={sort === o.k}
@@ -708,7 +906,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
               <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-bg text-title">{p.avatar}</span>
               <div className="min-w-0 flex-1"><p className="text-caption text-muted">#{i + 1}</p><h3 className="break-words text-small font-bold">{p.name}</h3></div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2"><span className={`rounded-pill px-2.5 py-1 text-caption font-bold ${b.cls}`}>{b.text}</span>{p.usedPass && <span className="text-caption text-muted">{st.usedPass}</span>}</div>
+            <div className="mt-3 flex flex-wrap items-center gap-2"><span className={`rounded-pill px-2.5 py-1 text-caption font-bold ${b.cls}`}>{b.text}</span><AgeChip age={p.age} />{p.usedPass && <span className="text-caption text-muted">{st.usedPass}</span>}</div>
             <dl className="mt-4 grid grid-cols-3 divide-x divide-border rounded-xl bg-bg/60 py-3 text-center">
               <div><dt className="text-caption text-muted">Tiến độ</dt><dd className="mt-1 text-small font-extrabold tabular-nums">{p.daysDone}/{TOTAL}</dd></div>
               <div><dt className="text-caption text-muted">Tổng điểm</dt><dd className="mt-1 text-small font-extrabold tabular-nums text-primary">{p.points}</dd></div>
@@ -722,6 +920,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
         <div className="sticky top-0 z-10 flex items-center gap-2 bg-bg/80 px-3 py-2.5 text-caption font-bold uppercase tracking-wide text-muted backdrop-blur">
           <span className="w-7 text-center">#</span>
           <span className="flex-1">{st.colPlayer}</span>
+          <span className="w-20 text-center">Tuổi</span>
           <span className="w-16 text-right">Chuỗi</span>
           <span className="w-14 text-right">{st.colDays}</span>
           <span className="w-16 text-right">{st.colPoints}</span>
@@ -740,6 +939,7 @@ function PlayersPanel({ s }: { s: AdminStats }) {
                   <span className="block truncate font-semibold">{p.name}</span>
                   {p.usedPass && <span className="block text-caption text-muted">{st.usedPass}</span>}
                 </span>
+                <span className="w-20 text-center"><AgeChip age={p.age} /></span>
                 <span className="w-16 text-right font-semibold tabular-nums text-accent">{p.streak}🔥</span>
                 <span className="w-14 text-right font-semibold tabular-nums">{p.daysDone}/{TOTAL}</span>
                 <span className="w-16 text-right font-extrabold tabular-nums text-primary">{p.points}</span>

@@ -23,6 +23,8 @@ export interface Profile {
   drinksPerWeek: number;
   role: Role;
   sugarPassAvailable: boolean;
+  /** Tuổi từ khảo sát trước khi chơi; null = chưa khảo sát. */
+  age?: number | null;
 }
 
 export interface CampaignState {
@@ -143,6 +145,7 @@ export interface AdminPlayer {
   eligible: boolean;  // đạt chỉ tiêu nhận quà (>= 10/14 ngày)
   finished: boolean;  // hoàn thành đủ 14 ngày
   usedPass: boolean;  // đã từng dùng Sugar Pass (ảnh hưởng ưu tiên xếp hạng)
+  age?: number | null; // tuổi khảo sát; null = chưa trả lời
 }
 
 /** Thống kê tổng quan cho màn Admin. */
@@ -235,6 +238,8 @@ export interface Api {
   getProfile(): Promise<Profile | null>;
   createProfile(input: CreateProfileInput): Promise<Profile>;
   updateProfile(patch: Partial<CreateProfileInput>): Promise<Profile>;
+  /** Khảo sát độ tuổi (6–99) trước khi chơi. */
+  setAge(age: number): Promise<Profile>;
   getCampaignState(): Promise<CampaignState>;
   getReminderStatus(): Promise<ReminderStatus>;
   /** Lưu Web Push subscription của thiết bị hiện tại (để server đẩy noti kể cả khi đóng app). */

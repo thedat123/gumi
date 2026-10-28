@@ -23,6 +23,22 @@ export function RequireProfile({ children }: { children: ReactNode }) {
   if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
   if (profile?.role === 'gamer') return <Navigate to="/event" replace />;
   if (!profile) return <Navigate to="/onboarding" replace />;
+  if (needsAgeSurvey(profile)) return <Navigate to="/survey" replace />;
+  return <>{children}</>;
+}
+
+/** Người chơi chưa trả lời khảo sát tuổi (age = null) phải làm trước khi chơi. */
+function needsAgeSurvey(profile: { role: string; age?: number | null }) {
+  return profile.role === 'player' && profile.age == null;
+}
+
+/** Màn khảo sát: chỉ dành cho người chơi CHƯA trả lời; đã trả lời thì về game. */
+export function RequireAgeSurvey({ children }: { children: ReactNode }) {
+  const { session, profile, loading } = useSession();
+  if (loading) return <Loading />;
+  if (!session) return <Navigate to="/welcome" replace />;
+  if (!profile) return <Navigate to="/onboarding" replace />;
+  if (!needsAgeSurvey(profile)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 

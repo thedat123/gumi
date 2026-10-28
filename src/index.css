@@ -235,3 +235,7 @@ button:hover .jersey-product { transform: translateY(-3px) rotate(-2deg); }
 .admin-status-options [aria-selected="true"] { background: #fbeef2; color: #a72e4c; }
 @media (max-width: 639px) { .admin-status-select { flex-basis: 100%; width: 100%; } }
 @media (max-width: 639px) { .admin-player-tools .admin-status-select { flex: 1 1 100%; } }
+
+
+/* Ô nhập tuổi: dùng viền hồng của chính ô thay cho outline xanh mặc định */
+.age-input:focus-visible { outline: none; }

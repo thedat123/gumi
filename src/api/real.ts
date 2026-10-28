@@ -130,6 +130,7 @@ export function createSupabaseApi(): Api {
     createProfile: (input: CreateProfileInput) =>
       rpc<Profile>('create_profile', { p_name: input.name, p_avatar: input.avatar, p_level: input.level, p_drinks: input.drinksPerWeek }),
     updateProfile: (patch) => rpc<Profile>('update_profile', { p_patch: patch }),
+    setAge: (age) => rpc<Profile>('set_my_age', { p_age: age }),
     getCampaignState: () => rpc<CampaignState>('get_campaign_state'),
     async getReminderStatus() {
       const session = await auth.getSession();
