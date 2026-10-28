@@ -2,6 +2,8 @@
 -- "Thời điểm hoàn thành" = lúc người chơi hoàn thành chặng gần nhất (day_progress 'checked' mới nhất),
 -- tức là lúc họ đạt tới số điểm hiện tại. Người đã xong 14 ngày → chính là lúc về đích.
 -- Thứ tự: điểm giảm dần → hoàn thành sớm hơn → còn nhiều Bùa hơn → tham gia sớm hơn → id (ổn định).
+-- Bảng xếp hạng chỉ trả TOP 20; người ngoài top vẫn thấy hạng của mình qua 'me'.
+-- (Giữ tên trường gapToTop10/top10LastName cho khớp hợp đồng API, nhưng mốc giờ là hạng 20.)
 -- Dùng chung một thứ tự cho bảng xếp hạng VÀ hạng ở Hành trình/Tổng kết (_rank_for) để không lệch nhau.
 
 create or replace function public._leaderboard() returns table (id uuid, name text, avatar text, points numeric, rn int)
@@ -45,12 +47,12 @@ begin
       select json_agg(json_build_object(
         'rank', rn, 'name', name, 'avatar', avatar, 'points', points,
         'isMe', case when id = uid then true else null end
-      ) order by rn) from lb
+      ) order by rn) from lb where rn <= 20
     ), '[]'::json),
     (select points from lb where id = uid),
     (select rn     from lb where id = uid),
-    (select name   from lb where rn = 10),
-    (select points from lb where rn = 10)
+    (select name   from lb where rn = 20),
+    (select points from lb where rn = 20)
   into top, mp, mr, last_name, last_pts;
 
   return json_build_object(

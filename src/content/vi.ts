@@ -270,8 +270,8 @@ export const vi = {
   leaderboard: {
     title: 'Sugar Slayer', me: 'Bạn', empty: 'Chưa có ai lên bảng. Hãy là người đầu tiên!', loading: 'Đang tải bảng xếp hạng…', error: 'Không tải được bảng xếp hạng.', retry: 'Thử lại',
     myRank: (rank: number, pts: number) => `Hạng hiện tại của bạn: #${rank} (${pts} pts)`,
-    gap: (pts: number, name: string) => `Bạn chỉ cần thêm ${pts} điểm nữa để vượt qua ${name} và lọt vào Top 10!`,
-    inTop: 'Bạn đang trong Top 10. Giữ vững phong độ nhé!',
+    gap: (pts: number, name: string) => `Bạn chỉ cần thêm ${pts} điểm nữa để vượt qua ${name} và lọt vào Top 20!`,
+    inTop: 'Bạn đang trong Top 20. Giữ vững phong độ nhé!',
     tiebreak: 'Hoà điểm: ai hoàn thành sớm hơn được xếp trên.',
   },
   onboarding: {

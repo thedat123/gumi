@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { vi } from '../content/vi';
 import { useAsync } from '../app/useAsync';
 
+const TOP_N = 20; // chỉ hiện Top 20 (server cũng chỉ trả 20; cắt thêm ở đây phòng DB chưa cập nhật)
 const MEDAL_TINT = ['text-[#E0A800]', 'text-[#9AA6B0]', 'text-[#C08457]']; // vàng · bạc · đồng
 
 /** S12 — Bảng xếp hạng Sugar Slayer. */
@@ -23,7 +24,7 @@ export function Leaderboard() {
             ) : (
               /* Desktop: dàn 2 cột (hạng đọc trái→phải theo hàng); mobile: 1 cột. */
               <ol className="grid gap-2 lg:grid-cols-2">
-                {lb.top.map((r) => {
+                {lb.top.slice(0, TOP_N).map((r) => {
                   const podium = ['bg-accent/20 border-accent!', 'bg-pink/20 border-pink!', 'bg-info/12 border-info!'][r.rank - 1];
                   return (
                     <li key={r.rank}>
@@ -41,7 +42,7 @@ export function Leaderboard() {
             {lb.me && (
               <div className="grad-brand flex flex-col gap-1 rounded-card p-4 text-on-primary shadow-pop">
                 <p className="font-bold">{vi.leaderboard.myRank(lb.me.rank, lb.me.points)}</p>
-                <p className="text-small opacity-95">{lb.me.rank <= 10 ? vi.leaderboard.inTop : vi.leaderboard.gap(lb.me.gapToTop10, lb.me.top10LastName)}</p>
+                <p className="text-small opacity-95">{lb.me.rank <= TOP_N ? vi.leaderboard.inTop : vi.leaderboard.gap(lb.me.gapToTop10, lb.me.top10LastName)}</p>
               </div>
             )}
           </>
