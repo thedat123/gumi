@@ -625,8 +625,8 @@ function AgeInsights({ players }: { players: AdminPlayer[] }) {
           <h3 className="text-body font-bold">Phân bố theo từng tuổi</h3>
           <span className="text-caption text-muted">Số người ở mỗi độ tuổi · màu theo nhóm</span>
         </div>
-        <div className="sm:hidden"><AgeHistogram ages={data.valid} compact /></div>
-        <div className="hidden sm:block"><AgeHistogram ages={data.valid} /></div>
+        <div className="sm:hidden"><AgeHistogram players={players} compact /></div>
+        <div className="hidden sm:block"><AgeHistogram players={players} /></div>
       </Card>
     </section>
   );
@@ -691,35 +691,102 @@ function AgePerformance({ rows }: { rows: AgeRowStat[] }) {
   );
 }
 
-function AgeHistogram({ ages, compact = false }: { ages: number[]; compact?: boolean }) {
-  if (!ages.length) return <p className="py-8 text-center text-small text-muted">Chưa có ai trả lời khảo sát tuổi.</p>;
+/* ---- Tương tác biểu đồ: rê chuột / chạm / kéo ngón tay / phím mũi tên để xem số liệu từng điểm ---- */
+function useChartHover(n: number, W: number, indexAt: (vx: number) => number) {
+  const [active, setActive] = useState<number | null>(null);
+  const clamp = (i: number) => Math.max(0, Math.min(n - 1, i));
+  const pick = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    if (!r.width) return;
+    setActive(clamp(indexAt(((e.clientX - r.left) / r.width) * W)));
+  };
+  const props = {
+    tabIndex: 0,
+    style: { touchAction: 'pan-y' } as CSSProperties, // vuốt dọc vẫn cuộn trang, kéo ngang để dò số liệu
+    className: 'w-full cursor-crosshair rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+    onPointerMove: pick,
+    onPointerDown: pick,
+    onPointerLeave: (e: React.PointerEvent<SVGSVGElement>) => { if (e.pointerType === 'mouse') setActive(null); },
+    onBlur: () => setActive(null),
+    onKeyDown: (e: React.KeyboardEvent<SVGSVGElement>) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setActive((a) => clamp((a ?? (e.key === 'ArrowRight' ? -1 : n)) + (e.key === 'ArrowRight' ? 1 : -1)));
+      } else if (e.key === 'Escape') setActive(null);
+    },
+  };
+  return { active, props };
+}
+
+/** Hộp số liệu nổi trên biểu đồ; (x, y) là toạ độ trong viewBox W×H. Tự né mép trái/phải. */
+function ChartTooltip({ x, y, W, H, children }: { x: number; y: number; W: number; H: number; children: ReactNode }) {
+  const px = (x / W) * 100;
+  const shift = px < 18 ? '-12%' : px > 82 ? '-88%' : '-50%';
+  const below = y / H < 0.45; // điểm nằm cao → đặt hộp phía dưới để không che tiêu đề
+  return (
+    <div role="status" aria-live="polite"
+      className="pointer-events-none absolute z-10 min-w-[150px] max-w-[230px] rounded-xl border border-border bg-surface px-3 py-2.5 text-small shadow-pop"
+      style={{ left: `${px}%`, top: `${(y / H) * 100}%`, transform: below ? `translate(${shift}, 14px)` : `translate(${shift}, calc(-100% - 12px))` }}>
+      {children}
+    </div>
+  );
+}
+
+function AgeHistogram({ players, compact = false }: { players: AdminPlayer[]; compact?: boolean }) {
+  const answered = players.filter((p) => typeof p.age === 'number');
+  const ages = answered.map((p) => p.age!);
   const lo = Math.min(...ages, 12), hi = Math.max(...ages, 45);
-  const bins = Array.from({ length: hi - lo + 1 }, (_, i) => ({ age: lo + i, n: ages.filter((a) => a === lo + i).length }));
+  const bins = Array.from({ length: hi - lo + 1 }, (_, i) => {
+    const people = answered.filter((p) => p.age === lo + i);
+    return { age: lo + i, n: people.length, people };
+  });
   const max = Math.max(1, ...bins.map((b) => b.n));
   const W = compact ? 340 : 660, H = compact ? 200 : 170, pad = { l: 22, r: 6, t: 14, b: 22 };
   const fs = compact ? 10 : 9;
   const bw = (W - pad.l - pad.r) / bins.length;
   const ih = H - pad.t - pad.b;
+  const { active, props } = useChartHover(bins.length, W, (vx) => Math.floor((vx - pad.l) / bw));
+  if (!ages.length) return <p className="py-8 text-center text-small text-muted">Chưa có ai trả lời khảo sát tuổi.</p>;
+  const cur = active !== null ? bins[active]! : null;
+  const curGroup = cur ? ageGroupOf(cur.age) : null;
+  const curTop = cur ? pad.t + ih - (cur.n / max) * ih : 0;
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Biểu đồ số người theo từng tuổi">
-      {[0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
-        <g key={v}>
-          <line x1={pad.l} x2={W - pad.r} y1={pad.t + ih - (v / max) * ih} y2={pad.t + ih - (v / max) * ih} stroke="var(--color-border)" />
-          <text x={pad.l - 5} y={pad.t + ih - (v / max) * ih + 3} textAnchor="end" fontSize={fs} className="fill-[color:var(--color-muted)]">{v}</text>
-        </g>
-      ))}
-      {bins.map((b, i) => {
-        const h = (b.n / max) * ih;
-        const x = pad.l + i * bw;
-        return (
-          <g key={b.age}>
-            <title>{`${b.age} tuổi: ${b.n} người`}</title>
-            <rect x={x + bw * 0.12} y={pad.t + ih - h} width={bw * 0.76} height={h} rx={Math.min(3, bw * 0.3)} fill={ageGroupOf(b.age)?.color ?? UNKNOWN_COLOR} />
-            {b.age % 5 === 0 && <text x={x + bw / 2} y={H - 6} textAnchor="middle" fontSize={fs} className="fill-[color:var(--color-muted)]">{b.age}</text>}
+    <div className="relative">
+      <svg viewBox={`0 0 ${W} ${H}`} {...props} role="img" aria-label="Biểu đồ số người theo từng tuổi. Rê chuột, chạm hoặc dùng phím mũi tên để xem từng tuổi.">
+        {[0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
+          <g key={v}>
+            <line x1={pad.l} x2={W - pad.r} y1={pad.t + ih - (v / max) * ih} y2={pad.t + ih - (v / max) * ih} stroke="var(--color-border)" />
+            <text x={pad.l - 5} y={pad.t + ih - (v / max) * ih + 3} textAnchor="end" fontSize={fs} className="fill-[color:var(--color-muted)]">{v}</text>
           </g>
-        );
-      })}
-    </svg>
+        ))}
+        {active !== null && <rect x={pad.l + active * bw} y={pad.t} width={bw} height={ih} rx={3} fill="var(--color-primary)" opacity={0.07} />}
+        {bins.map((b, i) => {
+          const h = (b.n / max) * ih;
+          const x = pad.l + i * bw;
+          const on = active === i;
+          return (
+            <g key={b.age}>
+              <rect x={x + bw * 0.12} y={pad.t + ih - h} width={bw * 0.76} height={h} rx={Math.min(3, bw * 0.3)}
+                fill={ageGroupOf(b.age)?.color ?? UNKNOWN_COLOR} opacity={active === null || on ? 1 : 0.4}
+                stroke={on ? 'var(--color-text)' : 'none'} strokeWidth={on ? 1.5 : 0} />
+              {(b.age % 5 === 0 || on) && <text x={x + bw / 2} y={H - 6} textAnchor="middle" fontSize={fs} fontWeight={on ? 800 : 400}
+                className={on ? 'fill-[color:var(--color-text)]' : 'fill-[color:var(--color-muted)]'}>{b.age}</text>}
+            </g>
+          );
+        })}
+      </svg>
+      {cur && (
+        <ChartTooltip x={pad.l + (active! + 0.5) * bw} y={Math.min(curTop, pad.t + ih - 4)} W={W} H={H}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-body font-extrabold">{cur.age} tuổi</span>
+            {curGroup && <span className="rounded-pill px-2 py-0.5 text-caption font-bold" style={{ background: `${curGroup.color}1F`, color: curGroup.color }}>{curGroup.hint}</span>}
+          </div>
+          <p className="mt-1"><b className="text-title tabular-nums" style={{ color: curGroup?.color }}>{cur.n}</b> người <span className="text-caption text-muted">· {Math.round((cur.n / ages.length) * 100)}% người đã trả lời</span></p>
+          {cur.n > 0 && <p className="mt-1 text-caption text-muted">{cur.people.slice(0, 3).map((p) => p.name).join(', ')}{cur.n > 3 ? ` +${cur.n - 3} người khác` : ''}</p>}
+        </ChartTooltip>
+      )}
+    </div>
   );
 }
 
@@ -736,30 +803,53 @@ function DailyTrend({ players, compact = false }: { players: AdminPlayer[]; comp
   const line = data.map((d) => `${x(d.day).toFixed(1)},${y(d.count).toFixed(1)}`).join(' ');
   const area = `M${x(1)},${pad.t + ih} L${line.replace(/ /g, ' L')} L${x(TOTAL)},${pad.t + ih} Z`;
   const gy = [...new Set([0, Math.round(max / 2), max])];
+  const { active, props } = useChartHover(TOTAL, W, (vx) => Math.round(((vx - pad.l) / iw) * (TOTAL - 1)));
+  const cur = active !== null ? data[active]! : null;
+  const prev = active ? data[active - 1]! : null;
+  const total = players.length;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Biểu đồ số người đạt tới mỗi ngày">
-      <defs>
-        <linearGradient id={`trendFill-${compact ? 'compact' : 'wide'}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#B83556" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#B83556" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {gy.map((v) => (
-        <g key={v}>
-          <line x1={pad.l} y1={y(v)} x2={W - pad.r} y2={y(v)} stroke="var(--color-border)" strokeWidth="1" />
-          <text x={pad.l - 6} y={y(v) + 3} textAnchor="end" className="fill-[color:var(--color-muted)]" fontSize="9">{v}</text>
-        </g>
-      ))}
-      <path d={area} fill={`url(#trendFill-${compact ? 'compact' : 'wide'})`} />
-      <polyline points={line} fill="none" stroke="#B83556" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {data.map((d) => (
-        <circle key={d.day} cx={x(d.day)} cy={y(d.count)} r={d.day === 1 || d.day === TOTAL || d.day % 7 === 0 ? 3 : 0} fill="#B83556" />
-      ))}
-      {[1, 7, 14].map((d) => (
-        <text key={d} x={x(d)} y={H - 6} textAnchor={d === 1 ? 'start' : d === TOTAL ? 'end' : 'middle'} className="fill-[color:var(--color-muted)]" fontSize="9">Ngày {d}</text>
-      ))}
-    </svg>
+    <div className="relative">
+      <svg viewBox={`0 0 ${W} ${H}`} {...props} role="img" aria-label="Biểu đồ số người đạt tới mỗi ngày. Rê chuột, chạm hoặc dùng phím mũi tên để xem từng ngày.">
+        <defs>
+          <linearGradient id={`trendFill-${compact ? 'compact' : 'wide'}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#B83556" stopOpacity="0.28" />
+            <stop offset="1" stopColor="#B83556" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {gy.map((v) => (
+          <g key={v}>
+            <line x1={pad.l} y1={y(v)} x2={W - pad.r} y2={y(v)} stroke="var(--color-border)" strokeWidth="1" />
+            <text x={pad.l - 6} y={y(v) + 3} textAnchor="end" className="fill-[color:var(--color-muted)]" fontSize="9">{v}</text>
+          </g>
+        ))}
+        <path d={area} fill={`url(#trendFill-${compact ? 'compact' : 'wide'})`} />
+        <polyline points={line} fill="none" stroke="#B83556" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {cur && <line x1={x(cur.day)} x2={x(cur.day)} y1={pad.t} y2={pad.t + ih} stroke="#B83556" strokeOpacity="0.45" strokeDasharray="3 3" />}
+        {data.map((d) => {
+          const on = cur?.day === d.day;
+          const mark = d.day === 1 || d.day === TOTAL || d.day % 7 === 0;
+          return <circle key={d.day} cx={x(d.day)} cy={y(d.count)} r={on ? 5 : mark ? 3 : 2} fill={on ? '#fff' : '#B83556'}
+            stroke="#B83556" strokeWidth={on ? 3 : 0} opacity={on || mark || active !== null ? 1 : 0.55} />;
+        })}
+        {[1, 7, 14].filter((d) => !cur || Math.abs(d - cur.day) > (compact ? 2 : 1)).map((d) => (
+          <text key={d} x={x(d)} y={H - 6} textAnchor={d === 1 ? 'start' : d === TOTAL ? 'end' : 'middle'} className="fill-[color:var(--color-muted)]" fontSize="9">Ngày {d}</text>
+        ))}
+        {cur && <text x={x(cur.day)} y={H - 6} textAnchor={cur.day === 1 ? 'start' : cur.day === TOTAL ? 'end' : 'middle'} fontSize="9" fontWeight={800} className="fill-[color:var(--color-text)]">Ngày {cur.day}</text>}
+      </svg>
+      {cur && (
+        <ChartTooltip x={x(cur.day)} y={y(cur.count)} W={W} H={H}>
+          <p className="text-caption font-bold uppercase tracking-wide text-muted">Ngày {cur.day}</p>
+          <p className="mt-0.5"><b className="text-title tabular-nums text-primary">{cur.count}</b> người đạt tới <span className="text-caption text-muted">· {total ? Math.round((cur.count / total) * 100) : 0}% tổng</span></p>
+          {prev && (
+            <p className={`mt-1 text-caption font-semibold ${prev.count - cur.count > 0 ? 'text-danger' : 'text-muted'}`}>
+              {prev.count - cur.count > 0 ? `↓ ${prev.count - cur.count} người dừng ở Ngày ${prev.day}` : `Giữ nguyên so với Ngày ${prev.day}`}
+            </p>
+          )}
+          {!prev && <p className="mt-1 text-caption text-muted">{total - cur.count} người chưa hoàn thành ngày nào</p>}
+        </ChartTooltip>
+      )}
+    </div>
   );
 }
 
