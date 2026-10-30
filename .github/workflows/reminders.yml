@@ -2,7 +2,7 @@ name: Push reminders
 
 # Lịch nhắc thật chạy mỗi phút bằng Supabase pg_cron (Edge Function send-reminders).
 # Workflow này chỉ chạy TAY để kiểm tra:
-#   • Điền test_email → gửi NGAY cho đúng tài khoản đó: thông báo trong app + push mọi thiết bị + email.
+#   • Điền test_email → gửi NGAY cho đúng tài khoản đó: thông báo trong app + push mọi thiết bị.
 #     Không đụng tới người chơi khác.
 #   • Để trống test_email → chạy 1 lượt nhắc nhở bình thường ngay bây giờ (chỉ ai tới giờ nhắc mới nhận).
 on:

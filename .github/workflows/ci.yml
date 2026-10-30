@@ -93,27 +93,7 @@ jobs:
         run: python3 scripts/migrate.py
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      # Đẩy secrets từ GitHub sang Supabase (bỏ qua biến nào chưa đặt). VAPID_* đã có sẵn trên Supabase.
-      - name: Đồng bộ secrets cho Edge Functions
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          REMINDER_EMAIL_FROM: ${{ secrets.REMINDER_EMAIL_FROM }}
-          APP_URL: ${{ secrets.APP_URL }}
-          EMAIL_UNSUB_SECRET: ${{ secrets.EMAIL_UNSUB_SECRET }}
-          EMAIL_SLOTS: ${{ secrets.EMAIL_SLOTS }}
-          EMAIL_DAILY_CAP: ${{ secrets.EMAIL_DAILY_CAP }}
-          EMAIL_BATCH: ${{ secrets.EMAIL_BATCH }}
-        run: |
-          args=()
-          for k in SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS REMINDER_EMAIL_FROM APP_URL EMAIL_UNSUB_SECRET EMAIL_SLOTS EMAIL_DAILY_CAP EMAIL_BATCH; do
-            if [ -n "${!k}" ]; then args+=("$k=${!k}"); fi
-          done
-          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"; else echo "Chưa có secret nào để đồng bộ"; fi
       - name: Deploy Edge Functions
         run: |
           supabase functions deploy send-reminders --use-api --project-ref "$PROJECT_REF"
-          supabase functions deploy email-unsubscribe --no-verify-jwt --use-api --project-ref "$PROJECT_REF"
           supabase functions deploy share-card --no-verify-jwt --use-api --project-ref "$PROJECT_REF"

@@ -97,7 +97,7 @@ Mỗi lần push `main` → Cloudflare tự build & deploy. `public/_redirects` 
 
 Mặc định Supabase gửi email bằng SMTP dùng chung — bị **giới hạn ~3–4 email/giờ** và dễ vào Spam, **không dùng cho production**. Để email "Quên mật khẩu"/"Xác nhận" gửi ổn định, tên miền riêng, ít vào Spam:
 
-1. **Dùng chung tài khoản Gmail gửi nhắc nhở** (xem `docs/reminders.md`): bật xác minh 2 bước rồi tạo **Mật khẩu ứng dụng** tại myaccount.google.com/apppasswords. Gmail cho gửi ~500 mail/ngày. Sau này có tên miền riêng thì đổi sang SMTP của tên miền (vd Zoho Mail) và xác thực SPF/DKIM.
+1. **Dùng một tài khoản Gmail**: bật xác minh 2 bước rồi tạo **Mật khẩu ứng dụng** tại myaccount.google.com/apppasswords. Gmail cho gửi ~500 mail/ngày. Sau này có tên miền riêng thì đổi sang SMTP của tên miền (vd Zoho Mail) và xác thực SPF/DKIM.
 2. **Supabase → Authentication → Emails → SMTP Settings → Enable Custom SMTP**, điền:
    - Host / Port: `smtp.gmail.com` : `465`
    - Username / Password: địa chỉ Gmail / Mật khẩu ứng dụng (16 ký tự, bỏ khoảng trắng)
