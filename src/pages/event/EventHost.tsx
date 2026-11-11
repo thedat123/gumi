@@ -38,12 +38,12 @@ export function EventHost() {
   return <main className="event-host">
     <aside className="eh-side" aria-label="Quét mã để chơi">
       <div className="eh-brand"><img src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" draggable={false}/><span>Mật Độ<small>The Less Sugar Challenge</small></span></div>
-      <h1>Quét mã,<br/>chơi một ván,<br/>ghi tên lên bảng.</h1>
+      <div className="eh-invite"><p className="eh-kicker">Thử thách bớt ngọt</p><h1>Chơi một ván.<br/>Tỏa sáng trên bảng.</h1><p>Quét mã bằng điện thoại để tham gia.</p></div>
       <div className="eh-code">{qr ? <img src={qr} alt={`Mã QR mở ${PLAY_URL}`}/> : <span>Đang tạo mã…</span>}</div>
-      <p className="eh-url">{PLAY_URL.replace(/^https?:\/\//, '')}</p>
+      <p className="eh-scan-note">Mở camera · Quét mã · Bắt đầu</p><p className="eh-url">{PLAY_URL.replace(/^https?:\/\//, '')}</p>
       <ol className="eh-steps">
         <li><b>1</b><span>Nhập tên của bạn</span></li>
-        <li><b>2</b><span>Chơi game</span></li>
+        <li><b>2</b><span>Chọn 1 thử thách</span></li>
         <li><b>3</b><span>Lên bảng xếp hạng</span></li>
       </ol>
       <img className="eh-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false}/>
@@ -52,7 +52,7 @@ export function EventHost() {
     <div className="eh-main">
       <header className="eh-head">
         <div>
-          <h2>Bảng xếp hạng</h2>
+          <span className="eh-live-label">Sự kiện đang diễn ra</span><h2>Ai đang dẫn đầu?</h2>
           <p>{total !== null ? `${total} người đã chơi` : 'Đang tải…'}{updated && <> · cập nhật {clock(updated)}</>}{error && <span className="eh-warn"> · {error}</span>}</p>
         </div>
         <div className="eh-tools">
@@ -64,10 +64,10 @@ export function EventHost() {
       <Leaderboard top={top?.rows ?? null} total={total ?? 0}/>
 
       <section className="eh-games" aria-label="Ba thử thách">
-        <p className="eh-games-label">Ba thử thách — chọn một</p>
-        <DemoCard n={1} title={gameNames[0]!} rule="30 giây. Đúng mỗi thẻ +5."><SortDemo/></DemoCard>
-        <DemoCard n={2} title={gameNames[1]!} rule="45 giây. Ghép đúng mỗi cặp +5."><MemoryDemo/></DemoCard>
-        <DemoCard n={3} title={gameNames[2]!} rule="5 câu. Đoán đúng mỗi câu +5."><TruthDemo/></DemoCard>
+        <div className="eh-games-label"><b>Chọn thế mạnh của bạn</b><span>3 thử thách · 1 lượt chơi · Cùng một bảng xếp hạng</span></div>
+        <DemoCard n={1} title={gameNames[0]!} rule="30 giây · Mỗi thẻ đúng +5 điểm"><SortDemo/></DemoCard>
+        <DemoCard n={2} title={gameNames[1]!} rule="45 giây · Mỗi cặp đúng +5 điểm"><MemoryDemo/></DemoCard>
+        <DemoCard n={3} title={gameNames[2]!} rule="5 câu hỏi · Mỗi câu đúng +5 điểm"><TruthDemo/></DemoCard>
       </section>
     </div>
   </main>;
@@ -76,7 +76,7 @@ export function EventHost() {
 function DemoCard({ n, title, rule, children }: { n: number; title: string; rule: string; children: ReactNode }) {
   return <article className={`eh-game g${n}`}>
     <div className="eh-game-stage" aria-hidden="true">{children}</div>
-    <div className="eh-game-copy"><b>{title}</b><small>{rule}</small></div>
+    <div className="eh-game-copy"><span className="eh-game-skill">{n === 1 ? "Nhanh tay" : n === 2 ? "Tinh mắt" : "Hiểu biết"}</span><b>{title}</b><small>{rule}</small></div>
   </article>;
 }
 
@@ -142,6 +142,18 @@ function useFresh(rows: BoardRow[] | null) {
 const PAGE = 10, FLIP_MS = 8000;
 function Leaderboard({ top, total }: { top: BoardRow[] | null; total: number }) {
   const fresh = useFresh(top);
+  if (!top) return <section className="eh-board"><p className="eh-empty">Đang tải bảng xếp hạng…</p></section>;
+  if (!top.length) return <section className="eh-board eh-board-waiting"><div className="eh-welcome"><span className="eh-trophy" aria-hidden="true">♛</span><p>Bảng xếp hạng đang chờ bạn</p><h3>Vị trí đầu tiên<br/>có thể là của bạn.</h3><span>Quét mã, chọn thử thách và ghi điểm ngay.</span></div><div className="eh-podium" aria-hidden="true">{[2, 1, 3].map(rank => <div key={rank} className={`eh-seat seat-${rank}`}><span>{rank === 1 ? 'Ngôi đầu' : `Top ${rank}`}</span><b>{rank}</b><small>Chờ người chơi</small></div>)}</div></section>;
+  return <section className="eh-board" aria-label="Bảng xếp hạng chung">
+    <ol className="eh-top3">{top.map(r => <li key={r.id} className={`p${r.rank} ${fresh.has(r.id) ? 'fresh' : ''}`}>
+      <span className="eh-pos">{r.rank}</span>
+      <span className="eh-who"><b title={r.player}>{r.player}</b><small>{gameNames[r.game - 1]}</small></span>
+      <strong>{r.score}<small>điểm</small></strong>
+    </li>)}</ol>
+    {total > 3 ? <RestBoard total={total}/> : <div className="eh-next-invite"><span>Cuộc đua mới bắt đầu</span><b>Bạn sẽ là người tiếp theo?</b><p>Quét mã bên trái để ghi tên mình lên bảng.</p></div>}
+  </section>;
+}
+function RestBoard({ total }: { total: number }) {
   const pages = Math.max(1, Math.ceil(Math.max(0, total - 3) / PAGE));
   const [page, setPage] = useState(0);
   // Màn chiếu không ai bấm: tự lật trang hạng 4+ mỗi 8 giây.
@@ -152,15 +164,9 @@ function Leaderboard({ top, total }: { top: BoardRow[] | null; total: number }) 
   }, [pages]);
   useEffect(() => { if (page > pages - 1) setPage(0); }, [page, pages]);
   const { data: rest } = useBoardPage(3 + page * PAGE, PAGE, 5000);
-  if (!top) return <section className="eh-board"><p className="eh-empty">Đang tải bảng xếp hạng…</p></section>;
-  if (!top.length) return <section className="eh-board"><div className="eh-empty"><b>Chưa có ai trên bảng.</b><span>Người quét mã đầu tiên sẽ đứng hạng 1.</span></div></section>;
-  return <section className="eh-board" aria-label="Bảng xếp hạng chung">
-    <ol className="eh-top3">{top.map(r => <li key={r.id} className={`p${r.rank} ${fresh.has(r.id) ? 'fresh' : ''}`}>
-      <span className="eh-pos">{r.rank}</span>
-      <span className="eh-who"><b title={r.player}>{r.player}</b><small>{gameNames[r.game - 1]}</small></span>
-      <strong>{r.score}<small>điểm</small></strong>
-    </li>)}</ol>
-    <div className="eh-rest-wrap">
+  return <div className="eh-rest-wrap">
+      <div className="eh-rest-heading"><span>Những người chơi nổi bật</span><span>Điểm</span></div>
+
       {rest && rest.rows.length > 0 && <ol className="eh-rest" key={page}>{rest.rows.map(r => <li key={r.id}>
         <span className="eh-pos">{r.rank}</span>
         <span className="eh-who"><b title={r.player}>{r.player}</b><small>{gameNames[r.game - 1]}</small></span>
@@ -172,6 +178,5 @@ function Leaderboard({ top, total }: { top: BoardRow[] | null; total: number }) 
         <span className="eh-dots" aria-hidden="true">{Array.from({ length: Math.min(pages, 12) }, (_, i) => <i key={i} className={i === page % 12 ? 'on' : ''}/>)}</span>
         <button onClick={() => setPage(p => (p + 1) % pages)} aria-label="Trang sau">›</button>
       </nav>}
-    </div>
-  </section>;
+    </div>;
 }

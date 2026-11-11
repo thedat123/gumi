@@ -230,3 +230,108 @@
 .eh-dots i.on { background: var(--rasp); }
 .eh-pager button:last-child { order: 0; }
 @keyframes eh-page { from { opacity: 0; transform: translateY(6px); } }
+
+/* Event stage: a scannable invitation beside the live competition. */
+.event-host { grid-template-columns: clamp(300px, 27vw, 480px) minmax(0, 1fr); }
+.eh-side { gap: clamp(12px, 1.8vh, 24px); padding: clamp(20px, 3vh, 40px) clamp(22px, 2.5vw, 48px); }
+.eh-brand { padding-bottom: 18px; border-bottom: 1px solid var(--rasp-line); }
+.eh-brand small { margin-top: 5px; line-height: 1.5; }
+.eh-kicker { font-size: 13px; font-weight: 700; color: var(--rasp-2); margin-bottom: 12px !important; }
+.eh-side h1 { font-size: clamp(28px, 3.5vh, 46px); line-height: 1.22; letter-spacing: -.04em; }
+.eh-invite > p:last-child { margin-top: 12px; font-size: clamp(13px, 1.6vh, 18px); line-height: 1.6; color: var(--rasp-2); max-width: 28ch; }
+.eh-code { width: min(100%, 31vh); align-self: center; border-radius: 18px; padding: 12px; box-shadow: 0 8px 0 -3px #962A47; flex-shrink: 0; }
+.eh-scan-note { text-align: center; font-size: clamp(11px, 1.4vh, 15px); line-height: 1.5; color: var(--rasp-2); }
+.eh-url { text-align: center; font-size: clamp(14px, 1.7vh, 21px); line-height: 1.5; }
+.eh-steps { max-width: 76%; margin-top: auto !important; padding-bottom: 12px !important; }
+.eh-steps li { font-size: clamp(12px, 1.5vh, 18px); line-height: 1.5; padding: 9px 0; gap: 10px; }
+.eh-steps b { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rasp-line); font-size: 12px; flex-shrink: 0; }
+.eh-gumi { width: 30%; right: -5%; bottom: -20px; }
+.eh-main { padding: clamp(22px, 3vh, 44px) clamp(24px, 3vw, 60px); gap: clamp(16px, 2.6vh, 32px); }
+.eh-head { border-bottom: 1px solid var(--line); align-items: center; padding-bottom: 22px; }
+.eh-head h2 { font-size: clamp(30px, 4.2vh, 56px); line-height: 1.2; margin-top: 8px; }
+.eh-live-label { display: inline-flex; align-items: center; gap: 8px; color: var(--rasp); font-size: 12px; font-weight: 800; }
+.eh-live-label::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--rasp); }
+.eh-head p { line-height: 1.6; font-size: clamp(12px, 1.5vh, 17px); }
+.eh-tools { flex-wrap: wrap; justify-content: flex-end; }
+.eh-tools button { min-height: 44px; font-size: 12px; border-color: #E0C3B4; }
+.event-host button:focus-visible { outline: 3px solid var(--rasp); outline-offset: 4px; }
+.eh-board { border: 1px solid var(--line); border-radius: 20px; padding: clamp(16px, 2vh, 28px); background: #FFF7F3; gap: 22px; }
+.eh-board-waiting { grid-template-columns: 1fr 1fr; align-items: center; align-content: center; background: #FFFFFF; }
+.eh-welcome { padding: 12px; }
+.eh-trophy { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--fresh); color: var(--gold-dark); font-size: 32px; margin-bottom: 16px; }
+.eh-welcome p { color: var(--rasp); font-size: clamp(12px, 1.5vh, 17px); font-weight: 700; }
+.eh-welcome h3 { margin: 12px 0 18px; font-size: clamp(28px, 3.6vh, 46px); line-height: 1.25; letter-spacing: -.035em; }
+.eh-welcome > span:last-child { display: block; color: var(--ink-2); font-size: clamp(13px, 1.6vh, 18px); line-height: 1.65; }
+.eh-podium { display: flex; gap: 10px; align-items: flex-end; justify-content: center; padding-top: 32px; }
+.eh-seat { flex: 1; min-width: 0; text-align: center; border: 1px solid var(--line); border-bottom: 0; border-radius: 14px 14px 0 0; padding: 24px 8px; background: var(--paper); }
+.eh-seat > span { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+.eh-seat > b { display: block; font-size: clamp(40px, 6vh, 76px); line-height: 1.4; color: var(--rasp); }
+.eh-seat small { display: block; font-size: 11px; line-height: 1.5; color: var(--ink-2); }
+.eh-seat.seat-1 { padding-top: 45px; padding-bottom: 45px; background: var(--rasp); color: white; border-color: var(--rasp); }
+.eh-seat.seat-1 > b { color: var(--gold); }
+.eh-seat.seat-1 > span, .eh-seat.seat-1 small { color: white; }
+.eh-seat.seat-3 { padding-top: 12px; padding-bottom: 12px; }
+.eh-top3 li { border-radius: 12px; box-shadow: none; }
+.eh-top3 .eh-who b { font-size: clamp(17px, 2.3vh, 28px); }
+.eh-top3 .p1 .eh-who b { font-size: clamp(19px, 2.7vh, 32px); }
+.eh-rest-heading { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-2); padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.eh-rest .eh-who small { line-height: 1.5; }
+.eh-next-invite { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 24px; }
+.eh-next-invite > span { color: var(--rasp); font-size: 13px; }
+.eh-next-invite b { font-size: clamp(24px, 3vh, 36px); line-height: 1.3; }
+.eh-next-invite p { color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+.eh-games-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 4px; }
+.eh-games-label b { font-size: clamp(15px, 1.9vh, 22px); color: var(--ink); }
+.eh-games-label span { font-size: 12px; font-weight: 500; }
+.eh-game { display: grid; grid-template-columns: 40% 1fr; border-radius: 12px; }
+.eh-game-stage { height: clamp(130px, 17vh, 190px); border-bottom: 0; border-right: 1px solid var(--line); }
+.eh-game-copy { display: flex; flex-direction: column; justify-content: center; gap: 7px; padding: 14px; }
+.eh-game-skill { color: var(--rasp); font-size: 11px; font-weight: 700; }
+.eh-game-copy b { font-size: clamp(14px, 1.7vh, 21px); line-height: 1.4; }
+.eh-game-copy small { font-size: clamp(11px, 1.3vh, 15px); line-height: 1.6; }
+.eh-game .sd { flex-direction: column; padding: 10px; }
+.eh-game .sd-zone { border: 0; padding: 0; width: auto; font-size: 10px; flex-direction: row; }
+.eh-game .sd-zone svg { width: 18px; }
+.eh-game .sd-card { max-width: 90%; padding: 8px; font-size: 11px; }
+.eh-game .sd-plus { font-size: 14px; top: 42%; }
+.eh-game .md { grid-template-columns: repeat(2, 1fr); padding: 10px; gap: 4px; }
+.eh-game .md-card { height: clamp(28px, 4vh, 44px); font-size: 9px; border-radius: 5px; }
+.eh-game .td { padding: 12px; gap: 8px; }
+.eh-game .td-q { font-size: 10px; line-height: 1.5; }
+.eh-game .td-btns { gap: 3px; }
+.eh-game .td-btns span { font-size: 9px; padding: 5px 2px; border-radius: 5px; }
+@media (max-width: 1280px) and (min-width: 1025px) { .eh-game { grid-template-columns: 1fr; } .eh-game-stage { height: 100px; border-right: 0; border-bottom: 1px solid var(--line); } .eh-game .sd { flex-direction: row; } .eh-game .md { grid-template-columns: repeat(3, 1fr); } .eh-game .md-card { height: 32px; } .eh-game-copy { gap: 2px; padding: 10px; } .eh-game-skill { display: none; } .eh-games-label span { font-size: 10px; } .eh-welcome { padding: 0; } .eh-welcome h3 { font-size: 28px; } .eh-seat { padding-inline: 4px; } .eh-seat small { font-size: 9px; } }
+@media (max-width: 1024px) { .eh-side { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 32px; } .eh-brand { grid-column: 1/-1; } .eh-code { grid-column: 2; grid-row: 2/5; width: min(100%, 280px); justify-self: center; } .eh-invite { grid-column: 1; } .eh-scan-note, .eh-url { text-align: left; } .eh-steps { grid-column: 1/-1; display: flex; max-width: 100%; gap: 24px; } .eh-gumi { display: none; } .eh-board-waiting { grid-template-columns: 1fr 1fr; min-height: 320px; } .eh-games { grid-template-columns: repeat(3, minmax(0, 1fr)); } .eh-game { grid-template-columns: 1fr; } .eh-game-stage { height: 130px; } .eh-game-copy b { font-size: 16px; } .eh-games-label { flex-wrap: wrap; } .eh-games-label span { font-size: 12px; } }
+@media (max-width: 600px) { .eh-side { display: flex; align-items: stretch; padding: 24px; gap: 20px; } .eh-side h1 { font-size: 34px; } .eh-code { width: min(100%, 280px); } .eh-scan-note, .eh-url { text-align: center; font-size: 14px; } .eh-steps { flex-direction: column; gap: 0; padding: 0 !important; } .eh-steps li { font-size: 15px; padding: 12px 0; } .eh-main { padding: 24px 18px; gap: 24px; } .eh-head { align-items: stretch; } .eh-head h2 { font-size: 32px; } .eh-head p { font-size: 14px; } .eh-tools { justify-content: flex-start; } .eh-tools button { font-size: 14px; } .eh-board-waiting { grid-template-columns: 1fr; } .eh-welcome h3 { font-size: 32px; } .eh-welcome p, .eh-welcome > span:last-child { font-size: 15px; } .eh-seat small { font-size: 12px; } .eh-games { grid-template-columns: 1fr; } .eh-game { grid-template-columns: 120px 1fr; } .eh-game-copy small { font-size: 13px; } .eh-game-skill { font-size: 12px; } .eh-top3 .eh-who b, .eh-top3 .p1 .eh-who b { font-size: 18px; white-space: normal; overflow-wrap: anywhere; } .eh-top3 .eh-who small { font-size: 13px; line-height: 1.5; } .eh-rest .eh-who b { font-size: 16px; white-space: normal; overflow-wrap: anywhere; } .eh-rest .eh-who small { font-size: 13px; } .eh-rest li { padding: 12px 0; } .eh-pager { flex-wrap: wrap; font-size: 13px; } .eh-pager button { min-width: 44px; min-height: 44px; } }
+/* Keep ranking text readable while reserving room for page controls. */
+.eh-welcome h3 { font-weight: 800; }
+.eh-top3 .eh-who b { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+.eh-rest { min-height: 0; }
+.eh-rest li { min-height: 0; }
+.eh-rest-wrap { gap: 8px; }
+@media (max-height: 820px) and (min-width: 1025px) {
+  .eh-rest .eh-who b { font-size: 14px; line-height: 1.5; }
+  .eh-rest .eh-who small { display: none; }
+  .eh-rest li { padding: 4px 0; }
+  .eh-rest .eh-pos { font-size: 14px; }
+  .eh-pager { font-size: 11px; gap: 7px; flex-shrink: 0; }
+  .eh-rest-heading { padding-bottom: 4px; }
+}
+
+@media (max-width: 600px) {
+  .event-host :is(h1, h2, h3) { line-height: 1.45; letter-spacing: -.02em; }
+  .eh-invite > p:last-child { margin-top: 18px; line-height: 1.8; }
+  .eh-brand span { line-height: 1.5; }
+  .eh-brand small { margin-top: 6px; line-height: 1.7; }
+  .eh-head h2 { margin-top: 12px; }
+  .eh-head p { margin-top: 14px; line-height: 1.8; }
+  .eh-welcome h3 { margin-block: 16px 24px; }
+  .eh-welcome > span:last-child { line-height: 1.8; }
+  .eh-game-copy { gap: 12px; padding: 18px 14px; }
+  .eh-game-copy b { line-height: 1.55; letter-spacing: 0; }
+  .eh-game-copy small { line-height: 1.8; }
+  .eh-top3 .eh-who, .eh-rest .eh-who { gap: 8px; }
+  .eh-top3 .eh-who b, .eh-top3 .p1 .eh-who b, .eh-rest .eh-who b { line-height: 1.6; letter-spacing: 0; }
+  .eh-who small { line-height: 1.7; }
+  .eh-next-invite b { line-height: 1.5; }
+}
