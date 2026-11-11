@@ -1,10 +1,7 @@
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useLocation } from 'react-router-dom';
 import './index.css';
-import './room.css';
-import './game.css';
-import { App } from './App';
 import { registerSW } from './pwa';
 import { applyGfxClass, isSlowNetwork, startAdaptiveQuality, startCrashGuard } from './lib/quality';
 import { RootErrorBoundary, reloadOnce } from './components/RootErrorBoundary';
@@ -26,11 +23,21 @@ if (sbUrl) {
   }
 }
 
+// QR players load only the event route: no auth/profile, furniture or 3D app.
+const FullApp = lazy(() => import('./App').then(module => ({ default: module.App })));
+const PublicEvent = lazy(() => import('./pages/event/EventGame').then(module => ({ default: module.EventGame })));
+function EntryRoute() {
+  const { pathname } = useLocation();
+  return <Suspense fallback={<div role="status" style={{ padding: 32, textAlign: 'center' }}>Đang tải…</div>}>
+    {/^\/play\/?$/.test(pathname) ? <PublicEvent/> : <FullApp/>}
+  </Suspense>;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RootErrorBoundary>
       <BrowserRouter>
-        <App />
+        <EntryRoute />
       </BrowserRouter>
     </RootErrorBoundary>
   </StrictMode>,
@@ -45,7 +52,7 @@ type IdleCb = (d?: { timeRemaining(): number }) => void;
 const idle = (cb: IdleCb) =>
   (window as unknown as { requestIdleCallback?: (cb: IdleCb, o?: { timeout: number }) => void }).requestIdleCallback?.(cb, { timeout: 4000 })
   ?? setTimeout(cb, 1200);
-if (!isSlowNetwork() && !/^\/(event|mission)(\/|$)/.test(window.location.pathname)) {
+if (!isSlowNetwork() && !/^\/(event|play|mission)(\/|$)/.test(window.location.pathname)) {
   const queue: Array<() => Promise<unknown>> = [
     () => import('./pages/GumiRoom'),
     () => import('./api').then(({ api }) => import('./app/useAsync').then(({ prefetchAsync }) => api.auth.getSession().then((s) => {

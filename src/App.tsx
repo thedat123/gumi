@@ -1,3 +1,5 @@
+import './room.css';
+import './game.css';
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';

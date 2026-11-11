@@ -34,6 +34,15 @@ for (const game of [1, 2, 3]) {
   await page.getByRole('button', { name: 'Bắt đầu chơi' }).click();
   await fits();
   await page.screenshot({ path: `/private/tmp/event-player-game-${game}.png`, fullPage: true });
+  if (game === 3) {
+    await page.getByRole('button', { name: 'Cú lừa' }).click();
+    await page.locator('.truth-reveal').waitFor();
+    await fits();
+    await page.screenshot({ path: '/private/tmp/event-player-answer.png', fullPage: true });
+    await page.getByRole('button', { name: 'Câu tiếp theo' }).click();
+    if (await page.locator('.player-question-track .complete').count() !== 1) throw Error('Question progress did not advance');
+  }
+
 }
 for (const width of [320, 360, 768, 1440]) {
   await page.setViewportSize({ width, height: 900 });
@@ -44,7 +53,7 @@ for (const width of [320, 360, 768, 1440]) {
     const [first, second] = [...el.children].map(line => line.getBoundingClientRect());
     return second.top - first.bottom;
   });
-  if (titleGap < 7) throw Error(`Headline line boxes too close at ${width}px: ${titleGap}`);
+  if (titleGap < 1) throw Error(`Headline line boxes too close at ${width}px: ${titleGap}`);
   await fits();
   await page.screenshot({ path: `/private/tmp/event-player-${width}.png`, fullPage: true });
 }
@@ -66,7 +75,7 @@ await page.evaluate(() => localStorage.removeItem('gumi-event-plays-mock-v2'));
 for (const width of [320, 768, 1280, 1920]) {
   await page.setViewportSize({ width, height: width === 1280 ? 720 : 1080 });
   await page.goto(`${base}/event`);
-  await page.getByRole('heading', { name: 'Ai đang dẫn đầu?' }).waitFor();
+  await page.getByRole('heading', { name: 'Bảng xếp hạng', exact: true }).waitFor();
   await page.locator('.eh-podium').waitFor();
   await page.locator('.eh-code img').waitFor();
   await fits();

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { playSfx } from '../../lib/sfx';
-import { cases, gameInfo, gameNames, healthy, pairs, shuffle, sugary } from './data';
-import { flush, myPlay, pending, playerKey, resetDevice, savePlay, watch, type EventPlay } from './store';
+import { cases, gameNames, healthy, pairs, shuffle, sugary } from './data';
+import { eventRound, flush, myPlay, pending, playerKey, resetDevice, savePlay, watch, type EventPlay } from './store';
 import { EventResults } from './EventResults';
-import gumiArt from '../../assets/gumi.png';
+import gumiArt from '../../assets/gumi-event.webp';
 import './event.css';
 import './event-player.css';
 function useClock(seconds: number, active: boolean, end: () => void) {
@@ -32,27 +32,40 @@ export function EventGame() {
   const [waiting, setWaiting] = useState(() => pending().length);
   const [online, setOnline] = useState(navigator.onLine);
   const finished = useRef(false);
+  const [round, setRound] = useState(eventRound);
+  const roundRef = useRef(round);
+  const playingRound = useRef(round);
 
   useEffect(() => {
-    const status = () => { setWaiting(pending().length); setOnline(navigator.onLine); };
+    const status = () => {
+      const next = eventRound();
+      if (next !== roundRef.current) {
+        roundRef.current = next; playingRound.current = next;
+        finished.current = true;
+        setRound(next); setDone(null); setName(''); setStep('name');
+        window.scrollTo({ top: 0 });
+      }
+      setWaiting(pending().length); setOnline(navigator.onLine);
+    };
     const off = () => setOnline(false);
     window.addEventListener('offline', off);
-    const stop = watch(status);
-    void flush().catch(() => {});
+    const stop = watch(status, round ? 0 : 15000);
+    void flush().catch(() => {}).then(status);
     return () => { stop(); window.removeEventListener('offline', off); };
-  }, []);
+  }, [round]);
 
   const finish = useCallback((score: number) => {
     if (finished.current) return;
     finished.current = true;
-    const play: EventPlay = { id: crypto.randomUUID(), player_key: playerKey(), player: name.trim(), game, score };
-    savePlay(play); setDone(myPlay() ?? play); playSfx('sparkle');
+    const play: EventPlay = { id: crypto.randomUUID(), player_key: playerKey(), player: name.trim(), game, score, round: playingRound.current ?? undefined };
+    if (!savePlay(play)) return;
+    setDone(myPlay() ?? play); playSfx('sparkle');
     window.scrollTo({ top: 0 });
   }, [name, game]);
-  const start = (g: number) => { finished.current = false; setGame(g); setStep('ready'); window.scrollTo({ top: 0 }); };
-  const status = waiting ? 'Đang gửi điểm' : online ? 'Đã kết nối' : 'Đang ngoại tuyến';
+  const start = (g: number) => { playingRound.current = eventRound(); finished.current = false; setGame(g); setStep('ready'); window.scrollTo({ top: 0 }); };
+  const status = !round ? 'Đang kết nối sự kiện' : waiting ? 'Đang gửi điểm' : online ? 'Đã kết nối' : 'Đang ngoại tuyến';
 
-  return <main className="event-shell event-mobile" data-game-active={step === 'play' && !done ? 'true' : undefined}>
+  return <main className="event-shell event-mobile" data-player-step={done ? 'done' : step} data-game-active={step === 'play' && !done ? 'true' : undefined}>
     <header className="event-header">
       <div className="event-brand"><img className="event-brand-mark" src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" draggable={false} decoding="async"/><div><b>MẬT ĐỘ</b><small>THE LESS SUGAR CHALLENGE</small></div></div>
       <div className="event-controls"><span className={`event-connection ${!online || waiting ? 'pending' : ''}`} role="status">{status}</span></div>
@@ -65,7 +78,7 @@ export function EventGame() {
           <div className="event-summary-body">
             <h1>Bạn đã hoàn thành!</h1>
             <p className="event-summary-team"><small>Người chơi</small>{done.player}</p>
-            <p className="event-eyebrow">{gameNames[done.game - 1]}</p>
+            <p className="event-eyebrow">{gameNames[done.game - 1]}</p><p className="player-score-caption">Điểm bạn ghi được</p>
             <h2><b>{done.score}</b><small>điểm</small></h2>
             <p role="status" className={`event-save-status ${waiting ? '' : 'ok'}`}>
               {waiting ? 'Đã lưu trên máy — điểm sẽ tự gửi lên khi có mạng.' : 'Điểm đã được gửi. Xem vị trí của bạn bên dưới nhé!'}
@@ -88,25 +101,23 @@ export function EventGame() {
       </> : step === 'pick' ? <>
         <p className="event-eyebrow"><span className="event-team-chip">{name.trim()}</span>Chọn thử thách</p>
         <div className="event-stage-heading"><h1>Bạn muốn chơi gì?</h1><button className="event-ghost event-back" onClick={() => setStep('name')}>← Đổi tên</button></div>
-        <p className="player-intro">Một lượt chơi, một cơ hội tỏa sáng. Bạn chọn thử thách nào?</p>
-        <div className="event-game-roster event-game-pick">{gameNames.map((g, i) => <button key={g} onClick={() => start(i + 1)}><GamePreview game={i + 1}/><div className="player-pick-copy"><small>{i === 0 ? 'Nhanh tay' : i === 1 ? 'Tinh mắt' : 'Hiểu biết'} <span>· {i === 0 ? '30 giây' : i === 1 ? '45 giây' : '5 câu hỏi'}</span></small><b>{g}</b><p>{gameInfo[i]!.hint}</p><strong className="player-pick-action">Khám phá thử thách <span aria-hidden="true">↗</span></strong></div></button>)}</div>
+        <p className="player-intro">Nhanh tay, tinh mắt hay hiểu biết? Chọn một thử thách để ghi tên lên bảng.</p>
+        <div className="event-game-roster event-game-pick">{gameNames.map((g, i) => <button key={g} onClick={() => start(i + 1)}><GamePreview game={i + 1}/><div className="player-pick-copy"><small>{i === 0 ? 'Nhanh tay' : i === 1 ? 'Tinh mắt' : 'Hiểu biết'} <span>· {i === 0 ? '30 giây' : i === 1 ? '45 giây' : '5 câu hỏi'}</span></small><b>{g}</b><p>{['Đưa đồ uống về đúng nơi. Nhanh tay để ghi nhiều điểm!', 'Lật thẻ, tìm đồ uống và lượng đường tương ứng.', 'Nhận diện những hiểu lầm quen thuộc về đường.'][i]}</p><strong className="player-pick-action">Xem cách chơi <span aria-hidden="true">→</span></strong></div></button>)}</div>
         <p className="event-note">Mỗi điện thoại có 1 lượt chơi. Mỗi đáp án đúng được cộng 5 điểm.</p>
       </> : <>
         <div className="event-lobby">
           <div className="event-lobby-copy">
-            <span className="event-live">Thử thách bớt ngọt</span>
+            <span className="player-welcome-tag">Chào mừng đến với Mật Độ</span>
             <h1 className="player-hero-title"><span>Hạ mật độ.</span><span>Bật năng lượng.</span></h1>
-            <p>Chọn 1 trong 3 thử thách, ghi điểm thật cao và leo lên đỉnh bảng xếp hạng!</p>
+            <div className="player-welcome-bottom"><p>Một chút nhanh tay.<br/>Một chút hiểu biết.<br/>Sẵn sàng ghi điểm cùng Gumi!</p><img className="player-welcome-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/></div>
           </div>
           <div className="event-entry-wrap">
-            <img className="event-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
             <form className="event-entry" onSubmit={e => { e.preventDefault(); const n = name.trim(); if (!n) return; try { localStorage.setItem(nameKey, n); } catch { /* ignore */ } setStep('pick'); }}>
-              <span className="event-eyebrow">Vé tham gia của bạn</span>
-              <h2>Chào bạn mới!</h2>
+              <div className="player-entry-heading"><span className="player-entry-number" aria-hidden="true">01</span><div><small>Bắt đầu từ đây</small><h2>Bạn tên là gì?</h2></div></div>
               <label htmlFor="event-name">Tên xuất hiện trên bảng xếp hạng</label>
               <input id="event-name" maxLength={40} required autoComplete="nickname" enterKeyHint="go" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên của bạn…"/>
-              <button className="event-primary" disabled={!name.trim()}>Chọn thử thách <span aria-hidden="true">→</span></button>
-              <small>Tên đã sẵn sàng? Cùng ghi điểm nào. Mỗi điện thoại có 1 lượt chơi.</small>
+              <button className="event-primary" disabled={!name.trim() || !round}>Chọn thử thách <span aria-hidden="true">→</span></button>
+              <small>Mỗi điện thoại có 1 lượt chơi. Chọn thử thách phù hợp với bạn ở bước tiếp theo.</small>
             </form>
           </div>
         </div>
@@ -137,14 +148,14 @@ function Memory({onDone}:{onDone:(s:number)=>void}) {
   useEffect(()=>{const t=setTimeout(()=>setPreview(false),3000);return()=>clearTimeout(t);},[]);
   const left=useClock(45,!preview,()=>onDone(points.current));
   useEffect(()=>{if(open.length!==2)return;const same=cards[open[0]].id===cards[open[1]].id;const t=setTimeout(()=>{ if(same){const next=[...matched,cards[open[0]].id]; points.current=next.length*5;setMatched(next);playSfx('sparkle');if(next.length===5)onDone(25);}setOpen([]);},same?300:800);return()=>clearTimeout(t);},[open,cards,matched,onDone]);
-  return <div className="event-game"><div className="event-hud"><span className={preview ? 'event-hud-chip' : left<=5 ? 'event-timer urgent' : 'event-timer'}>{preview?'Ghi nhớ trong 3 giây':<>◷ {left}<small>giây</small></>}</span><b className="event-points">{matched.length*5}<small>điểm · {matched.length}/5 cặp</small></b></div><TimeBar left={preview ? 45 : left} total={45}/><p>Ghép đồ uống với lượng đường tương ứng. Đúng một cặp +5 điểm.</p><div className="memory-grid">{cards.map((c,i)=><button key={i} disabled={preview||open.length===2||matched.includes(c.id)||open.includes(i)} className={matched.includes(c.id)?'matched':preview||open.includes(i)?'revealed':''} onClick={()=>setOpen(o=>o.length < 2 && !o.includes(i) ? [...o,i] : o)}>{preview||open.includes(i)||matched.includes(c.id)?<><small>{matched.includes(c.id) ? '✓ Đã ghép' : 'Ghép cặp đồ uống'}</small><strong>{c.label}</strong></>:<><span className="memory-emblem">M↓</span><small>Chạm để lật</small></>}</button>)}</div></div>;
+  return <div className="event-game event-memory"><div className="event-hud"><span className={preview ? 'event-hud-chip' : left<=5 ? 'event-timer urgent' : 'event-timer'}>{preview?'Ghi nhớ trong 3 giây':<>◷ {left}<small>giây</small></>}</span><b className="event-points">{matched.length*5}<small>điểm · {matched.length}/5 cặp</small></b></div><TimeBar left={preview ? 45 : left} total={45}/><p>Ghép đồ uống với lượng đường tương ứng. Đúng một cặp +5 điểm.</p><div className="memory-grid">{cards.map((c,i)=><button key={i} disabled={preview||open.length===2||matched.includes(c.id)||open.includes(i)} className={matched.includes(c.id)?'matched':preview||open.includes(i)?'revealed':''} onClick={()=>setOpen(o=>o.length < 2 && !o.includes(i) ? [...o,i] : o)}>{preview||open.includes(i)||matched.includes(c.id)?<><small>{matched.includes(c.id) ? '✓ Đã ghép' : c.label.includes('muỗng') ? 'Lượng đường' : 'Đồ uống'}</small><strong>{c.label}</strong></>:<><span className="memory-emblem" aria-hidden="true">?</span><small>Chạm để lật</small></>}</button>)}</div></div>;
 }
 function Truth({onDone}:{onDone:(s:number)=>void}) {
   const [questions]=useState(()=>shuffle(cases));const [index,setIndex]=useState(0);const [answer,setAnswer]=useState<boolean|null>(null);const score=useRef(0);const locked=useRef(false);
   const choose=(value:boolean|null)=>{if(locked.current)return;locked.current=true;const ok=value===questions[index].fact;if(ok)score.current+=5;setAnswer(ok);playSfx(ok?'sparkle':'sleep');};
   const left=useClock(15,answer===null,()=>choose(null));
   useEffect(()=>{const key=(e:KeyboardEvent)=>{if(answer!==null||e.repeat)return;if(e.code==='ArrowLeft'){e.preventDefault();choose(false);}if(e.code==='ArrowRight'){e.preventDefault();choose(true);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);});
-  return <div className="event-game event-truth"><div className="event-hud"><span className="event-hud-chip">Câu {index + 1}/5 · {score.current} điểm</span><b className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>giây</small></b></div><TimeBar left={answer===null ? left : 0} total={15}/><blockquote>{questions[index].statement}</blockquote><div className="event-answers"><button disabled={answer!==null} onClick={()=>choose(false)}><span className="event-answer-text"><strong>Cú lừa</strong><small>Không chính xác</small></span><kbd aria-hidden="true">←</kbd></button><button disabled={answer!==null} onClick={()=>choose(true)}><span className="event-answer-text"><strong>Sự thật</strong><small>Chính xác</small></span><kbd aria-hidden="true">→</kbd></button></div>{answer!==null&&<div className={`truth-reveal ${answer ? 'ok' : 'bad'}`} role="status"><h2>{answer?'✓ Chính xác · +5 điểm':'✕ Chưa chính xác / hết giờ'}</h2><b>Đáp án: {questions[index].fact?'Sự thật':'Cú lừa'}</b><p>{questions[index].explanation}</p><button className="event-primary" onClick={()=>{if(index===4)onDone(score.current);else{setIndex(i=>i+1);setAnswer(null);locked.current=false;}}}>{index===4?'Xem kết quả →':'Câu tiếp theo →'}</button></div>}</div>;
+  return <div className="event-game event-truth"><div className="event-hud"><span className="event-hud-chip">Câu {index + 1}/5 · {score.current} điểm</span><b className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>giây</small></b></div><TimeBar left={answer===null ? left : 0} total={15}/><div className="player-question-track" aria-label={`Câu ${index + 1} trên 5`}>{questions.map((_, i) => <span key={i} className={i < index ? 'complete' : i === index ? 'current' : ''} aria-hidden="true"/>)}</div><p className="player-question-label">Theo bạn, nhận định này đúng hay sai?</p><blockquote>{questions[index].statement}</blockquote><div className="event-answers"><button disabled={answer!==null} onClick={()=>choose(false)}><span className="event-answer-text"><strong>Cú lừa</strong><small>Nhận định sai</small></span><kbd aria-hidden="true">←</kbd></button><button disabled={answer!==null} onClick={()=>choose(true)}><span className="event-answer-text"><strong>Sự thật</strong><small>Nhận định đúng</small></span><kbd aria-hidden="true">→</kbd></button></div>{answer!==null&&<div className={`truth-reveal ${answer ? 'ok' : 'bad'}`} role="status"><h2>{answer?'✓ Chính xác · +5 điểm':'✕ Chưa chính xác / hết giờ'}</h2><b>Đáp án: {questions[index].fact?'Sự thật':'Cú lừa'}</b><p>{questions[index].explanation}</p><button className="event-primary" onClick={()=>{if(index===4)onDone(score.current);else{setIndex(i=>i+1);setAnswer(null);locked.current=false;}}}>{index===4?'Xem kết quả →':'Câu tiếp theo →'}</button></div>}</div>;
 }
 
 /** Lightweight CSS illustrations: no animation loop or external requests. */

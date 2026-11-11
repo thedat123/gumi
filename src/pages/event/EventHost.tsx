@@ -4,7 +4,7 @@ import { cases, gameNames, healthy, sugary } from './data';
 import { useBoardPage } from './EventResults';
 import { PLAY_URL, useQr } from './qr';
 import type { BoardRow } from './store';
-import gumiArt from '../../assets/gumi.png';
+import gumiArt from '../../assets/gumi-event.webp';
 import './event-host.css';
 
 /** Đếm nhịp cho mô phỏng (đứng yên khi tab ẩn hoặc người xem tắt chuyển động). */
@@ -24,7 +24,7 @@ const clock = (d: Date) => d.toLocaleTimeString('vi-VN', { hour: '2-digit', minu
 export function EventHost() {
   const { signOut } = useSession();
   const qr = useQr(PLAY_URL, 900);
-  const { data: top, error } = useBoardPage(0, 3, 5000);
+  const { data: top } = useBoardPage(0, 3, 60000);
   const total = top?.total ?? null;
   const [updated, setUpdated] = useState<Date | null>(null);
   useEffect(() => { if (top) setUpdated(new Date()); }, [top]);
@@ -52,8 +52,8 @@ export function EventHost() {
     <div className="eh-main">
       <header className="eh-head">
         <div>
-          <span className="eh-live-label">Sự kiện đang diễn ra</span><h2>Ai đang dẫn đầu?</h2>
-          <p>{total !== null ? `${total} người đã chơi` : 'Đang tải…'}{updated && <> · cập nhật {clock(updated)}</>}{error && <span className="eh-warn"> · {error}</span>}</p>
+          <span className="eh-live-label">Sự kiện đang diễn ra</span><h2>Bảng xếp hạng</h2>
+          <p>{total !== null ? `${total} người đã chơi` : 'Đang tải…'}{updated && <> · cập nhật {clock(updated)}</>}</p>
         </div>
         <div className="eh-tools">
           <button onClick={toggleFull}>{full ? 'Thoát toàn màn hình' : 'Toàn màn hình'}</button>
@@ -139,15 +139,15 @@ function useFresh(rows: BoardRow[] | null) {
   return fresh;
 }
 
-const PAGE = 10, FLIP_MS = 8000;
+const PAGE = 10, FLIP_MS = 60000;
 function Leaderboard({ top, total }: { top: BoardRow[] | null; total: number }) {
   const fresh = useFresh(top);
   if (!top) return <section className="eh-board"><p className="eh-empty">Đang tải bảng xếp hạng…</p></section>;
-  if (!top.length) return <section className="eh-board eh-board-waiting"><div className="eh-welcome"><span className="eh-trophy" aria-hidden="true">♛</span><p>Bảng xếp hạng đang chờ bạn</p><h3>Vị trí đầu tiên<br/>có thể là của bạn.</h3><span>Quét mã, chọn thử thách và ghi điểm ngay.</span></div><div className="eh-podium" aria-hidden="true">{[2, 1, 3].map(rank => <div key={rank} className={`eh-seat seat-${rank}`}><span>{rank === 1 ? 'Ngôi đầu' : `Top ${rank}`}</span><b>{rank}</b><small>Chờ người chơi</small></div>)}</div></section>;
+  if (!top.length) return <section className="eh-board eh-board-waiting"><div className="eh-welcome"><span className="eh-trophy" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 5h12v8a6 6 0 0 1-12 0V5ZM10 8H5v3a6 6 0 0 0 6 6M22 8h5v3a6 6 0 0 1-6 6M16 19v7M11 27h10"/></svg></span><p>Bảng xếp hạng đang chờ bạn</p><h3>Vị trí đầu tiên<br/>có thể là của bạn.</h3><span>Quét mã, chọn thử thách và ghi điểm ngay.</span></div><div className="eh-podium" aria-hidden="true">{[2, 1, 3].map(rank => <div key={rank} className={`eh-seat seat-${rank}`}><span>{rank === 1 ? 'Ngôi đầu' : `Top ${rank}`}</span><b>{rank}</b><small>Chờ người chơi</small></div>)}</div></section>;
   return <section className="eh-board" aria-label="Bảng xếp hạng chung">
     <ol className="eh-top3">{top.map(r => <li key={r.id} className={`p${r.rank} ${fresh.has(r.id) ? 'fresh' : ''}`}>
       <span className="eh-pos">{r.rank}</span>
-      <span className="eh-who"><b title={r.player}>{r.player}</b><small>{gameNames[r.game - 1]}</small></span>
+      <span className="eh-who">{r.rank === 1 && <span className="eh-leader-label">Đang dẫn đầu</span>}<b title={r.player}>{r.player}</b><small>{gameNames[r.game - 1]}</small></span>
       <strong>{r.score}<small>điểm</small></strong>
     </li>)}</ol>
     {total > 3 ? <RestBoard total={total}/> : <div className="eh-next-invite"><span>Cuộc đua mới bắt đầu</span><b>Bạn sẽ là người tiếp theo?</b><p>Quét mã bên trái để ghi tên mình lên bảng.</p></div>}
@@ -156,14 +156,14 @@ function Leaderboard({ top, total }: { top: BoardRow[] | null; total: number }) 
 function RestBoard({ total }: { total: number }) {
   const pages = Math.max(1, Math.ceil(Math.max(0, total - 3) / PAGE));
   const [page, setPage] = useState(0);
-  // Màn chiếu không ai bấm: tự lật trang hạng 4+ mỗi 8 giây.
+  // Màn chiếu không ai bấm: tự lật trang hạng 4+ mỗi 60 giây.
   useEffect(() => {
     if (pages <= 1 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = window.setInterval(() => { if (!document.hidden) setPage(p => (p + 1) % pages); }, FLIP_MS);
     return () => clearInterval(t);
   }, [pages]);
   useEffect(() => { if (page > pages - 1) setPage(0); }, [page, pages]);
-  const { data: rest } = useBoardPage(3 + page * PAGE, PAGE, 5000);
+  const { data: rest } = useBoardPage(3 + page * PAGE, PAGE, 60000);
   return <div className="eh-rest-wrap">
       <div className="eh-rest-heading"><span>Những người chơi nổi bật</span><span>Điểm</span></div>
 

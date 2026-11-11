@@ -1,0 +1,44 @@
+purpose:
+  stands_in_for: Supabase HTTP calls for the historical team event and the current public QR event.
+  unblocks: Local checks of durable score retries, round resets, stale outbox rejection and lightweight public entry without production writes.
+assumptions:
+  - id: round-expiry-rejects-old-score
+    status: supported
+    claim: Migration 0065 rejects a missing or stale round token and permits the same device to submit in the new round after clear.
+    reason: Exercised the actual SQL functions and clear command on a temporary PostgreSQL 18 database with anon execution and preserved profile data.
+    verification: "2026-11-11: scripts/verify-event-reset.py passed dry run, atomic reset, stale and tokenless rejection, replay and idempotency. This covers local PostgreSQL behavior, not hosted Supabase gateway configuration."
+    source: supabase/migrations/0065_event_reset_round.sql; scripts/clear-event.py; scripts/verify-event-reset.py
+    updated_at: "2026-11-11"
+  - id: reset-discards-old-device-outbox
+    status: supported
+    claim: The updated public event client clears event-only player state when the server round changes, preserves unrelated storage, and does not resurrect an old offline result.
+    reason: The browser ran the real store and Supabase HTTP client through this simulation, with offline/reconnect and server round rotation.
+    verification: "2026-11-11: scripts/verify-event-round.mjs passed reset, blank name, removed local play/outbox, same-device replay, 503 retention and deduplicated retry. Simulation log includes event_round/event_submit/event_board requests, 503 and subsequent 200 responses."
+    source: src/pages/event/store.ts; src/pages/event/EventGame.tsx; postman/mocks/event-supabase/default.cjs; scripts/verify-event-round.mjs
+    updated_at: "2026-11-11"
+  - id: lightweight-client-and-coalescing
+    status: supported
+    claim: During the tested active game the public client does not poll the server, and 200 simulated Realtime messages cause one board read through its shared channel.
+    reason: Browser request assertions exercised the isolated entry route and a WebSocket protocol fixture; the actual HTTP reads reached this simulation.
+    verification: "2026-11-11: verify-event-round.mjs passed no game polling, no auth/profile/3D/vision requests, one-minute polling fallback and 200-to-one notification coalescing. The socket was a browser fixture, not hosted Supabase Realtime."
+    source: src/main.tsx; src/pages/event/store.ts; scripts/verify-event-round.mjs
+    updated_at: "2026-11-11"
+  - id: local-200-client-spike
+    status: supported
+    claim: The local PostgreSQL schema completed a burst of 200 concurrent clients, each reading a round, submitting a distinct play and reading a board page, without failed transactions.
+    reason: pgbench ran against actual migrations 0063–0065 in an isolated PostgreSQL 18 cluster; verification counted exactly 200 rows and one public revision signal for the burst.
+    verification: "2026-11-11 final run: 200/200 transactions, 0 errors, average 200.515ms excluding initial connection time, approximately 997 transactions/s for this short local burst. Does not measure Supabase HTTP gateway, hosted hardware, WebSockets or Internet latency; not a sustained production capacity claim."
+    source: scripts/verify-event-reset.py; supabase/migrations/0063_event_public_play.sql; supabase/migrations/0064_event_one_play_common_board.sql; supabase/migrations/0065_event_reset_round.sql
+    updated_at: "2026-11-11"
+  - id: hosted-realtime-capacity
+    status: unknown
+    claim: The deployed Supabase project permits and sustains 200 player connections plus the host with the required Realtime publication configured.
+    reason: No production migration, load test, project-limit inspection or hosted WebSocket test was performed.
+    verification: null
+    source: docs/event-operations.md; supabase/migrations/0065_event_reset_round.sql
+    updated_at: "2026-11-11"
+fingerprints:
+  - id: event-reset-and-load-20261111
+    date: "2026-11-11"
+    commit: "3db98e32631397b7bc95432d410e07433cc95a61 (working tree modified)"
+    cli: "Postman CLI 1.75.0; simulation run available, status command unavailable. Reused repository-owned mock; no external owner lookup or workspace publication."

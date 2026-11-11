@@ -21,7 +21,8 @@
     "db:push": "python3 scripts/migrate.py --force",
     "db:push:from": "python3 scripts/migrate.py --from",
     "db:status": "python3 scripts/migrate.py --status",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "clear": "python3 scripts/clear-event.py"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",

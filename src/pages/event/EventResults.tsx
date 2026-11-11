@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { fetchBoard, watch, type BoardPage } from './store';
+import { fetchBoard, watchBoard, type BoardPage } from './store';
 import { gameNames } from './data';
 import './event-results.css';
 
 /** 1 trang bảng xếp hạng chung (phân trang phía máy chủ), tự làm mới định kỳ; mất mạng thì giữ bản đã tải. */
-export function useBoardPage(offset: number, limit: number, every = 15000) {
+export function useBoardPage(offset: number, limit: number, every = 60000) {
   const [data, setData] = useState<BoardPage | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useBoardPage(offset: number, limit: number, every = 15000) {
       finally { busy = false; }
     };
     void refresh();
-    const stop = watch(() => void refresh(), every);
+    const stop = watchBoard(() => void refresh(), every);
     return () => { alive = false; stop(); };
   }, [offset, limit, every]);
   return { data, error };
@@ -31,7 +31,7 @@ const PAGE = 10;
 /** Bảng xếp hạng chung trên điện thoại: 10 người/trang, ghim hạng của chính mình, nút tới trang của mình. */
 export function EventResults() {
   const [page, setPage] = useState(0);
-  const { data, error } = useBoardPage(page * PAGE, PAGE, 30000);
+  const { data } = useBoardPage(page * PAGE, PAGE, 60000);
   const total = data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const mine = data?.mine;
@@ -41,7 +41,6 @@ export function EventResults() {
     <div className="event-section-heading"><div><p className="event-eyebrow">Cùng tỏa sáng</p><h2>Bảng xếp hạng{data ? ` · ${total} người` : ''}</h2></div><span className="event-live">Tự cập nhật</span></div>
     {mine && <p className="event-my-rank"><span>{mine.pending ? 'Điểm của bạn đang được gửi…' : <>Bạn đang hạng <b>{mine.rank}</b> / {total}</>}</span>
       {minePage !== null && minePage !== page && <button onClick={() => setPage(minePage)}>Xem vị trí của bạn</button>}</p>}
-    {error && <p className="event-note" role="status">{error}</p>}
     <ol className="event-board">
       {data === null && <li className="event-board-empty">Đang tải…</li>}
       {data?.rows.length === 0 && <li className="event-board-empty"><span aria-hidden="true">✦</span>Chưa có ai chơi. Bạn là người đầu tiên?</li>}

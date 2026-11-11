@@ -1,3 +1,5 @@
+> Event QR hiện tại dùng 3 game, mỗi điện thoại 1 lượt. Xem [vận hành, reset và giảm tải](event-operations.md) cho kiến trúc và lệnh hiện tại. Nội dung bản đội chơi 4 game bên dưới là lịch sử.
+
 # Khu sự kiện trực tiếp
 
 Route `/event` có shell riêng, yêu cầu đăng nhập với profile role `gamer`.
