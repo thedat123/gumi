@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { useSession } from '../../app/session';
-import { prepareUfoArt } from '../../lib/ufoArt';
 import { playSfx } from '../../lib/sfx';
-import { FlappyBird } from '../minigames/FlappyBird';
-import { cases, gameNames, healthy, pairs, shuffle, sugary } from './data';
-import { flushResults, pendingCount, queueResult, type EventResult } from './store';
+import { cases, gameInfo, gameNames, healthy, pairs, shuffle, sugary } from './data';
+import { flush, myPlays, pending, playerKey, resetDevice, savePlay, watch, type EventPlay } from './store';
 import { EventResults } from './EventResults';
 import gumiArt from '../../assets/gumi.png';
 import './event.css';
@@ -19,127 +16,102 @@ function useClock(seconds: number, active: boolean, end: () => void) {
   }, [seconds, active]);
   return left;
 }
+const nameKey = 'gumi-event-name';
+
+/** Sự kiện bản QR: quét mã → nhập tên → chơi 1, 2 hoặc cả 3 game (mỗi game 1 lần / điện thoại).
+ *  Mỗi game có bảng riêng; bảng Tổng hợp xếp ai chơi nhiều game hơn lên trên, rồi tới tổng điểm.
+ *  Ban tổ chức mở `/play?new=1` để xoá lượt đã chơi trên máy (máy dùng chung / thử nghiệm). */
 export function EventGame() {
-  const { signOut, session } = useSession();
-  const owner = session!.userId;
-  const [assets, setAssets] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [assetAttempt, setAssetAttempt] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    setAssets('loading');
-    void prepareUfoArt().then(() => { if (!cancelled) setAssets('ready'); })
-      .catch(() => { if (!cancelled) setAssets('error'); });
-    return () => { cancelled = true; };
-  }, [assetAttempt]);
-  const [team, setTeam] = useState('');
-  const [stage, setStage] = useState(-1);
-  const [scores, setScores] = useState<number[]>([]);
-  const [result, setResult] = useState<EventResult | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
-  const [queued, setQueued] = useState(() => pendingCount(owner));
+  const [plays, setPlays] = useState<EventPlay[]>(() => {
+    if (new URLSearchParams(location.search).has('new')) { resetDevice(); history.replaceState(null, '', location.pathname); }
+    return myPlays();
+  });
+  const [name, setName] = useState(() => plays[plays.length - 1]?.player ?? (() => { try { return localStorage.getItem(nameKey) ?? ''; } catch { return ''; } })());
+  const [step, setStep] = useState<'name' | 'pick' | 'play' | 'result'>(() => plays.length ? 'result' : 'name');
+  const [game, setGame] = useState(() => plays[plays.length - 1]?.game ?? 1);
+  const [waiting, setWaiting] = useState(() => pending().length);
   const [online, setOnline] = useState(navigator.onLine);
-  const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
-  const pendingKey = `gumi-event-pending:${owner}`;
-  const completedStage = useRef(-1);
-  const advance = useCallback((score: number) => {
-    if (completedStage.current === stage) return;
-    completedStage.current = stage;
-    setScores(s => [...s, score]); setStage(s => s+1);
-  }, [stage]);
-  const persist = useCallback((r: EventResult) => {
-    setError('');
-    try {
-      queueResult(r, owner); setSaved(true); sessionStorage.removeItem(pendingKey);
-      // Server acknowledgement is never on the path to the next team.
-      void flushResults(owner).catch(() => {});
-    } catch { setError('Bộ nhớ máy đang đầy hoặc bị khóa. Hãy lưu lại điểm trước khi chuyển đội.'); }
-  }, [owner, pendingKey]);
+  const finished = useRef(false);
+
   useEffect(() => {
-    const pending = sessionStorage.getItem(pendingKey);
-    if (pending) { try { const r: EventResult = JSON.parse(pending); setResult(r); setTeam(r.team); setScores(r.scores); setStage(4); persist(r); } catch { setError('Không đọc được kết quả đang chờ lưu.'); } }
-  }, [pendingKey, persist]);
-  useEffect(() => {
-    if (stage !== 4 || result) return;
-    const r = { id: crypto.randomUUID(), team: team.trim(), scores, total: scores.reduce((a,b) => a+b,0) };
-    setResult(r);
-    try { sessionStorage.setItem(pendingKey, JSON.stringify(r)); } catch { /* durable outbox below is authoritative */ }
-    persist(r);
-  }, [stage, result, scores, team, persist, pendingKey]);
-  useEffect(() => {
-    const status = () => { setQueued(pendingCount(owner)); setOnline(navigator.onLine); };
-    const reconnect = () => { status(); if (stage < 0 || stage >= 4) void flushResults(owner).catch(() => {}); };
-    window.addEventListener('event-results', status); window.addEventListener('storage', status);
-    window.addEventListener('online', reconnect); window.addEventListener('offline', status);
-    const timer = setInterval(() => { if (!document.hidden && navigator.onLine) reconnect(); }, 30000);
-    reconnect();
-    return () => { clearInterval(timer); window.removeEventListener('event-results', status); window.removeEventListener('storage', status); window.removeEventListener('online', reconnect); window.removeEventListener('offline', status); };
-  }, [owner, stage]);
-  useEffect(() => {
-    const update = () => setFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener('fullscreenchange', update);
-    return () => document.removeEventListener('fullscreenchange', update);
+    const status = () => { setWaiting(pending().length); setOnline(navigator.onLine); };
+    const off = () => setOnline(false);
+    window.addEventListener('offline', off);
+    const stop = watch(status);
+    void flush().catch(() => {});
+    return () => { stop(); window.removeEventListener('offline', off); };
   }, []);
-  const fullScreen = () => {
-    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-    else void document.documentElement.requestFullscreen?.().catch(() => {});
-  };
-  const total = scores.reduce((a,b) => a+b, 0);
-  const nextTeam = () => { setTeam(''); setScores([]); setResult(null); setSaved(false); completedStage.current = -1; setStage(-1); };
-  return <main className="event-shell" data-game-active={stage >= 0 ? 'true' : undefined}>
+
+  const finish = useCallback((score: number) => {
+    if (finished.current) return;
+    finished.current = true;
+    savePlay({ id: crypto.randomUUID(), player_key: playerKey(), player: name.trim(), game, score });
+    setPlays(myPlays()); setStep('result'); playSfx('sparkle');
+    window.scrollTo({ top: 0 });
+  }, [name, game]);
+  const start = (g: number) => { finished.current = false; setGame(g); setStep('play'); window.scrollTo({ top: 0 }); };
+
+  const played = (g: number) => plays.find(p => p.game === g);
+  const left = gameNames.map((_, i) => i + 1).filter(g => !played(g));
+  const total = plays.reduce((s, p) => s + p.score, 0);
+  const last = plays.find(p => p.game === game) ?? plays[plays.length - 1];
+  const status = waiting ? 'ĐANG GỬI ĐIỂM…' : online ? 'SẴN SÀNG' : 'MẤT MẠNG';
+
+  return <main className="event-shell event-mobile" data-game-active={step === 'play' ? 'true' : undefined}>
     <header className="event-header">
       <div className="event-brand"><img className="event-brand-mark" src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" draggable={false} decoding="async"/><div><b>MẬT ĐỘ</b><small>THE LESS SUGAR CHALLENGE</small></div></div>
-      <nav aria-label="Tiến độ" style={{ '--ev-fill': stage < 0 ? 0 : Math.min(1, (stage + .5) / 5) } as CSSProperties}>{[...gameNames, 'Tổng kết'].map((name,i) => <span key={i} className={stage === i ? 'current' : stage > i ? 'lit' : ''} aria-current={stage === i ? 'step' : undefined}><b>{stage > i ? '✓' : `0${i+1}`}</b><small>{name}</small></span>)}</nav>
-      <div className="event-controls">
-        <span className={`event-connection ${!online || queued ? 'pending' : ''}`} role="status">{queued ? `${queued} kết quả chờ đồng bộ` : online ? 'SẴN SÀNG' : 'CHƠI NGOẠI TUYẾN'}</span>
-        <button className="event-icon-btn" onClick={fullScreen} aria-label={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'} title="Toàn màn hình">⛶</button>
-        <button className="event-signout" onClick={() => void signOut()}>Đăng xuất</button>
-      </div>
+      <div className="event-controls"><span className={`event-connection ${!online || waiting ? 'pending' : ''}`} role="status">{status}</span></div>
     </header>
     <div className="event-content">
-      <p className="event-eyebrow">{stage < 0 ? 'TRẠM THỬ THÁCH' : <><span className="event-team-chip">{team}</span>{stage < 4 ? `GAME 0${stage+1}` : 'HOÀN THÀNH CHẶNG'}</>}</p>
-      {stage < 0 ? <>
+      {step === 'result' && last ? <>
+        <section className="event-summary">
+          <img className="event-summary-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
+          <div className="event-summary-body">
+            <h1>{left.length ? 'HOÀN THÀNH!' : 'XUẤT SẮC!'}</h1>
+            <p className="event-summary-team"><small>NGƯỜI CHƠI</small>{last.player}</p>
+            <p className="event-eyebrow">{gameNames[last.game - 1]}</p>
+            <h2><b>{last.score}</b><small>điểm</small></h2>
+            <div className="event-my-games">
+              {gameNames.map((g, i) => { const p = played(i + 1); return <span key={g} className={p ? 'done' : ''}><small>0{i + 1} · {g}</small><b>{p ? p.score : '—'}</b></span>; })}
+              <span className="sum"><small>Tổng · {plays.length}/3 game</small><b>{total}</b></span>
+            </div>
+            <p role="status" className={`event-save-status ${waiting ? '' : 'ok'}`}>
+              {waiting ? 'Đã lưu trên máy — điểm sẽ tự gửi lên khi có mạng.' : left.length ? `Đã lên bảng xếp hạng! Chơi thêm ${left.length} game nữa để leo bảng Tổng hợp.` : 'Bạn đã chơi đủ 3 game — xem hạng của bạn ở bảng Tổng hợp!'}
+            </p>
+            {left.length > 0 && <div className="event-next-games">
+              {left.map(g => <button key={g} className="event-primary" onClick={() => start(g)}>Chơi tiếp: {gameNames[g - 1]} <span aria-hidden="true">→</span></button>)}
+            </div>}
+          </div>
+        </section>
+        <EventResults initialGame={left.length ? last.game : 0} />
+      </> : step === 'play' ? <>
+        <p className="event-eyebrow"><span className="event-team-chip">{name.trim()}</span>THỬ THÁCH 0{game}</p>
+        <div className="event-stage-heading"><h1>{gameNames[game - 1]}</h1></div>
+        {game === 1 ? <Sort onDone={finish}/> : game === 2 ? <Memory onDone={finish}/> : <Truth onDone={finish}/>}
+      </> : step === 'pick' ? <>
+        <p className="event-eyebrow"><span className="event-team-chip">{name.trim()}</span>CHỌN THỬ THÁCH</p>
+        <div className="event-stage-heading"><h1>Chọn game</h1>{!plays.length && <button className="event-ghost event-back" onClick={() => setStep('name')}>← Đổi tên</button>}</div>
+        <div className="event-game-roster event-game-pick">{gameNames.map((g, i) => { const p = played(i + 1); return <button key={g} disabled={Boolean(p)} onClick={() => start(i + 1)}><span>{p ? '✓' : `0${i+1}`}</span><div><b>{g}</b><small>{p ? `Đã chơi · ${p.score} điểm` : gameInfo[i]!.hint}</small></div><i aria-hidden="true">{gameInfo[i]!.icon}</i></button>; })}</div>
+        <p className="event-note">Mỗi game chơi 1 lần. Chơi càng nhiều game, hạng ở bảng Tổng hợp càng cao!</p>
+      </> : <>
         <div className="event-lobby">
           <div className="event-lobby-copy">
             <span className="event-live">LIVE ARCADE / 2026</span>
             <h1>HẠ MẬT ĐỘ.<br/><em>BẬT NĂNG LƯỢNG.</em></h1>
-            <p>Phản xạ nhanh. Ghi nhớ chuẩn. Bóc trần cú lừa.<br/>Sẵn sàng đưa đội bạn lên đỉnh bảng xếp hạng?</p>
-            <div className="event-lobby-stats"><span><b>04</b>THỬ THÁCH</span><span><b>01</b>ĐỘI CHƠI</span><span><b>∞</b>NĂNG LƯỢNG</span></div>
+            <p>3 thử thách — chơi càng nhiều, điểm tổng càng cao, càng dễ lên đỉnh bảng xếp hạng!</p>
           </div>
           <div className="event-entry-wrap">
             <img className="event-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
-            <form className="event-entry" onSubmit={e => { e.preventDefault(); if (team.trim() && assets === 'ready') setStage(0); }}>
+            <form className="event-entry" onSubmit={e => { e.preventDefault(); const n = name.trim(); if (!n) return; try { localStorage.setItem(nameKey, n); } catch { /* ignore */ } setStep('pick'); }}>
               <span className="event-eyebrow">PLAYER CHECK-IN</span>
-              <h2>Đội bạn tên gì?</h2>
-              <label htmlFor="event-team">Tên xuất hiện trên bảng xếp hạng</label>
-              <input id="event-team" maxLength={60} required autoComplete="off" value={team} onChange={e => setTeam(e.target.value)} placeholder="Nhập tên đội…"/>
-              <button className="event-primary" disabled={!team.trim() || assets !== 'ready'} aria-busy={assets === 'loading'}>{assets === 'loading' ? 'Đang chuẩn bị hình ảnh…' : 'Bắt đầu thử thách'} <span aria-hidden="true">↗</span></button>
-              {assets === 'error' ? <><small role="alert">Chưa tải được hình ảnh. Kiểm tra kết nối và thử lại.</small><button type="button" className="event-ghost" onClick={() => setAssetAttempt(n => n + 1)}>Tải lại hình ảnh</button></> : <small>Chỉ cần tên đội. Sẵn sàng là chơi.</small>}
+              <h2>Bạn tên gì?</h2>
+              <label htmlFor="event-name">Tên xuất hiện trên bảng xếp hạng</label>
+              <input id="event-name" maxLength={40} required autoComplete="nickname" enterKeyHint="go" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên của bạn…"/>
+              <button className="event-primary" disabled={!name.trim()}>Tiếp tục <span aria-hidden="true">→</span></button>
+              <small>Mỗi điện thoại chơi được cả 3 game, mỗi game 1 lần.</small>
             </form>
           </div>
         </div>
-        <div className="event-game-roster">{gameNames.map((name,i) => <article key={name}><span>0{i+1}</span><div><b>{name}</b><small>{['30 giây · Kéo & thả', '45 giây · Ghép cặp', '5 hồ sơ · Đúng hay sai', '5 lượt · Bay qua 40 cột'][i]}</small></div><i aria-hidden="true">{['↔','▦','?','↗'][i]}</i></article>)}</div>
-        <EventResults pageSizes={[10, 20, 50]} />
-      </> : stage === 4 ? <>
-        <section className="event-summary">
-          <img className="event-summary-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
-          <div className="event-summary-body">
-            <h1>CHẶNG ĐƯỜNG RỰC RỠ!</h1>
-            <p className="event-summary-team"><small>ĐỘI</small>{team}</p>
-            <h2><b>{total}</b><small>điểm</small></h2>
-            <div className="event-scorecards">{scores.map((s,i) => <article key={i}><span>0{i+1}</span><strong>{gameNames[i]}</strong><b>{s}</b>{i===3 && <small>{s>=40 ? 'Hoàn thành' : 'Đã hết 5 lượt'}</small>}</article>)}</div>
-            <p role="status" className={`event-save-status ${saved && !queued ? 'ok' : ''}`}>{saved ? queued ? 'Đã lưu tại máy. Tự đồng bộ khi có mạng — đội tiếp theo có thể chơi ngay.' : 'Đã lưu lên bảng xếp hạng!' : 'Kết quả đang chờ lưu.'}</p>
-            {error && <p role="alert" className="event-save-status bad">{error}</p>}
-            <div className="event-summary-actions">
-              {!saved && result && <button className="event-ghost" onClick={() => void persist(result)}>Lưu kết quả</button>}
-              <button className="event-primary" disabled={!saved} onClick={nextTeam}>Đội tiếp theo →</button>
-            </div>
-          </div>
-        </section>
-        <EventResults pageSizes={[10, 20, 50]} />
-      </> : <>
-        <div className="event-stage-heading"><h1>{gameNames[stage]}</h1><span className="event-stage-tag">THỬ THÁCH 0{stage+1} / 04</span></div>
-        {stage===0 ? <Sort onDone={advance}/> : stage===1 ? <Memory onDone={advance}/> : stage===2 ? <Truth onDone={advance}/> : <FlappyBird event={{ onFinish: advance }}/>}
       </>}
     </div>
   </main>;
@@ -159,7 +131,7 @@ function Sort({ onDone }: { onDone: (s:number) => void }) {
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   });
   useEffect(() => { if(!feedback) return; const t=setTimeout(() => {setDeck(d => d.length>1 ? d.slice(1) : shuffle([...healthy.map(name=>({name,good:true})),...sugary.map(name=>({name,good:false}))])); setFeedback('');locked.current=false;},250);return()=>clearTimeout(t); },[feedback]);
-  return <div className={`event-game event-sort ${feedback}`}><div className="event-hud"><span className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>GIÂY</small></span><b className="event-points">{score}<small>ĐIỂM</small></b></div><TimeBar left={left} total={30}/><p>Kéo thẻ vào đúng nơi hoặc chọn nút bên dưới. Đúng +5 điểm.</p><p className="event-note">Theo công thức trong bộ thẻ: nhóm ít đường không thêm đường; matcha và trà trái cây ở nhóm còn lại là phiên bản pha ngọt.</p><div className="drink-card" draggable onDragStart={e=>e.dataTransfer.setData('text/plain',deck[0].name)}><span className="event-drink-art" aria-hidden="true"><i/><i/><i/></span><small>PHÂN LOẠI ĐỒ UỐNG</small><strong>{deck[0].name}</strong></div><div className="event-answers">{[false,true].map(good=><button key={String(good)} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(e.dataTransfer.getData('text/plain')===deck[0].name)choose(good);}} onClick={()=>choose(good)}><span className="event-bin-icon">{good ? <FridgeIcon/> : <BinIcon/>}</span><span className="event-answer-text"><strong>{good?'Tủ lạnh':'Thùng rác'}</strong><small>{good ? 'ÍT ĐƯỜNG / HEALTHY' : 'NHIỀU ĐƯỜNG'}</small></span><kbd aria-hidden="true">{good ? '→' : '←'}</kbd></button>)}</div><p role="status" className={`event-feedback ${feedback}`}>{feedback==='correct'?'✓ Chính xác! +5':feedback==='wrong'?'✕ Chưa chính xác!':'Dùng phím ← Thùng rác · Tủ lạnh →'}</p></div>;
+  return <div className={`event-game event-sort ${feedback}`}><div className="event-hud"><span className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>GIÂY</small></span><b className="event-points">{score}<small>ĐIỂM</small></b></div><TimeBar left={left} total={30}/><p>Chạm Tủ lạnh (ít đường) hoặc Thùng rác (nhiều đường). Đúng +5 điểm.</p><p className="event-note">Theo công thức trong bộ thẻ: nhóm ít đường không thêm đường; matcha và trà trái cây ở nhóm còn lại là phiên bản pha ngọt.</p><div className="drink-card" draggable onDragStart={e=>e.dataTransfer.setData('text/plain',deck[0].name)}><span className="event-drink-art" aria-hidden="true"><i/><i/><i/></span><small>PHÂN LOẠI ĐỒ UỐNG</small><strong>{deck[0].name}</strong></div><div className="event-answers">{[false,true].map(good=><button key={String(good)} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(e.dataTransfer.getData('text/plain')===deck[0].name)choose(good);}} onClick={()=>choose(good)}><span className="event-bin-icon">{good ? <FridgeIcon/> : <BinIcon/>}</span><span className="event-answer-text"><strong>{good?'Tủ lạnh':'Thùng rác'}</strong><small>{good ? 'ÍT ĐƯỜNG / HEALTHY' : 'NHIỀU ĐƯỜNG'}</small></span><kbd aria-hidden="true">{good ? '→' : '←'}</kbd></button>)}</div><p role="status" className={`event-feedback ${feedback}`}>{feedback==='correct'?'✓ Chính xác! +5':feedback==='wrong'?'✕ Chưa chính xác!':(matchMedia('(pointer: coarse)').matches ? 'Chạm để chọn — càng nhanh càng nhiều điểm!' : 'Dùng phím ← Thùng rác · Tủ lạnh →')}</p></div>;
 }
 function Memory({onDone}:{onDone:(s:number)=>void}) {
   const [cards]=useState(()=>shuffle(pairs.flatMap((p,id)=>p.map(label=>({id,label}))))); const [preview,setPreview]=useState(true); const [open,setOpen]=useState<number[]>([]);const [matched,setMatched]=useState<number[]>([]);const points=useRef(0);
@@ -173,5 +145,5 @@ function Truth({onDone}:{onDone:(s:number)=>void}) {
   const choose=(value:boolean|null)=>{if(locked.current)return;locked.current=true;const ok=value===questions[index].fact;if(ok)score.current+=5;setAnswer(ok);playSfx(ok?'sparkle':'sleep');};
   const left=useClock(15,answer===null,()=>choose(null));
   useEffect(()=>{const key=(e:KeyboardEvent)=>{if(answer!==null||e.repeat)return;if(e.code==='ArrowLeft'){e.preventDefault();choose(false);}if(e.code==='ArrowRight'){e.preventDefault();choose(true);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);});
-  return <div className="event-game event-truth"><div className="event-hud"><span className="event-hud-chip">HỒ SƠ #{String(index+1).padStart(2,'0')} · {questions[index].title}</span><b className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>GIÂY</small></b></div><TimeBar left={answer===null ? left : 0} total={15}/><blockquote>{questions[index].statement}</blockquote><div className="event-answers"><button disabled={answer!==null} onClick={()=>choose(false)}><span className="event-answer-text"><strong>Cú lừa</strong><small>CAP / FAKE</small></span><kbd aria-hidden="true">←</kbd></button><button disabled={answer!==null} onClick={()=>choose(true)}><span className="event-answer-text"><strong>Sự thật</strong><small>FACT</small></span><kbd aria-hidden="true">→</kbd></button></div>{answer!==null&&<div className={`truth-reveal ${answer ? 'ok' : 'bad'}`} role="status"><h2>{answer?'✓ Chính xác · +5 điểm':'✕ Chưa chính xác / hết giờ'}</h2><b>Đáp án: {questions[index].fact?'SỰ THẬT':'CÚ LỪA'}</b><p>{questions[index].explanation}</p><button className="event-primary" onClick={()=>{if(index===4)onDone(score.current);else{setIndex(i=>i+1);setAnswer(null);locked.current=false;}}}>{index===4?'Qua Flappy Gumi →':'Hồ sơ tiếp theo →'}</button></div>}</div>;
+  return <div className="event-game event-truth"><div className="event-hud"><span className="event-hud-chip">HỒ SƠ #{String(index+1).padStart(2,'0')} · {questions[index].title}</span><b className={left<=5 ? "event-timer urgent" : "event-timer"}>◷ {left}<small>GIÂY</small></b></div><TimeBar left={answer===null ? left : 0} total={15}/><blockquote>{questions[index].statement}</blockquote><div className="event-answers"><button disabled={answer!==null} onClick={()=>choose(false)}><span className="event-answer-text"><strong>Cú lừa</strong><small>CAP / FAKE</small></span><kbd aria-hidden="true">←</kbd></button><button disabled={answer!==null} onClick={()=>choose(true)}><span className="event-answer-text"><strong>Sự thật</strong><small>FACT</small></span><kbd aria-hidden="true">→</kbd></button></div>{answer!==null&&<div className={`truth-reveal ${answer ? 'ok' : 'bad'}`} role="status"><h2>{answer?'✓ Chính xác · +5 điểm':'✕ Chưa chính xác / hết giờ'}</h2><b>Đáp án: {questions[index].fact?'SỰ THẬT':'CÚ LỪA'}</b><p>{questions[index].explanation}</p><button className="event-primary" onClick={()=>{if(index===4)onDone(score.current);else{setIndex(i=>i+1);setAnswer(null);locked.current=false;}}}>{index===4?'Xem kết quả →':'Hồ sơ tiếp theo →'}</button></div>}</div>;
 }

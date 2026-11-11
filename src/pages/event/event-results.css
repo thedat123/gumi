@@ -70,3 +70,42 @@
   .event-section-heading .event-live { display: none; }
   .event-leaderboard th, .event-leaderboard td { padding: 12px 14px; }
 }
+
+/* Bảng xếp hạng dạng danh sách — gọn trên điện thoại. */
+.event-board-tabs { display: flex; gap: 6px; padding: 0 20px 14px; overflow-x: auto; scrollbar-width: none; }
+.event-board-tabs::-webkit-scrollbar { display: none; }
+.event-shell .event-board-tabs button {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 999px; font-size: 13px; font-weight: 800;
+  background: var(--ev-soft, #FFF7F3); border: 1px solid var(--ev-line, #EBD8CD); color: var(--ev-muted, #775A4E);
+}
+.event-board-tabs button span { font-size: 11px; opacity: .7; }
+.event-shell .event-board-tabs button.active { background: var(--ev-grad); border-color: transparent; color: #fff; }
+.event-board { list-style: none; margin: 0; padding: 0; max-height: 560px; overflow: auto; border-top: 1px solid var(--ev-line, #EBD8CD); }
+.event-board li { display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #F3E7DF; font-variant-numeric: tabular-nums; }
+.event-board li:last-child { border-bottom: 0; }
+.event-board li.top-1 { background: linear-gradient(90deg, #FFF3DC 0%, #FFF3DC00 70%); }
+.event-board li.mine { background: var(--ev-pink-soft, #FCE8EE); box-shadow: inset 4px 0 0 var(--ev-primary, #B83556); }
+.event-board-name { flex: 1; min-width: 0; font-weight: 800; font-size: 15px; overflow-wrap: anywhere; }
+.event-board li > b {
+  min-width: 52px; padding: 5px 12px; border-radius: 999px; text-align: center;
+  background: var(--ev-pink-soft, #FCE8EE); color: var(--ev-primary, #B83556); font-size: 16px; font-weight: 900;
+}
+.event-board li.mine > b { background: var(--ev-primary, #B83556); color: #fff; }
+.event-you { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--ev-primary, #B83556); color: #fff; font-size: 10px; font-weight: 900; letter-spacing: 1px; vertical-align: middle; }
+.event-board-empty { justify-content: center; padding: 28px 20px !important; color: var(--ev-muted, #775A4E); font-size: 14px; flex-direction: column; text-align: center; }
+.event-board-empty > span { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--ev-pink-soft, #FCE8EE); color: var(--ev-primary, #B83556); font-size: 22px; }
+@media (max-width: 700px) {
+  .event-board-tabs { padding: 0 14px 12px; }
+  .event-board li { padding: 11px 14px; gap: 10px; }
+}
+/* 3 tab chia đều, chữ tự xuống dòng — không tràn trên điện thoại. */
+.event-board-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+.event-shell .event-board-tabs button { justify-content: center; text-align: center; white-space: normal; line-height: 1.25; padding: 9px 8px; border-radius: 14px; }
+@media (max-width: 440px) { .event-board-tabs button span { display: none; } .event-shell .event-board-tabs button { font-size: 12px; } }
+/* 4 tab: Tổng hợp + 3 game → 2×2 trên điện thoại, 1 hàng trên màn rộng. */
+.event-board-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 560px) { .event-board-tabs { grid-template-columns: 1fr 1fr; } }
+.event-board-games { display: block; margin-top: 2px; color: var(--ev-muted, #775A4E); font-size: 11.5px; font-weight: 700; }
+.event-board-rule { margin: 0; padding: 0 20px 12px; color: var(--ev-muted, #775A4E); font-size: 13px; line-height: 1.45; }
+.event-board-rule b { color: var(--ev-primary, #B83556); }

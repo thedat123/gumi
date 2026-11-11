@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { useEventResults } from './event/EventResults';
 import { gameNames } from './event/data';
-import type { EventResult } from './event/store';
+import { adminDelete, adminPlays, adminWatch, totalsOf, type EventPlay } from './event/store';
+import { PLAY_URL, useQr } from './event/qr';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
 import { AsyncView } from '../components/AsyncView';
@@ -254,17 +254,13 @@ function WallPanel() {
   );
 }
 
-/* ============================ SỰ KIỆN TRỰC TIẾP ============================ */
-type EvRow = EventResult & { pending?: boolean; rank: number };
-type EvSort = 'total' | 0 | 1 | 2 | 3;
-const GAME_SHORT = ['Phân loại', 'Truy vết', 'Sự thật', 'Flappy'];
-const FLAPPY_GOAL = 40; // Flappy Gumi: bay qua đủ 40 cột là hoàn thành
+/* ============================ SỰ KIỆN TRỰC TIẾP (QR) ============================ */
+type EvRow = EventPlay & { rank: number };
 const MEDAL = [
   { color: '#C9962B', chip: 'bg-[#C9962B]/15 text-[#9A6F12]', label: 'Vô địch' },
   { color: '#7D8A9C', chip: 'bg-[#7D8A9C]/15 text-[#566273]', label: 'Á quân' },
   { color: '#B0703F', chip: 'bg-[#B0703F]/15 text-[#8A5126]', label: 'Hạng ba' },
 ];
-
 function RankChip({ rank }: { rank: number }) {
   const m = MEDAL[rank - 1];
   return m
@@ -272,15 +268,25 @@ function RankChip({ rank }: { rank: number }) {
     : <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-bg px-1.5 text-caption font-bold tabular-nums text-muted" aria-label={`Hạng ${rank}`}>{rank}</span>;
 }
 
-function PendingTag() {
-  return <span className="ml-2 inline-flex items-center gap-1 rounded-pill bg-accent/15 px-2 py-0.5 align-middle text-[11px] font-bold text-accent"><Icon name="clock" size={11} />Đang đồng bộ</span>;
-}
+/** Xếp hạng riêng từng game (hoà điểm: ai chơi trước xếp trên). */
+const rankAll = (plays: EventPlay[]): EvRow[] => {
+  const out: EvRow[] = [];
+  for (let g = 1; g <= gameNames.length; g++) {
+    plays.filter((p) => p.game === g)
+      .sort((a, b) => b.score - a.score || (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+      .forEach((p, i) => out.push({ ...p, rank: i + 1 }));
+  }
+  return out;
+};
 
 function exportEventCsv(rows: EvRow[]) {
-  const header = ['Hạng', 'Tên đội', ...gameNames, 'Tổng', 'Thời gian'];
+  const header = ['Bảng', 'Hạng', 'Người chơi', 'Điểm', 'Số game', 'Thời gian'];
   const esc = (v: string | number) => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const when = (iso?: string) => iso ? new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
-  const body = rows.map((r) => [r.rank, r.team, ...gameNames.map((_, g) => r.scores[g] ?? 0), r.total, when(r.created_at)].map(esc).join(','));
+  const body = [
+    ...totalsOf(rows).map((r) => ['Tổng hợp', r.rank, r.player, r.score, r.games ?? '', ''].map(esc).join(',')),
+    ...rows.map((r) => [gameNames[r.game - 1] ?? r.game, r.rank, r.player, r.score, '', when(r.created_at)].map(esc).join(',')),
+  ];
   const csv = '﻿' + [header.join(','), ...body].join('\r\n'); // BOM để Excel đọc đúng tiếng Việt
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
@@ -289,33 +295,82 @@ function exportEventCsv(rows: EvRow[]) {
   URL.revokeObjectURL(url);
 }
 
-function EventPanel() {
-  const { rows, error } = useEventResults();
-  const [q, setQ] = useState('');
-  const [sort, setSort] = useState<EvSort>('total');
-
-  // Hạng luôn theo TỔNG điểm (hoà điểm: đội chơi trước xếp trên), dù đang sắp xếp theo cột khác.
-  const ranked: EvRow[] = useMemo(() => [...rows]
-    .sort((a, b) => b.total - a.total || (a.created_at ?? '￿').localeCompare(b.created_at ?? '￿'))
-    .map((r, i) => ({ ...r, rank: i + 1 })), [rows]);
-  const colMax = useMemo(() => gameNames.map((_, g) => Math.max(0, ...ranked.map((r) => r.scores[g] ?? 0))), [ranked]);
-  const view = useMemo(() => {
-    const key = q.trim().toLowerCase();
-    const list = ranked.filter((r) => !key || r.team.toLowerCase().includes(key));
-    return sort === 'total' ? list : [...list].sort((a, b) => (b.scores[sort] ?? 0) - (a.scores[sort] ?? 0) || a.rank - b.rank);
-  }, [ranked, q, sort]);
-  const pg = usePagination(view, 20, `${q}|${sort}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event' });
-
-  const top = ranked[0];
-  const avg = ranked.length ? Math.round(ranked.reduce((a, r) => a + r.total, 0) / ranked.length) : 0;
-  const flappyDone = ranked.filter((r) => (r.scores[3] ?? 0) >= FLAPPY_GOAL).length;
-  const SORTS: { k: EvSort; label: string }[] = [{ k: 'total', label: 'Tổng' }, ...GAME_SHORT.map((label, g) => ({ k: g as EvSort, label }))];
-
-  const bar = (g: number, v: number) => (
-    <span className="mt-1.5 block h-1.5 w-full overflow-hidden rounded-full bg-border/50" aria-hidden="true">
-      <span className="block h-full rounded-full bg-primary/70" style={{ width: `${colMax[g] ? Math.round((v / colMax[g]) * 100) : 0}%` }} />
-    </span>
+function QrCard() {
+  const qr = useQr(PLAY_URL);
+  const [big, setBig] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!big) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setBig(false); };
+    window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
+  }, [big]);
+  const copy = () => void navigator.clipboard?.writeText(PLAY_URL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
+  const btn = 'flex h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 text-small font-semibold text-text transition-colors hover:bg-bg';
+  return (
+    <section className="flex flex-wrap items-center gap-6 rounded-[24px] border border-border bg-surface p-5 shadow-soft sm:p-6">
+      <div className="flex h-44 w-44 shrink-0 items-center justify-center rounded-2xl border border-border bg-white p-2">
+        {qr ? <img src={qr} alt={`Mã QR mở ${PLAY_URL}`} className="h-full w-full" /> : <span className="text-small text-muted">Đang tạo mã…</span>}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-caption font-bold uppercase tracking-[.14em] text-muted">Mã QR cho người chơi</p>
+        <h3 className="mt-1 text-title font-extrabold">Quét để chơi trên điện thoại</h3>
+        <p className="mt-1 text-small text-muted">Không cần đăng nhập: nhập tên → chơi 1–3 game (mỗi game 1 lần / điện thoại) → điểm lên bảng ngay. Máy dùng chung mở <code>/play?new=1</code> để người tiếp theo chơi.</p>
+        <a href={PLAY_URL} target="_blank" rel="noreferrer" className="mt-2 inline-block break-all text-small font-bold text-primary underline">{PLAY_URL}</a>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a className={btn} href={qr || undefined} download="ma-qr-su-kien-gumi.png" aria-disabled={!qr}><Icon name="arrow-right" size={15} className="rotate-90" />Tải ảnh QR</a>
+          <button className={btn} onClick={() => setBig(true)} disabled={!qr}><Icon name="sparkle" size={15} />Chiếu toàn màn hình</button>
+          <button className={btn} onClick={copy}><Icon name={copied ? 'check' : 'flag'} size={15} />{copied ? 'Đã chép' : 'Chép link'}</button>
+        </div>
+      </div>
+      {big && (
+        <div role="dialog" aria-modal="true" aria-label="Mã QR toàn màn hình" onClick={() => setBig(false)}
+          className="fixed inset-0 z-50 flex cursor-zoom-out flex-col items-center justify-center gap-6 bg-white p-6 text-center">
+          <p className="text-[clamp(24px,4vw,48px)] font-extrabold text-[#33231D]">Quét mã để chơi 🎮</p>
+          <img src={qr} alt="" className="aspect-square w-[min(80vw,70vh)]" />
+          <p className="break-all text-[clamp(16px,2.4vw,28px)] font-bold text-[#B83556]">{PLAY_URL.replace(/^https?:\/\//, '')}</p>
+          <p className="text-small text-[#775A4E]">Chạm hoặc nhấn Esc để đóng</p>
+        </div>
+      )}
+    </section>
   );
+}
+
+function EventPanel() {
+  const [plays, setPlays] = useState<EventPlay[] | null>(null);
+  const [error, setError] = useState('');
+  const [game, setGame] = useState(0); // 0 = Tổng hợp
+  const [q, setQ] = useState('');
+  const [busyId, setBusyId] = useState('');
+  useEffect(() => {
+    let alive = true, busy = false;
+    let t: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      if (busy || !alive) return; busy = true;
+      try { const r = await adminPlays(); if (alive) { setPlays(r); setError(''); } }
+      catch { if (alive) { setPlays((p) => p ?? []); setError('Không tải được kết quả. Đang thử lại…'); } }
+      finally { busy = false; }
+    };
+    void refresh();
+    const stop = adminWatch(() => { clearTimeout(t); t = setTimeout(() => void refresh(), 300); });
+    return () => { alive = false; clearTimeout(t); stop(); };
+  }, []);
+
+  const ranked = useMemo(() => rankAll(plays ?? []), [plays]);
+  const totals = useMemo(() => totalsOf(plays ?? []), [plays]);
+  const inGame = useMemo(() => ranked.filter((r) => r.game === game), [ranked, game]);
+  const view = useMemo(() => { const k = q.trim().toLowerCase(); return k ? inGame.filter((r) => r.player.toLowerCase().includes(k)) : inGame; }, [inGame, q]);
+  const totalView = useMemo(() => { const k = q.trim().toLowerCase(); return k ? totals.filter((r) => r.player.toLowerCase().includes(k)) : totals; }, [totals, q]);
+  const pgTotal = usePagination(totalView, 20, `${q}|total`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event-total' });
+  const pg = usePagination(view, 20, `${q}|${game}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event-qr' });
+  const count = (g: number) => ranked.filter((r) => r.game === g).length;
+
+  const remove = async (r: EvRow) => {
+    if (!confirm(`Xoá lượt chơi của "${r.player}" (${r.score} điểm)? Không hoàn tác được.`)) return;
+    setBusyId(r.id);
+    try { await adminDelete(r.id); setPlays((p) => p?.filter((x) => x.id !== r.id) ?? p); }
+    catch { alert('Xoá không được, thử lại sau.'); }
+    finally { setBusyId(''); }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -323,7 +378,7 @@ function EventPanel() {
         <div className="max-w-xl">
           <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · SỰ KIỆN TRỰC TIẾP</p>
           <h2 className="text-[28px] font-extrabold leading-tight tracking-tight text-white sm:text-[34px]">Bảng vàng sự kiện.</h2>
-          <p className="mt-3 text-small leading-relaxed text-white/70">Điểm 4 thử thách của từng đội — tự cập nhật ngay khi một đội chơi xong.</p>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Mỗi người chơi tối đa 3 game — bảng Tổng hợp ưu tiên ai chơi nhiều game, cùng 3 bảng riêng từng game. Tự cập nhật khi có người chơi xong.</p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3.5 py-2 text-caption font-bold uppercase tracking-[.14em] text-white">
           <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
@@ -334,119 +389,84 @@ function EventPanel() {
         </span>
       </section>
 
+      <QrCard />
+
       {error && <div role="status"><Banner kind="info">{error}</Banner></div>}
 
       <section>
         <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Chỉ số chính</h2>
         <div className="grid grid-cols-2 gap-3 min-[1100px]:grid-cols-4">
-          <StatCard icon="flag" cls="text-primary" accent="#B83556" value={ranked.length} label="Đội đã thi đấu" />
-          <StatCard icon="trophy" cls="text-accent" accent="#C9962B" value={top?.total ?? 0} label="Điểm cao nhất" hint={top ? top.team : undefined} />
-          <StatCard icon="star" cls="text-info" accent="#55768C" value={avg} label="Điểm trung bình" />
-          <StatCard icon="medal" cls="text-success" accent="#1F7A4D" value={`${flappyDone}/${ranked.length}`} label={`Qua đủ ${FLAPPY_GOAL} cột Flappy`} />
+          <StatCard icon="flag" cls="text-primary" accent="#B83556" value={totals.length} label="Người chơi" hint={`${ranked.length} lượt · ${totals.filter((t) => t.games === 3).length} người đủ 3 game`} />
+          {gameNames.map((g, i) => {
+            const top = ranked.find((r) => r.game === i + 1 && r.rank === 1);
+            return <StatCard key={g} icon={(['star', 'trophy', 'medal'] as const)[i]!} cls={['text-info', 'text-accent', 'text-success'][i]!} accent={['#55768C', '#C9962B', '#1F7A4D'][i]} value={count(i + 1)} label={`Người chơi · ${g}`} hint={top ? `Top 1: ${top.player} (${top.score})` : undefined} />;
+          })}
         </div>
       </section>
 
-      {ranked.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Bục vinh quang</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {ranked.slice(0, 3).map((r, i) => (
-              <article key={r.id} className="admin-kpi flex flex-col gap-3 rounded-[20px] border border-border bg-surface p-5 shadow-soft" style={{ '--kpi': MEDAL[i]!.color } as CSSProperties}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-caption font-extrabold ${MEDAL[i]!.chip}`}><Icon name="medal" size={14} filled />{MEDAL[i]!.label}</span>
-                  <span className="text-caption font-bold tabular-nums text-muted">#{r.rank}</span>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="truncate text-title font-extrabold" title={r.team}>{r.team}{r.pending && <PendingTag />}</h3>
-                  <p className="mt-1 text-[30px] font-extrabold leading-none tabular-nums text-text">{r.total}<span className="ml-1 text-small font-semibold text-muted">điểm</span></p>
-                </div>
-                <dl className="grid grid-cols-4 gap-1.5 rounded-xl bg-bg/60 p-2 text-center">
-                  {GAME_SHORT.map((g, gi) => (
-                    <div key={g} className="min-w-0"><dt className="truncate text-[11px] text-muted">{g}</dt><dd className="text-small font-extrabold tabular-nums">{r.scores[gi] ?? 0}</dd></div>
-                  ))}
-                </dl>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5"><h2 className="admin-section-title">Tất cả đội</h2><span className="admin-result-count">{view.length}/{ranked.length}</span></div>
-          <div className="admin-player-tools flex w-full flex-wrap items-center gap-2">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm tên đội…" aria-label="Tìm đội"
+          <div className="admin-sort flex items-center gap-1 overflow-x-auto rounded-lg p-1" role="tablist" aria-label="Chọn game">
+            {['Tổng hợp', ...gameNames].map((g, i) => (
+              <button key={g} role="tab" aria-selected={game === i} onClick={() => setGame(i)}
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-colors ${game === i ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'}`}>
+                {g} <span className="tabular-nums text-muted">· {i ? count(i) : totals.length}</span>
+              </button>
+            ))}
+          </div>
+          <div className="admin-player-tools flex flex-wrap items-center gap-2">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm người chơi…" aria-label="Tìm người chơi"
               className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
-            <div className="admin-sort flex items-center gap-1 overflow-x-auto rounded-lg p-1" role="group" aria-label="Sắp xếp theo">
-              {SORTS.map((o) => (
-                <button key={String(o.k)} onClick={() => setSort(o.k)} aria-pressed={sort === o.k}
-                  className={`whitespace-nowrap rounded-md px-2.5 py-1 transition-colors ${sort === o.k ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'}`}>
-                  {o.label}
-                </button>
-              ))}
-            </div>
-            <button onClick={() => exportEventCsv(view)} disabled={view.length === 0}
+            <button onClick={() => exportEventCsv(ranked)} disabled={ranked.length === 0}
               className="admin-export flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-small font-semibold text-text transition-colors hover:bg-bg disabled:opacity-40">
-              <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV
+              <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV (4 bảng)
             </button>
           </div>
         </div>
 
-        {ranked.length === 0 ? (
+        {plays === null ? <p className="rounded-[20px] border border-border bg-surface px-6 py-12 text-center text-small text-muted">Đang tải…</p>
+          : game === 0 ? (totals.length === 0
+            ? <p className="rounded-[20px] border border-border bg-surface px-6 py-12 text-center text-small text-muted">Chưa có ai chơi.</p>
+            : <>
+              <p className="text-small text-muted">Xếp theo <b className="text-text">số game đã chơi</b> (chơi nhiều xếp trên), rồi <b className="text-text">tổng điểm</b>, rồi ai xong trước.</p>
+              <Card className="divide-y divide-border/60 overflow-hidden rounded-[20px] p-0">
+                {totalView.length === 0 ? <p className="px-4 py-8 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>
+                  : pgTotal.slice.map((r) => (
+                    <div key={r.id} className="admin-row flex items-center gap-3 px-4 py-2.5 text-small">
+                      <RankChip rank={r.rank} />
+                      <span className="min-w-0 flex-1 truncate font-semibold" title={r.player}>{r.player}</span>
+                      <span className="rounded-pill bg-bg px-2.5 py-1 text-caption font-bold tabular-nums text-muted">{r.games}/3 game</span>
+                      <span className="w-14 text-right text-body font-extrabold tabular-nums text-text">{r.score}</span>
+                    </div>
+                  ))}
+              </Card>
+              <Pagination {...pgTotal} unit="người" />
+            </>)
+          : inGame.length === 0 ? (
           <div className="flex flex-col items-center rounded-[20px] border border-border bg-surface px-6 py-16 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg text-accent"><Icon name="trophy" size={28} filled /></span>
-            <p className="mt-4 text-body font-bold">Chưa có đội nào thi đấu</p>
-            <p className="mt-1 max-w-sm text-small text-muted">Bảng sẽ tự cập nhật ngay khi đội đầu tiên hoàn thành 4 thử thách.</p>
+            <p className="mt-4 text-body font-bold">Chưa có ai chơi {gameNames[game - 1]}</p>
+            <p className="mt-1 max-w-sm text-small text-muted">Bảng tự cập nhật ngay khi có người chơi xong.</p>
           </div>
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 min-[1100px]:hidden">
-              {view.length === 0 && <p className="col-span-full rounded-2xl border border-border bg-surface px-4 py-10 text-center text-small text-muted">Không tìm thấy đội nào.</p>}
-              {pg.slice.map((r) => (
-                <article key={r.id} className="min-w-0 rounded-[20px] border border-border bg-surface p-4 shadow-soft">
-                  <div className="flex items-center gap-3">
-                    <RankChip rank={r.rank} />
-                    <h3 className="min-w-0 flex-1 break-words text-small font-bold">{r.team}{r.pending && <PendingTag />}</h3>
-                    <span className="text-title font-extrabold tabular-nums text-primary">{r.total}</span>
-                  </div>
-                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-bg/60 p-3">
-                    {gameNames.map((g, gi) => (
-                      <div key={g} className="min-w-0">
-                        <dt className="flex items-baseline justify-between gap-2 text-caption text-muted"><span className="truncate">{g}</span><span className={`font-extrabold tabular-nums ${sort === gi ? 'text-primary' : 'text-text'}`}>{r.scores[gi] ?? 0}</span></dt>
-                        <dd>{bar(gi, r.scores[gi] ?? 0)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </article>
-              ))}
-            </div>
-
-            <div className="hidden overflow-x-auto rounded-[20px] border border-border bg-surface min-[1100px]:block"><Card className="min-w-[860px] divide-y divide-border/60 border-0 p-0">
-              <div className="sticky top-0 z-10 flex items-center gap-4 bg-bg/80 px-4 py-2.5 text-caption font-bold uppercase tracking-wide text-muted backdrop-blur">
-                <span className="w-14">Hạng</span>
-                <span className="min-w-0 flex-1">Đội</span>
-                {gameNames.map((g, gi) => <span key={g} className={`w-32 ${sort === gi ? 'text-primary' : ''}`}>{g}</span>)}
-                <span className={`w-20 text-right ${sort === 'total' ? 'text-primary' : ''}`}>Tổng</span>
-              </div>
+            <Card className="divide-y divide-border/60 overflow-hidden rounded-[20px] p-0">
               {view.length === 0
-                ? <p className="px-4 py-8 text-center text-small text-muted">Không tìm thấy đội nào.</p>
+                ? <p className="px-4 py-8 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>
                 : pg.slice.map((r) => (
-                  <div key={r.id} className="admin-row flex items-center gap-4 px-4 py-2.5 text-small">
-                    <span className="w-14"><RankChip rank={r.rank} /></span>
-                    <span className="min-w-0 flex-1 truncate font-semibold" title={r.team}>{r.team}{r.pending && <PendingTag />}</span>
-                    {gameNames.map((g, gi) => {
-                      const v = r.scores[gi] ?? 0;
-                      const best = v > 0 && v === colMax[gi];
-                      return <span key={g} className="w-32">
-                        <span className={`tabular-nums ${best ? 'font-extrabold text-primary' : 'font-semibold'}`} title={best ? 'Điểm cao nhất ở thử thách này' : undefined}>{v}</span>
-                        {bar(gi, v)}
-                      </span>;
-                    })}
-                    <span className="w-20 text-right text-body font-extrabold tabular-nums text-text">{r.total}</span>
+                  <div key={r.id} className="admin-row flex items-center gap-3 px-4 py-2.5 text-small">
+                    <RankChip rank={r.rank} />
+                    <span className="min-w-0 flex-1 truncate font-semibold" title={r.player}>{r.player}</span>
+                    <span className="hidden text-caption text-muted sm:inline">{r.created_at ? new Date(r.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : ''}</span>
+                    <span className="w-14 text-right text-body font-extrabold tabular-nums text-text">{r.score}</span>
+                    <button onClick={() => void remove(r)} disabled={busyId === r.id} aria-label={`Xoá lượt của ${r.player}`} title="Xoá lượt chơi"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-[#B3261E]/10 hover:text-[#B3261E] disabled:opacity-40">
+                      <Icon name="trash" size={15} />
+                    </button>
                   </div>
                 ))}
-            </Card></div>
-            <Pagination {...pg} unit="đội" />
+            </Card>
+            <Pagination {...pg} unit="người" />
           </>
         )}
       </section>

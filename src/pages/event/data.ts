@@ -13,4 +13,10 @@ export const cases = [
   { title: 'Ngộ nhận đường “lành mạnh”', statement: 'Dùng mật ong hoặc đường nâu/đường phèn thay đường trắng thì ăn uống thả ga không sợ tích mỡ hay tăng đường huyết.', fact: false, explanation: 'Mật ong và các loại đường này vẫn cung cấp đường tự do và năng lượng. Dùng quá nhiều vẫn có thể gây tăng cân và tăng đường huyết.' },
   { title: 'Lợi ích giảm nấc ngọt', statement: 'Chủ động giảm độ ngọt xuống 30% giúp giảm lượng đường nạp vào và cảm nhận rõ vị trà nguyên bản hơn.', fact: true, explanation: 'Giảm đường thêm vào giúp giảm năng lượng từ đường. Tác động lên mệt mỏi và mụn khác nhau ở mỗi người; mức 30% không bảo đảm một lượng đường cố định.' },
 ];
-export const gameNames = ['Phân loại nhanh', 'Truy vết Mật Độ', 'Truy tìm sự thật', 'Flappy Gumi'];
+export const gameNames = ['Phân loại nhanh', 'Truy vết Mật Độ', 'Truy tìm sự thật'];
+/** Mô tả ngắn từng game ở màn chọn game. */
+export const gameInfo = [
+  { hint: '30 giây · Chạm chọn Tủ lạnh / Thùng rác', icon: '↔', max: null },
+  { hint: '45 giây · Lật thẻ ghép cặp', icon: '▦', max: 25 },
+  { hint: '5 hồ sơ · Đúng hay sai', icon: '?', max: 25 },
+] as const;

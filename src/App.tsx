@@ -10,6 +10,7 @@ import { SystemState } from './pages/SystemState'; // nhẹ + guards đã import
 
 // Mỗi trang thành một chunk riêng: màn đầu (login/landing) không còn kéo theo toàn bộ app.
 // Trang nặng (Phòng 3D, minigame, Admin) chỉ tải khi người dùng thật sự vào.
+const EventHost = lazy(() => import('./pages/event/EventHost').then(m => ({ default: m.EventHost })));
 const EventGame = lazy(() => import('./pages/event/EventGame').then(m => ({ default: m.EventGame })));
 const AgeSurvey = lazy(() => import('./pages/AgeSurvey').then((m) => ({ default: m.AgeSurvey })));
 const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
@@ -34,7 +35,10 @@ export function App() {
       <SkinProvider>
       <RoomDecorProvider>
       <Routes>
-        <Route path="event" element={<RequireGamer><Suspense fallback={<Loading />}><EventGame /></Suspense></RequireGamer>} />
+        {/* Sự kiện QR: công khai, không cần đăng nhập — quét mã là chơi trên điện thoại. */}
+        <Route path="play" element={<Suspense fallback={<Loading />}><EventGame /></Suspense>} />
+        {/* Máy trạm (tài khoản gamer): QR to cho mọi người quét + bảng xếp hạng trực tiếp. */}
+        <Route path="event" element={<RequireGamer><Suspense fallback={<Loading />}><EventHost /></Suspense></RequireGamer>} />
         {/* Admin: shell riêng (dashboard), KHÔNG dùng AppShell game của người chơi. */}
         <Route path="admin" element={<RequireAdmin><Suspense fallback={<Loading />}><Admin /></Suspense></RequireAdmin>} />
         <Route element={<AppShell />}>

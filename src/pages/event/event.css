@@ -688,3 +688,121 @@
   .event-game.correct { box-shadow: 0 0 0 3px var(--ev-good); }
   .event-game.wrong { box-shadow: 0 0 0 3px var(--ev-bad); }
 }
+
+/* ---------- Bản QR (chơi trên điện thoại) ---------- */
+.event-shell .event-game-pick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.event-shell .event-game-pick > button {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 20px 18px; border-radius: 20px; text-align: left;
+  background: #FFFFFFD0; border: 1px solid #FFFFFF; box-shadow: var(--ev-shadow-sm);
+}
+.event-shell .event-game-pick > button:hover:enabled { transform: translateY(-2px); box-shadow: var(--ev-shadow); border-color: var(--ev-pink); }
+.event-game-pick > button > span { align-self: flex-start; color: var(--ev-gold-dark); font-size: 12px; font-weight: 900; }
+.event-game-pick > button:nth-child(even) i { background: var(--ev-gold-soft); color: var(--ev-gold-dark); }
+.event-shell .event-back { padding: 8px 14px; font-size: 13px; }
+@media (max-width: 860px) { .event-shell .event-game-pick { grid-template-columns: 1fr; gap: 12px; } }
+
+/* Điện thoại đang chơi: gọn để cả game nằm trong 1 màn hình, không phải cuộn khi đồng hồ chạy. */
+@media (max-width: 700px) {
+  .event-mobile[data-game-active] { padding-top: 8px; padding-bottom: 16px; }
+  .event-mobile[data-game-active] .event-header { padding: 6px; border-radius: 16px; }
+  .event-mobile[data-game-active] .event-brand-mark { width: 34px; height: 34px; border-radius: 11px; }
+  .event-mobile[data-game-active] .event-brand b { font-size: 15px; }
+  .event-mobile[data-game-active] .event-content { margin-top: 10px; }
+  .event-mobile[data-game-active] .event-content > .event-eyebrow { margin: 0 0 6px; }
+  .event-mobile[data-game-active] .event-team-chip { font-size: 13px; padding: 3px 11px; }
+  .event-mobile[data-game-active] .event-stage-heading { margin-bottom: 8px; }
+  .event-mobile[data-game-active] .event-stage-heading h1 { font-size: 22px; }
+  .event-mobile .event-game { padding: 12px 12px 14px; }
+  .event-mobile .event-game > p { margin: 8px 0 0; font-size: 12.5px; line-height: 1.45; }
+  .event-mobile .event-game > p.event-note { display: none; }
+  /* Phân loại */
+  .event-mobile .drink-card { min-height: 0; padding: 14px 12px; margin: 10px auto 12px; gap: 6px; }
+  .event-mobile .event-drink-art { width: 34px; height: 46px; }
+  .event-mobile .drink-card strong { font-size: 24px; }
+  .event-mobile .event-answers button { min-height: 96px; }
+  .event-mobile .event-feedback { margin-top: 8px; }
+  /* Truy vết: 2 cột, chữ ngang dễ đọc */
+  .event-mobile .memory-grid { grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+  .event-shell.event-mobile .memory-grid button { min-height: 62px; padding: 6px 8px; gap: 2px; }
+  .event-mobile .memory-grid button strong { font-size: 13.5px; line-height: 1.25; }
+  .event-mobile .memory-emblem { font-size: 18px; }
+  /* Sự thật */
+  .event-mobile .event-game blockquote { min-height: 0; margin: 10px 0 12px; padding: 22px 14px 16px; font-size: 18px; }
+  .event-mobile .event-game blockquote::before { font-size: 44px; }
+}
+@media (max-width: 700px) and (max-height: 700px) {
+  .event-mobile .event-game > p:not(.event-feedback) { display: none; }
+  .event-mobile .drink-card > small, .event-mobile .event-drink-art { display: none; }
+  .event-mobile .event-answers button { min-height: 84px; }
+  .event-shell.event-mobile .memory-grid button { min-height: 54px; }
+}
+
+/* Điện thoại: ô nhập tên lên đầu để nút "Tiếp tục" luôn trong màn hình. */
+@media (max-width: 860px) {
+  .event-mobile .event-lobby { display: flex; flex-direction: column; }
+  .event-mobile .event-entry-wrap { order: -1; padding-top: 64px; }
+  .event-mobile .event-gumi { width: 84px; }
+  .event-mobile .event-lobby-copy h1 { font-size: clamp(28px, 8vw, 40px); margin: 12px 0 8px; }
+}
+/* Màn hình thấp (điện thoại xoay ngang, laptop 720p): bỏ phần trang trí, giữ nút bấm trong màn hình. */
+@media (max-height: 500px) {
+  .event-mobile .event-content { margin-top: 8px; }
+  .event-mobile .event-entry-wrap { padding-top: 0; }
+  .event-mobile .event-gumi { display: none; }
+  .event-mobile .event-entry { padding: 14px 18px; }
+  .event-mobile .event-entry h2 { font-size: 20px; margin: 4px 0; }
+  .event-mobile[data-game-active] .event-header { display: none; }
+  .event-mobile[data-game-active] .event-content { margin-top: 0; }
+  .event-mobile[data-game-active] .event-content > .event-eyebrow { display: none; }
+  .event-mobile[data-game-active] .event-stage-heading { display: none; }
+  .event-mobile .event-game { padding: 8px 12px 10px; }
+  .event-mobile .event-game > p:not(.event-feedback), .event-mobile .event-game > p.event-feedback { display: none; }
+  .event-mobile .drink-card { min-height: 0; padding: 8px 12px; margin: 6px auto 8px; gap: 2px; }
+  .event-mobile .drink-card > small, .event-mobile .event-drink-art { display: none; }
+  .event-mobile .drink-card strong { font-size: 22px; }
+  .event-shell.event-mobile .event-answers button { min-height: 58px; padding: 6px 10px; flex-direction: row; gap: 10px; }
+  .event-mobile .event-bin-icon { width: 34px; height: 34px; }
+  .event-mobile .memory-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+  .event-shell.event-mobile .memory-grid button { min-height: 0; height: calc((100dvh - 100px) / 2); padding: 4px 6px; }
+  .event-mobile .memory-grid button small { display: none; }
+  .event-mobile .memory-grid button strong { font-size: 12.5px; }
+  .event-mobile .event-game blockquote { margin: 6px 0 8px; padding: 12px 14px; font-size: 16px; }
+  .event-mobile .event-game blockquote::before { display: none; }
+}
+@media (max-height: 760px) and (min-width: 1000px) {
+  .event-shell .memory-grid button { min-height: 128px; }
+}
+
+/* Kết quả: điểm từng game + tổng, nút chơi tiếp. */
+.event-my-games { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0 4px; }
+.event-my-games span { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--ev-soft); border: 1px solid var(--ev-line); }
+.event-my-games small { color: var(--ev-muted); font-size: 11px; font-weight: 800; line-height: 1.3; }
+.event-my-games b { font-size: 22px; font-weight: 900; color: var(--ev-faint); font-variant-numeric: tabular-nums; }
+.event-my-games span.done b { color: var(--ev-text); }
+.event-my-games span.sum { background: var(--ev-pink-soft); border-color: transparent; }
+.event-my-games span.sum b { color: var(--ev-primary); }
+.event-next-games { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.event-shell .event-next-games .event-primary { flex: 1 1 220px; }
+.event-shell .event-game-pick > button:disabled { opacity: .6; cursor: default; transform: none; }
+.event-game-pick > button:disabled > span { color: var(--ev-good); }
+@media (max-width: 560px) { .event-my-games { grid-template-columns: 1fr 1fr; } .event-my-games b { font-size: 20px; } }
+@media (max-height: 500px) {
+  .event-mobile .event-game blockquote { min-height: 0; }
+  .event-mobile .event-answers kbd { display: none; }
+  .event-shell.event-mobile .event-game-pick { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .event-shell.event-mobile .event-game-pick > button { padding: 12px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .event-mobile .event-game-pick i { display: none; }
+  .event-mobile:not([data-game-active]) .event-stage-heading { margin-bottom: 6px; }
+  .event-mobile:not([data-game-active]) .event-stage-heading h1 { font-size: 20px; }
+  .event-mobile .event-entry > small, .event-mobile .event-entry > .event-eyebrow { display: none; }
+  .event-mobile .event-entry input { padding-top: 10px; padding-bottom: 10px; }
+}
+/* Điện thoại: tên người chơi không chui dưới hình Gumi góc phải. */
+@media (max-width: 700px) {
+  .event-mobile .event-summary-gumi { width: 64px; }
+  .event-mobile .event-summary-team { max-width: calc(100% - 64px); font-size: 20px; padding-right: 14px; }
+}
+@media (max-width: 700px) {
+  .event-mobile .event-summary-team { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 14px; border-radius: 18px; overflow-wrap: break-word; word-break: normal; }
+}

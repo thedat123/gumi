@@ -43,13 +43,15 @@ const isAdminEmail = (email: string): boolean => ADMIN_EMAILS.includes(email.tri
 
 // ⚙️ TÀI KHOẢN TEST CỐ ĐỊNH (chỉ ở mock/demo) — đăng nhập là MỞ HẾT: tự có hồ sơ (bỏ onboarding),
 // mọi ngày trên bản đồ bấm được, làm nhiệm vụ ngày nào cũng chạy, xem được mọi màn (kể cả Summary/Admin).
-const TEST_ACCOUNTS: Record<string, { password: string; admin?: boolean; name: string; avatar: string }> = {
+const TEST_ACCOUNTS: Record<string, { password: string; admin?: boolean; gamer?: boolean; name: string; avatar: string }> = {
   'test1@gumi.vn': { password: 'test1234', name: 'Người Test 1', avatar: '🐱' },
   'test2@gumi.vn': { password: 'test1234', name: 'Người Test 2', avatar: '🐰' },
   'test3@gumi.vn': { password: 'test1234', name: 'Người Test 3', avatar: '🐻' },
   'test4@gumi.vn': { password: 'test1234', name: 'Người Test 4', avatar: '🐼' },
   'test5@gumi.vn': { password: 'test1234', name: 'Người Test 5', avatar: '🐨' },
   'admin@gumi.vn': { password: 'test1234', admin: true, name: 'Admin Test', avatar: '🦊' },
+  // Máy trạm sự kiện: mở /event (QR + bảng xếp hạng).
+  'gamer@gumi.vn': { password: 'test1234', gamer: true, name: 'Máy trạm sự kiện', avatar: '🎮' },
 };
 const testAccount = (email: string) => TEST_ACCOUNTS[email.trim().toLowerCase()];
 // Ánh xạ ngày → loại nhiệm vụ cho hành trình 14 ngày (khớp vi.missions và MissionRouter).
@@ -61,7 +63,7 @@ const MINIGAME_DAYS = [3, 5, 7, 8, 9, 11, 12]; // GAME/KNOW hoàn thành bằng 
 
 interface Persisted {
   session: Session | null;
-  users: Record<string, { password: string; userId: string; role: 'player' | 'admin' }>;
+  users: Record<string, { password: string; userId: string; role: 'player' | 'admin' | 'gamer' }>;
   profile: Profile | null;
   campaignDay: number;
   completed: number[];
@@ -261,7 +263,7 @@ export function createMockApi(): Api {
       const t = testAccount(key);
       if (t) {
         if (password !== t.password) throw new ApiError('wrong_password');
-        const role = t.admin || isAdminEmail(key) ? 'admin' : 'player';
+        const role = t.gamer ? 'gamer' : t.admin || isAdminEmail(key) ? 'admin' : 'player';
         const userId = state.users[key]?.userId ?? uid();
         state.users[key] = { password: t.password, userId, role };
         state.session = { userId, email: key };
