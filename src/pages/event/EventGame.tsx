@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { playSfx } from '../../lib/sfx';
 import { cases, gameInfo, gameNames, healthy, pairs, shuffle, sugary } from './data';
-import { flush, myPlays, pending, playerKey, resetDevice, savePlay, watch, type EventPlay } from './store';
+import { flush, myPlay, pending, playerKey, resetDevice, savePlay, watch, type EventPlay } from './store';
 import { EventResults } from './EventResults';
 import gumiArt from '../../assets/gumi.png';
 import './event.css';
@@ -18,17 +18,16 @@ function useClock(seconds: number, active: boolean, end: () => void) {
 }
 const nameKey = 'gumi-event-name';
 
-/** Sự kiện bản QR: quét mã → nhập tên → chơi 1, 2 hoặc cả 3 game (mỗi game 1 lần / điện thoại).
- *  Mỗi game có bảng riêng; bảng Tổng hợp xếp ai chơi nhiều game hơn lên trên, rồi tới tổng điểm.
+/** Sự kiện bản QR: quét mã → nhập tên → chọn 1 trong 3 game → chơi xong lên bảng xếp hạng chung. Mỗi điện thoại 1 lượt.
  *  Ban tổ chức mở `/play?new=1` để xoá lượt đã chơi trên máy (máy dùng chung / thử nghiệm). */
 export function EventGame() {
-  const [plays, setPlays] = useState<EventPlay[]>(() => {
+  const [done, setDone] = useState<EventPlay | null>(() => {
     if (new URLSearchParams(location.search).has('new')) { resetDevice(); history.replaceState(null, '', location.pathname); }
-    return myPlays();
+    return myPlay();
   });
-  const [name, setName] = useState(() => plays[plays.length - 1]?.player ?? (() => { try { return localStorage.getItem(nameKey) ?? ''; } catch { return ''; } })());
-  const [step, setStep] = useState<'name' | 'pick' | 'play' | 'result'>(() => plays.length ? 'result' : 'name');
-  const [game, setGame] = useState(() => plays[plays.length - 1]?.game ?? 1);
+  const [name, setName] = useState(() => { try { return localStorage.getItem(nameKey) ?? ''; } catch { return ''; } });
+  const [step, setStep] = useState<'name' | 'pick' | 'play'>('name');
+  const [game, setGame] = useState(1);
   const [waiting, setWaiting] = useState(() => pending().length);
   const [online, setOnline] = useState(navigator.onLine);
   const finished = useRef(false);
@@ -45,60 +44,48 @@ export function EventGame() {
   const finish = useCallback((score: number) => {
     if (finished.current) return;
     finished.current = true;
-    savePlay({ id: crypto.randomUUID(), player_key: playerKey(), player: name.trim(), game, score });
-    setPlays(myPlays()); setStep('result'); playSfx('sparkle');
+    const play: EventPlay = { id: crypto.randomUUID(), player_key: playerKey(), player: name.trim(), game, score };
+    savePlay(play); setDone(myPlay() ?? play); playSfx('sparkle');
     window.scrollTo({ top: 0 });
   }, [name, game]);
   const start = (g: number) => { finished.current = false; setGame(g); setStep('play'); window.scrollTo({ top: 0 }); };
-
-  const played = (g: number) => plays.find(p => p.game === g);
-  const left = gameNames.map((_, i) => i + 1).filter(g => !played(g));
-  const total = plays.reduce((s, p) => s + p.score, 0);
-  const last = plays.find(p => p.game === game) ?? plays[plays.length - 1];
   const status = waiting ? 'ĐANG GỬI ĐIỂM…' : online ? 'SẴN SÀNG' : 'MẤT MẠNG';
 
-  return <main className="event-shell event-mobile" data-game-active={step === 'play' ? 'true' : undefined}>
+  return <main className="event-shell event-mobile" data-game-active={step === 'play' && !done ? 'true' : undefined}>
     <header className="event-header">
       <div className="event-brand"><img className="event-brand-mark" src="/icons/icon-192.png?v=20261014" alt="" aria-hidden="true" draggable={false} decoding="async"/><div><b>MẬT ĐỘ</b><small>THE LESS SUGAR CHALLENGE</small></div></div>
       <div className="event-controls"><span className={`event-connection ${!online || waiting ? 'pending' : ''}`} role="status">{status}</span></div>
     </header>
     <div className="event-content">
-      {step === 'result' && last ? <>
+      {done ? <>
         <section className="event-summary">
           <img className="event-summary-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
           <div className="event-summary-body">
-            <h1>{left.length ? 'HOÀN THÀNH!' : 'XUẤT SẮC!'}</h1>
-            <p className="event-summary-team"><small>NGƯỜI CHƠI</small>{last.player}</p>
-            <p className="event-eyebrow">{gameNames[last.game - 1]}</p>
-            <h2><b>{last.score}</b><small>điểm</small></h2>
-            <div className="event-my-games">
-              {gameNames.map((g, i) => { const p = played(i + 1); return <span key={g} className={p ? 'done' : ''}><small>0{i + 1} · {g}</small><b>{p ? p.score : '—'}</b></span>; })}
-              <span className="sum"><small>Tổng · {plays.length}/3 game</small><b>{total}</b></span>
-            </div>
+            <h1>HOÀN THÀNH!</h1>
+            <p className="event-summary-team"><small>NGƯỜI CHƠI</small>{done.player}</p>
+            <p className="event-eyebrow">{gameNames[done.game - 1]}</p>
+            <h2><b>{done.score}</b><small>điểm</small></h2>
             <p role="status" className={`event-save-status ${waiting ? '' : 'ok'}`}>
-              {waiting ? 'Đã lưu trên máy — điểm sẽ tự gửi lên khi có mạng.' : left.length ? `Đã lên bảng xếp hạng! Chơi thêm ${left.length} game nữa để leo bảng Tổng hợp.` : 'Bạn đã chơi đủ 3 game — xem hạng của bạn ở bảng Tổng hợp!'}
+              {waiting ? 'Đã lưu trên máy — điểm sẽ tự gửi lên khi có mạng.' : 'Đã lên bảng xếp hạng! Nhìn lên màn hình lớn nhé 👀'}
             </p>
-            {left.length > 0 && <div className="event-next-games">
-              {left.map(g => <button key={g} className="event-primary" onClick={() => start(g)}>Chơi tiếp: {gameNames[g - 1]} <span aria-hidden="true">→</span></button>)}
-            </div>}
           </div>
         </section>
-        <EventResults initialGame={left.length ? last.game : 0} />
+        <EventResults />
       </> : step === 'play' ? <>
         <p className="event-eyebrow"><span className="event-team-chip">{name.trim()}</span>THỬ THÁCH 0{game}</p>
         <div className="event-stage-heading"><h1>{gameNames[game - 1]}</h1></div>
         {game === 1 ? <Sort onDone={finish}/> : game === 2 ? <Memory onDone={finish}/> : <Truth onDone={finish}/>}
       </> : step === 'pick' ? <>
         <p className="event-eyebrow"><span className="event-team-chip">{name.trim()}</span>CHỌN THỬ THÁCH</p>
-        <div className="event-stage-heading"><h1>Chọn game</h1>{!plays.length && <button className="event-ghost event-back" onClick={() => setStep('name')}>← Đổi tên</button>}</div>
-        <div className="event-game-roster event-game-pick">{gameNames.map((g, i) => { const p = played(i + 1); return <button key={g} disabled={Boolean(p)} onClick={() => start(i + 1)}><span>{p ? '✓' : `0${i+1}`}</span><div><b>{g}</b><small>{p ? `Đã chơi · ${p.score} điểm` : gameInfo[i]!.hint}</small></div><i aria-hidden="true">{gameInfo[i]!.icon}</i></button>; })}</div>
-        <p className="event-note">Mỗi game chơi 1 lần. Chơi càng nhiều game, hạng ở bảng Tổng hợp càng cao!</p>
+        <div className="event-stage-heading"><h1>Chọn 1 game</h1><button className="event-ghost event-back" onClick={() => setStep('name')}>← Đổi tên</button></div>
+        <div className="event-game-roster event-game-pick">{gameNames.map((g, i) => <button key={g} onClick={() => start(i + 1)}><span>0{i+1}</span><div><b>{g}</b><small>{gameInfo[i]!.hint}</small></div><i aria-hidden="true">{gameInfo[i]!.icon}</i></button>)}</div>
+        <p className="event-note">Mỗi người chơi 1 game — chơi xong điểm lên bảng xếp hạng chung ngay.</p>
       </> : <>
         <div className="event-lobby">
           <div className="event-lobby-copy">
             <span className="event-live">LIVE ARCADE / 2026</span>
             <h1>HẠ MẬT ĐỘ.<br/><em>BẬT NĂNG LƯỢNG.</em></h1>
-            <p>3 thử thách — chơi càng nhiều, điểm tổng càng cao, càng dễ lên đỉnh bảng xếp hạng!</p>
+            <p>Chọn 1 trong 3 thử thách, ghi điểm thật cao và leo lên đỉnh bảng xếp hạng!</p>
           </div>
           <div className="event-entry-wrap">
             <img className="event-gumi" src={gumiArt} alt="" aria-hidden="true" draggable={false} decoding="async"/>
@@ -108,7 +95,7 @@ export function EventGame() {
               <label htmlFor="event-name">Tên xuất hiện trên bảng xếp hạng</label>
               <input id="event-name" maxLength={40} required autoComplete="nickname" enterKeyHint="go" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên của bạn…"/>
               <button className="event-primary" disabled={!name.trim()}>Tiếp tục <span aria-hidden="true">→</span></button>
-              <small>Mỗi điện thoại chơi được cả 3 game, mỗi game 1 lần.</small>
+              <small>Mỗi điện thoại được chơi 1 lượt.</small>
             </form>
           </div>
         </div>

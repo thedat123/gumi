@@ -2,8 +2,8 @@ import { supabase } from '../../api/client';
 
 /** Một lượt chơi sự kiện: 1 điện thoại · 1 game (1–3) · 1 điểm. */
 export interface EventPlay { id: string; player_key: string; player: string; game: number; score: number; created_at?: string }
-/** Dòng bảng xếp hạng. game 1–3: điểm game đó; game 0 (Tổng hợp): `games` = số game đã chơi, `score` = tổng điểm. */
-export interface BoardRow { id: string; player: string; score: number; rank: number; games?: number; me?: boolean; pending?: boolean }
+/** Dòng bảng xếp hạng chung. */
+export interface BoardRow { id: string; player: string; game: number; score: number; rank: number; me?: boolean; pending?: boolean }
 
 const live = import.meta.env.VITE_DATA_SOURCE !== 'mock' ? supabase : null;
 const outboxKey = 'gumi-event-plays-outbox-v2';
@@ -21,8 +21,8 @@ export function playerKey(): string {
   if (!k) { k = crypto.randomUUID(); write(keyKey, k); }
   return k;
 }
-/** Các game máy này đã chơi (mỗi game 1 lần). */
-export const myPlays = (): EventPlay[] => read<EventPlay[]>(mineKey, []);
+/** Lượt chơi của máy này (mỗi điện thoại 1 lượt). */
+export const myPlay = (): EventPlay | null => read<EventPlay[]>(mineKey, [])[0] ?? null;
 export const pending = (): EventPlay[] => read<EventPlay[]>(outboxKey, []);
 /** Ban tổ chức mở `/play?new=1`: xoá lượt đã chơi để máy dùng chung / thử nghiệm chơi lại như người mới. */
 export function resetDevice() {
@@ -31,8 +31,8 @@ export function resetDevice() {
 
 /** Lưu vào máy TRƯỚC, rồi mới gửi lên server → mất mạng giữa chừng vẫn không mất điểm. */
 export function savePlay(play: EventPlay) {
-  if (myPlays().some(p => p.game === play.game)) return;
-  write(mineKey, [...myPlays(), play]);
+  if (myPlay()) return;
+  write(mineKey, [play]);
   if (!live) write(mockKey, [...read<EventPlay[]>(mockKey, []).filter(p => p.id !== play.id), { ...play, created_at: new Date().toISOString() }]);
   else if (!pending().some(p => p.id === play.id)) write(outboxKey, [...pending(), play]);
   changed();
@@ -57,57 +57,45 @@ export function flush(): Promise<void> {
 
 const byScore = <T extends { score: number; created_at?: string }>(a: T, b: T) => b.score - a.score || (a.created_at ?? '').localeCompare(b.created_at ?? '');
 
-/** Bảng tổng hợp tính tại máy (chế độ giả lập + admin). */
-export function totalsOf(plays: EventPlay[], me?: string): BoardRow[] {
-  const by = new Map<string, EventPlay[]>();
-  for (const p of plays) by.set(p.player_key, [...(by.get(p.player_key) ?? []), p]);
-  return [...by.entries()].map(([k, ps]) => {
-    const last = [...ps].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))[0]!;
-    return { id: k, player: last.player, games: ps.length, score: ps.reduce((s, p) => s + p.score, 0), last: last.created_at ?? '', me: k === me };
-  }).sort((a, b) => b.games - a.games || b.score - a.score || a.last.localeCompare(b.last))
-    .map(({ last: _last, ...r }, i) => ({ ...r, rank: i + 1 }));
-}
+/** Xếp hạng chung tại máy (chế độ giả lập + admin). */
+export const rankPlays = (plays: EventPlay[], me?: string): BoardRow[] =>
+  [...plays].sort(byScore).map((p, i) => ({ id: p.id, player: p.player, game: p.game, score: p.score, rank: i + 1, me: p.player_key === me }));
 
-/** Bảng xếp hạng: game 1–3, hoặc 0 = Tổng hợp. Kèm lượt của máy này nếu chưa gửi lên kịp. */
-export async function fetchBoard(game: number, limit = 100): Promise<BoardRow[]> {
+export interface BoardPage { rows: BoardRow[]; total: number; mine: BoardRow | null }
+
+/** 1 trang bảng xếp hạng chung (phân trang phía máy chủ) + dòng của máy này dù nằm ở trang nào. */
+export async function fetchBoard(offset = 0, limit = 10): Promise<BoardPage> {
   const me = playerKey();
+  let all: BoardRow[]; let total: number;
   if (!live) {
-    const all = read<EventPlay[]>(mockKey, []);
-    return game === 0 ? totalsOf(all, me).slice(0, limit)
-      : all.filter(p => p.game === game).sort(byScore).slice(0, limit).map((p, i) => ({ id: p.id, player: p.player, score: p.score, rank: i + 1, me: p.player_key === me }));
-  }
-  const waiting = pending();
-  if (game === 0) {
-    const { data, error } = await live.rpc('event_total', { p_limit: limit, p_key: me }).abortSignal(AbortSignal.timeout(8000));
+    const ranked = rankPlays(read<EventPlay[]>(mockKey, []), me);
+    total = ranked.length;
+    all = ranked.filter(r => (r.rank > offset && r.rank <= offset + limit) || r.me);
+  } else {
+    const { data, error } = await live.rpc('event_board', { p_offset: offset, p_limit: limit, p_key: me }).abortSignal(AbortSignal.timeout(8000));
     if (error) throw error;
-    const rows = ((data ?? []) as { id: string; player: string; games: number; total: number; rank: number; me: boolean }[])
-      .map(r => ({ id: r.id, player: r.player, games: r.games, score: r.total, rank: Number(r.rank), me: r.me }));
-    if (!waiting.length) return rows;
-    // Còn game chưa gửi kịp: cộng tạm vào dòng của mình rồi xếp lại.
-    const mine = rows.find(r => r.me) ?? { id: 'me', player: waiting[waiting.length - 1]!.player, games: 0, score: 0, rank: 0, me: true };
-    const merged = { ...mine, games: (mine.games ?? 0) + waiting.length, score: mine.score + waiting.reduce((s, p) => s + p.score, 0), pending: true };
-    return [...rows.filter(r => !r.me), merged]
-      .sort((a, b) => (b.games ?? 0) - (a.games ?? 0) || b.score - a.score || (a.me ? 1 : b.me ? -1 : a.rank - b.rank))
-      .map((r, i) => ({ ...r, rank: i + 1 }));
+    const raw = (data ?? []) as (BoardRow & { total: number })[];
+    total = Number(raw[0]?.total ?? 0);
+    all = raw.map(({ total: _t, ...r }) => ({ ...r, rank: Number(r.rank) }));
+    // Lượt của máy này chưa gửi kịp: hiện tạm là "đang gửi" (chưa có hạng thật).
+    const w = pending().find(p => !all.some(r => r.id === p.id));
+    if (w) all.push({ id: w.id, player: w.player, game: w.game, score: w.score, rank: 0, me: true, pending: true });
   }
-  const { data, error } = await live.rpc('event_board', { p_game: game, p_limit: limit }).abortSignal(AbortSignal.timeout(8000));
-  if (error) throw error;
-  const minePlayed = myPlays().find(p => p.game === game)?.id;
-  const rows: BoardRow[] = ((data ?? []) as { id: string; player: string; score: number; rank: number }[])
-    .map(r => ({ ...r, rank: Number(r.rank), me: r.id === minePlayed }));
-  const w = waiting.filter(p => p.game === game && !rows.some(r => r.id === p.id));
-  if (!w.length) return rows;
-  return [...rows, ...w.map(p => ({ id: p.id, player: p.player, score: p.score, rank: 0, me: true, pending: true }))]
-    .sort((a, b) => b.score - a.score || (a.pending ? 1 : b.pending ? -1 : a.rank - b.rank))
-    .map((r, i) => ({ ...r, rank: i + 1 }));
+  const mine = all.find(r => r.me) ?? null;
+  return { rows: all.filter(r => r.rank > offset && r.rank <= offset + limit), total, mine };
 }
 
-/** Gọi `refresh` khi có thay đổi ở máy, khi có mạng lại, và định kỳ 10 giây lúc đang mở màn hình. */
-export function watch(refresh: () => void) {
+/** Gọi `refresh` khi máy có điểm mới, khi có mạng lại, và định kỳ lúc màn hình đang mở.
+ *  Nhịp có độ lệch ngẫu nhiên để hàng trăm điện thoại không gọi máy chủ cùng một giây. */
+export function watch(refresh: () => void, every = 15000) {
   const online = () => { void flush().catch(() => {}); refresh(); };
   window.addEventListener('event-plays', refresh); window.addEventListener('storage', refresh); window.addEventListener('online', online);
-  const timer = window.setInterval(() => { if (!document.hidden && navigator.onLine) online(); }, 10000);
-  return () => { clearInterval(timer); window.removeEventListener('event-plays', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', online); };
+  let timer = 0;
+  const loop = () => { timer = window.setTimeout(() => { if (!document.hidden && navigator.onLine) online(); loop(); }, every * (0.8 + Math.random() * 0.4)); };
+  loop();
+  const visible = () => { if (!document.hidden) refresh(); };
+  document.addEventListener('visibilitychange', visible);
+  return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', visible); window.removeEventListener('event-plays', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', online); };
 }
 
 /* ---------- Admin ---------- */

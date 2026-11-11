@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { gameNames } from './event/data';
-import { adminDelete, adminPlays, adminWatch, totalsOf, type EventPlay } from './event/store';
+import { adminDelete, adminPlays, adminWatch, rankPlays, type BoardRow, type EventPlay } from './event/store';
 import { PLAY_URL, useQr } from './event/qr';
 import { api } from '../api';
 import { AdminShell, type AdminTab } from '../components/AdminShell';
@@ -255,12 +255,13 @@ function WallPanel() {
 }
 
 /* ============================ SỰ KIỆN TRỰC TIẾP (QR) ============================ */
-type EvRow = EventPlay & { rank: number };
+type EvRow = BoardRow & { created_at?: string };
 const MEDAL = [
   { color: '#C9962B', chip: 'bg-[#C9962B]/15 text-[#9A6F12]', label: 'Vô địch' },
   { color: '#7D8A9C', chip: 'bg-[#7D8A9C]/15 text-[#566273]', label: 'Á quân' },
   { color: '#B0703F', chip: 'bg-[#B0703F]/15 text-[#8A5126]', label: 'Hạng ba' },
 ];
+
 function RankChip({ rank }: { rank: number }) {
   const m = MEDAL[rank - 1];
   return m
@@ -268,26 +269,12 @@ function RankChip({ rank }: { rank: number }) {
     : <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-bg px-1.5 text-caption font-bold tabular-nums text-muted" aria-label={`Hạng ${rank}`}>{rank}</span>;
 }
 
-/** Xếp hạng riêng từng game (hoà điểm: ai chơi trước xếp trên). */
-const rankAll = (plays: EventPlay[]): EvRow[] => {
-  const out: EvRow[] = [];
-  for (let g = 1; g <= gameNames.length; g++) {
-    plays.filter((p) => p.game === g)
-      .sort((a, b) => b.score - a.score || (a.created_at ?? '').localeCompare(b.created_at ?? ''))
-      .forEach((p, i) => out.push({ ...p, rank: i + 1 }));
-  }
-  return out;
-};
-
 function exportEventCsv(rows: EvRow[]) {
-  const header = ['Bảng', 'Hạng', 'Người chơi', 'Điểm', 'Số game', 'Thời gian'];
+  const header = ['Hạng', 'Người chơi', 'Game', 'Điểm', 'Thời gian'];
   const esc = (v: string | number) => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const when = (iso?: string) => iso ? new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
-  const body = [
-    ...totalsOf(rows).map((r) => ['Tổng hợp', r.rank, r.player, r.score, r.games ?? '', ''].map(esc).join(',')),
-    ...rows.map((r) => [gameNames[r.game - 1] ?? r.game, r.rank, r.player, r.score, '', when(r.created_at)].map(esc).join(',')),
-  ];
-  const csv = '﻿' + [header.join(','), ...body].join('\r\n'); // BOM để Excel đọc đúng tiếng Việt
+  const body = rows.map((r) => [r.rank, r.player, gameNames[r.game - 1] ?? r.game, r.score, when(r.created_at)].map(esc).join(','));
+  const csv = '\uFEFF' + [header.join(','), ...body].join('\r\n'); // BOM để Excel đọc đúng tiếng Việt
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url; a.download = `su-kien-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -314,7 +301,7 @@ function QrCard() {
       <div className="min-w-0 flex-1">
         <p className="text-caption font-bold uppercase tracking-[.14em] text-muted">Mã QR cho người chơi</p>
         <h3 className="mt-1 text-title font-extrabold">Quét để chơi trên điện thoại</h3>
-        <p className="mt-1 text-small text-muted">Không cần đăng nhập: nhập tên → chơi 1–3 game (mỗi game 1 lần / điện thoại) → điểm lên bảng ngay. Máy dùng chung mở <code>/play?new=1</code> để người tiếp theo chơi.</p>
+        <p className="mt-1 text-small text-muted">Không cần đăng nhập: nhập tên → chọn 1 trong 3 game → điểm lên bảng chung ngay. Mỗi điện thoại 1 lượt; máy dùng chung mở <code>/play?new=1</code> để người tiếp theo chơi.</p>
         <a href={PLAY_URL} target="_blank" rel="noreferrer" className="mt-2 inline-block break-all text-small font-bold text-primary underline">{PLAY_URL}</a>
         <div className="mt-4 flex flex-wrap gap-2">
           <a className={btn} href={qr || undefined} download="ma-qr-su-kien-gumi.png" aria-disabled={!qr}><Icon name="arrow-right" size={15} className="rotate-90" />Tải ảnh QR</a>
@@ -338,7 +325,7 @@ function QrCard() {
 function EventPanel() {
   const [plays, setPlays] = useState<EventPlay[] | null>(null);
   const [error, setError] = useState('');
-  const [game, setGame] = useState(0); // 0 = Tổng hợp
+  const [game, setGame] = useState(0); // 0 = tất cả (bảng chung)
   const [q, setQ] = useState('');
   const [busyId, setBusyId] = useState('');
   useEffect(() => {
@@ -355,14 +342,18 @@ function EventPanel() {
     return () => { alive = false; clearTimeout(t); stop(); };
   }, []);
 
-  const ranked = useMemo(() => rankAll(plays ?? []), [plays]);
-  const totals = useMemo(() => totalsOf(plays ?? []), [plays]);
-  const inGame = useMemo(() => ranked.filter((r) => r.game === game), [ranked, game]);
-  const view = useMemo(() => { const k = q.trim().toLowerCase(); return k ? inGame.filter((r) => r.player.toLowerCase().includes(k)) : inGame; }, [inGame, q]);
-  const totalView = useMemo(() => { const k = q.trim().toLowerCase(); return k ? totals.filter((r) => r.player.toLowerCase().includes(k)) : totals; }, [totals, q]);
-  const pgTotal = usePagination(totalView, 20, `${q}|total`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event-total' });
+  // Hạng luôn theo bảng chung; tab game chỉ lọc để xem.
+  const ranked: EvRow[] = useMemo(() => {
+    const at = new Map((plays ?? []).map((p) => [p.id, p.created_at]));
+    return rankPlays(plays ?? []).map((r) => ({ ...r, created_at: at.get(r.id) }));
+  }, [plays]);
+  const view = useMemo(() => {
+    const k = q.trim().toLowerCase();
+    return ranked.filter((r) => (!game || r.game === game) && (!k || r.player.toLowerCase().includes(k)));
+  }, [ranked, game, q]);
   const pg = usePagination(view, 20, `${q}|${game}`, { sizes: ADMIN_PAGE_SIZES, storageKey: 'admin-event-qr' });
   const count = (g: number) => ranked.filter((r) => r.game === g).length;
+  const top = ranked[0];
 
   const remove = async (r: EvRow) => {
     if (!confirm(`Xoá lượt chơi của "${r.player}" (${r.score} điểm)? Không hoàn tác được.`)) return;
@@ -378,7 +369,7 @@ function EventPanel() {
         <div className="max-w-xl">
           <p className="mb-3 text-caption font-bold uppercase tracking-[.18em] text-white/60">GUMI · SỰ KIỆN TRỰC TIẾP</p>
           <h2 className="text-[28px] font-extrabold leading-tight tracking-tight text-white sm:text-[34px]">Bảng vàng sự kiện.</h2>
-          <p className="mt-3 text-small leading-relaxed text-white/70">Mỗi người chơi tối đa 3 game — bảng Tổng hợp ưu tiên ai chơi nhiều game, cùng 3 bảng riêng từng game. Tự cập nhật khi có người chơi xong.</p>
+          <p className="mt-3 text-small leading-relaxed text-white/70">Mỗi người quét QR, chơi 1 trong 3 game và lên bảng xếp hạng chung — tự cập nhật khi có người chơi xong.</p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3.5 py-2 text-caption font-bold uppercase tracking-[.14em] text-white">
           <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
@@ -396,21 +387,20 @@ function EventPanel() {
       <section>
         <h2 className="mb-3 text-small font-bold uppercase tracking-wide text-muted">Chỉ số chính</h2>
         <div className="grid grid-cols-2 gap-3 min-[1100px]:grid-cols-4">
-          <StatCard icon="flag" cls="text-primary" accent="#B83556" value={totals.length} label="Người chơi" hint={`${ranked.length} lượt · ${totals.filter((t) => t.games === 3).length} người đủ 3 game`} />
-          {gameNames.map((g, i) => {
-            const top = ranked.find((r) => r.game === i + 1 && r.rank === 1);
-            return <StatCard key={g} icon={(['star', 'trophy', 'medal'] as const)[i]!} cls={['text-info', 'text-accent', 'text-success'][i]!} accent={['#55768C', '#C9962B', '#1F7A4D'][i]} value={count(i + 1)} label={`Người chơi · ${g}`} hint={top ? `Top 1: ${top.player} (${top.score})` : undefined} />;
-          })}
+          <StatCard icon="flag" cls="text-primary" accent="#B83556" value={ranked.length} label="Người đã chơi" hint={top ? `Top 1: ${top.player} (${top.score})` : undefined} />
+          {gameNames.map((g, i) => (
+            <StatCard key={g} icon={(['star', 'trophy', 'medal'] as const)[i]!} cls={['text-info', 'text-accent', 'text-success'][i]!} accent={['#55768C', '#C9962B', '#1F7A4D'][i]} value={count(i + 1)} label={`Chọn ${g}`} />
+          ))}
         </div>
       </section>
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="admin-sort flex items-center gap-1 overflow-x-auto rounded-lg p-1" role="tablist" aria-label="Chọn game">
-            {['Tổng hợp', ...gameNames].map((g, i) => (
+          <div className="admin-sort flex items-center gap-1 overflow-x-auto rounded-lg p-1" role="tablist" aria-label="Lọc theo game">
+            {['Bảng chung', ...gameNames].map((g, i) => (
               <button key={g} role="tab" aria-selected={game === i} onClick={() => setGame(i)}
                 className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-colors ${game === i ? 'bg-surface text-text shadow-sm' : 'text-muted hover:text-text'}`}>
-                {g} <span className="tabular-nums text-muted">· {i ? count(i) : totals.length}</span>
+                {g} <span className="tabular-nums text-muted">· {i ? count(i) : ranked.length}</span>
               </button>
             ))}
           </div>
@@ -419,33 +409,16 @@ function EventPanel() {
               className="h-9 w-52 rounded-lg border border-border bg-surface px-3 text-small font-medium text-text outline-none focus:border-primary/60" />
             <button onClick={() => exportEventCsv(ranked)} disabled={ranked.length === 0}
               className="admin-export flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-small font-semibold text-text transition-colors hover:bg-bg disabled:opacity-40">
-              <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV (4 bảng)
+              <Icon name="arrow-right" size={15} className="rotate-90" /> Xuất CSV
             </button>
           </div>
         </div>
 
         {plays === null ? <p className="rounded-[20px] border border-border bg-surface px-6 py-12 text-center text-small text-muted">Đang tải…</p>
-          : game === 0 ? (totals.length === 0
-            ? <p className="rounded-[20px] border border-border bg-surface px-6 py-12 text-center text-small text-muted">Chưa có ai chơi.</p>
-            : <>
-              <p className="text-small text-muted">Xếp theo <b className="text-text">số game đã chơi</b> (chơi nhiều xếp trên), rồi <b className="text-text">tổng điểm</b>, rồi ai xong trước.</p>
-              <Card className="divide-y divide-border/60 overflow-hidden rounded-[20px] p-0">
-                {totalView.length === 0 ? <p className="px-4 py-8 text-center text-small text-muted">Không tìm thấy người chơi nào.</p>
-                  : pgTotal.slice.map((r) => (
-                    <div key={r.id} className="admin-row flex items-center gap-3 px-4 py-2.5 text-small">
-                      <RankChip rank={r.rank} />
-                      <span className="min-w-0 flex-1 truncate font-semibold" title={r.player}>{r.player}</span>
-                      <span className="rounded-pill bg-bg px-2.5 py-1 text-caption font-bold tabular-nums text-muted">{r.games}/3 game</span>
-                      <span className="w-14 text-right text-body font-extrabold tabular-nums text-text">{r.score}</span>
-                    </div>
-                  ))}
-              </Card>
-              <Pagination {...pgTotal} unit="người" />
-            </>)
-          : inGame.length === 0 ? (
+          : ranked.length === 0 ? (
           <div className="flex flex-col items-center rounded-[20px] border border-border bg-surface px-6 py-16 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg text-accent"><Icon name="trophy" size={28} filled /></span>
-            <p className="mt-4 text-body font-bold">Chưa có ai chơi {gameNames[game - 1]}</p>
+            <p className="mt-4 text-body font-bold">Chưa có ai chơi</p>
             <p className="mt-1 max-w-sm text-small text-muted">Bảng tự cập nhật ngay khi có người chơi xong.</p>
           </div>
         ) : (
@@ -457,7 +430,8 @@ function EventPanel() {
                   <div key={r.id} className="admin-row flex items-center gap-3 px-4 py-2.5 text-small">
                     <RankChip rank={r.rank} />
                     <span className="min-w-0 flex-1 truncate font-semibold" title={r.player}>{r.player}</span>
-                    <span className="hidden text-caption text-muted sm:inline">{r.created_at ? new Date(r.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : ''}</span>
+                    <span className="hidden rounded-pill bg-bg px-2.5 py-1 text-caption font-bold text-muted sm:inline">{gameNames[r.game - 1]}</span>
+                    <span className="hidden text-caption text-muted md:inline">{r.created_at ? new Date(r.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : ''}</span>
                     <span className="w-14 text-right text-body font-extrabold tabular-nums text-text">{r.score}</span>
                     <button onClick={() => void remove(r)} disabled={busyId === r.id} aria-label={`Xoá lượt của ${r.player}`} title="Xoá lượt chơi"
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-[#B3261E]/10 hover:text-[#B3261E] disabled:opacity-40">

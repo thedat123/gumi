@@ -109,3 +109,20 @@
 .event-board-games { display: block; margin-top: 2px; color: var(--ev-muted, #775A4E); font-size: 11.5px; font-weight: 700; }
 .event-board-rule { margin: 0; padding: 0 20px 12px; color: var(--ev-muted, #775A4E); font-size: 13px; line-height: 1.45; }
 .event-board-rule b { color: var(--ev-primary, #B83556); }
+/* Nhãn game trong bảng xếp hạng chung. */
+.event-game-tag { display: inline-block; margin: 3px 0 0; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .2px; vertical-align: middle; }
+.event-board-name .event-game-tag { display: table; }
+.event-game-tag.g1 { background: #FCE8EE; color: #B83556; }
+.event-game-tag.g2 { background: #FFF1D9; color: #A9580A; }
+.event-game-tag.g3 { background: #E6F0FB; color: #2F5F8F; }
+/* Hạng của bạn (ghim) + phân trang. */
+.event-my-rank { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 20px 12px !important; padding: 10px 14px; border-radius: 14px; background: var(--ev-pink-soft, #FCE8EE); color: var(--ev-primary, #B83556); font-size: 14px; font-weight: 700; }
+.event-my-rank b { font-size: 18px; font-weight: 900; }
+.event-shell .event-my-rank button { padding: 6px 12px; border-radius: 999px; font-size: 12px; background: #fff; border-color: transparent; color: var(--ev-primary, #B83556); }
+.event-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--ev-line, #EBD8CD); font-size: 14px; color: var(--ev-muted, #775A4E); font-variant-numeric: tabular-nums; }
+.event-pager b { color: var(--ev-text, #33231D); }
+.event-shell .event-pager button { padding: 10px 14px; min-height: 44px; border-radius: 12px; font-size: 14px; }
+.event-shell .event-pager button:disabled { opacity: .4; cursor: default; }
+@media (max-width: 700px) { .event-my-rank { margin: 0 14px 10px !important; } .event-pager { padding: 10px 14px; } }
+/* Có phân trang → không cần khung cuộn riêng. */
+.event-leaderboard .event-board { max-height: none; overflow: visible; }
